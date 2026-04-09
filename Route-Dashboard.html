@@ -13,7 +13,7 @@ body { font-family: Arial, sans-serif; background: #f0f2f5; color: #333; }
 .header h1 { font-size: 22px; font-weight: 700; }
 .header .subtitle { font-size: 13px; opacity: 0.8; margin-top: 2px; }
 .container { display: flex; height: calc(100vh - 64px); }
-.sidebar { width: 380px; min-width: 380px; background: white; padding: 20px; overflow-y: auto; border-right: 1px solid #ddd; display: flex; flex-direction: column; gap: 16px; }
+.sidebar { width: 420px; min-width: 420px; background: white; padding: 20px; overflow-y: auto; border-right: 1px solid #ddd; display: flex; flex-direction: column; gap: 14px; }
 .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #888; margin-bottom: 4px; }
 select { width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; background: white; cursor: pointer; }
 select:focus { outline: none; border-color: #2c5f8a; box-shadow: 0 0 0 2px rgba(44,95,138,0.2); }
@@ -23,6 +23,9 @@ select:focus { outline: none; border-color: #2c5f8a; box-shadow: 0 0 0 2px rgba(
 .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
 .btn-secondary { background: #e8ecf0; color: #555; margin-top: 4px; }
 .btn-secondary:hover { background: #dde1e6; }
+.btn-export { background: #2e7d32; color: white; margin-top: 4px; }
+.btn-export:hover { background: #1b5e20; }
+.btn-export:disabled { background: #aaa; cursor: not-allowed; }
 .result-box { background: #f7f9fb; border: 1px solid #dde3ea; border-radius: 8px; padding: 16px; }
 .result-title { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px; }
 .result-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #eee; }
@@ -40,6 +43,19 @@ select:focus { outline: none; border-color: #2c5f8a; box-shadow: 0 0 0 2px rgba(
 .loc-details { font-size: 12px; color: #666; line-height: 1.6; padding: 8px 0; }
 .loc-details strong { color: #333; }
 .divider { border: none; border-top: 1px solid #eee; margin: 4px 0; }
+.progress-bar { width: 100%; height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; margin: 8px 0; }
+.progress-fill { height: 100%; background: #2c5f8a; border-radius: 3px; transition: width 0.3s; }
+.batch-results { max-height: 300px; overflow-y: auto; font-size: 12px; border: 1px solid #dde3ea; border-radius: 6px; margin-top: 8px; }
+.batch-results table { width: 100%; border-collapse: collapse; }
+.batch-results th { background: #1a3a5c; color: white; padding: 8px 6px; text-align: left; position: sticky; top: 0; font-size: 11px; }
+.batch-results td { padding: 6px; border-bottom: 1px solid #eee; }
+.batch-results tr:hover { background: #f0f4f8; }
+.tab-bar { display: flex; gap: 0; border-bottom: 2px solid #ddd; }
+.tab-btn { flex: 1; padding: 10px; border: none; background: #f0f2f5; cursor: pointer; font-size: 13px; font-weight: 600; color: #888; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+.tab-btn.active { background: white; color: #1a3a5c; border-bottom-color: #2c5f8a; }
+.tab-btn:hover { color: #1a3a5c; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
 </style>
 </head>
 <body>
@@ -51,35 +67,64 @@ select:focus { outline: none; border-color: #2c5f8a; box-shadow: 0 0 0 2px rgba(
 </div>
 <div class="container">
   <div class="sidebar">
-    <div>
-      <div class="section-label">1. Select Mill / Supplier</div>
-      <select id="millSelect"><option value="">— Choose a mill or supplier —</option></select>
-      <div id="millDetails" class="loc-details" style="display:none"></div>
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="single">Single Route</button>
+      <button class="tab-btn" data-tab="batch">Batch All Yards</button>
     </div>
-    <div>
-      <div class="section-label">2. Select Yard</div>
-      <select id="yardSelect"><option value="">— Choose a yard —</option></select>
-      <div id="yardDetails" class="loc-details" style="display:none"></div>
+
+    <!-- SINGLE ROUTE TAB -->
+    <div id="tab-single" class="tab-content active">
+      <div>
+        <div class="section-label">1. Select Mill / Supplier</div>
+        <select id="millSelect"><option value="">— Choose a mill or supplier —</option></select>
+        <div id="millDetails" class="loc-details" style="display:none"></div>
+      </div>
+      <div>
+        <div class="section-label">2. Select Yard</div>
+        <select id="yardSelect"><option value="">— Choose a yard —</option></select>
+        <div id="yardDetails" class="loc-details" style="display:none"></div>
+      </div>
+      <button class="btn btn-primary" id="routeBtn" disabled>Get Route & Distance</button>
+      <button class="btn btn-secondary" id="clearBtn" style="display:none">Clear Route</button>
+      <div id="statusMsg" class="status-msg" style="display:none"></div>
+      <div id="resultBox" class="result-box" style="display:none">
+        <div class="result-title">Route Summary</div>
+        <div class="distance-highlight" id="distMiles">—</div>
+        <div class="distance-sub" id="distKm"></div>
+        <hr class="divider" style="margin: 10px 0;">
+        <div class="result-row"><span class="result-label">Est. Drive Time</span><span class="result-value" id="driveTime">—</span></div>
+        <div class="result-row"><span class="result-label">From</span><span class="result-value" id="fromName">—</span></div>
+        <div class="result-row"><span class="result-label">To</span><span class="result-value" id="toName">—</span></div>
+      </div>
     </div>
-    <button class="btn btn-primary" id="routeBtn" disabled>Get Route & Distance</button>
-    <button class="btn btn-secondary" id="clearBtn" style="display:none">Clear Route</button>
-    <div id="statusMsg" class="status-msg" style="display:none"></div>
-    <div id="resultBox" class="result-box" style="display:none">
-      <div class="result-title">Route Summary</div>
-      <div class="distance-highlight" id="distMiles">—</div>
-      <div class="distance-sub" id="distKm"></div>
-      <hr class="divider" style="margin: 10px 0;">
-      <div class="result-row"><span class="result-label">Est. Drive Time</span><span class="result-value" id="driveTime">—</span></div>
-      <div class="result-row"><span class="result-label">From</span><span class="result-value" id="fromName">—</span></div>
-      <div class="result-row"><span class="result-label">To</span><span class="result-value" id="toName">—</span></div>
+
+    <!-- BATCH TAB -->
+    <div id="tab-batch" class="tab-content">
+      <div>
+        <div class="section-label">1. Select Mill / Supplier</div>
+        <select id="batchMillSelect"><option value="">— Choose a mill or supplier —</option></select>
+        <div id="batchMillDetails" class="loc-details" style="display:none"></div>
+      </div>
+      <button class="btn btn-primary" id="batchBtn" disabled>Calculate Distance to All Yards</button>
+      <div id="batchStatus" class="status-msg" style="display:none"></div>
+      <div class="progress-bar" id="batchProgress" style="display:none"><div class="progress-fill" id="batchProgressFill" style="width:0%"></div></div>
+      <div id="batchSummary" class="result-box" style="display:none">
+        <div class="result-title">Batch Results</div>
+        <div class="result-row"><span class="result-label">Routes calculated</span><span class="result-value" id="batchCount">0</span></div>
+        <div class="result-row"><span class="result-label">Closest yard</span><span class="result-value" id="batchClosest">—</span></div>
+        <div class="result-row"><span class="result-label">Farthest yard</span><span class="result-value" id="batchFarthest">—</span></div>
+      </div>
+      <button class="btn btn-export" id="exportCsvBtn" style="display:none" disabled>Export to CSV</button>
+      <div id="batchResultsTable" class="batch-results" style="display:none"></div>
     </div>
+
     <div class="legend">
-      <div><span class="legend-dot" style="background:#c62828;"></span>Mill / Supplier</div>
+      <div><span class="legend-dot" style="background:#c62828;"></span>Mill</div>
       <div><span class="legend-dot" style="background:#1565c0;"></span>Yard</div>
       <div><span class="legend-dot" style="background:#2e7d32; width:20px; height:4px; border-radius:2px;"></span>Route</div>
     </div>
     <div class="info-card">
-      Routes use the OSRM public API for real road distances. Geocoding via OpenStreetMap Nominatim. Results are estimates — actual mileage may vary.
+      Routes use the OSRM public API for real road distances. Geocoding via OpenStreetMap Nominatim. Batch mode calculates one mill to all yards sequentially to avoid rate limits.
     </div>
   </div>
   <div id="map"></div>
@@ -89,32 +134,44 @@ select:focus { outline: none; border-color: #2c5f8a; box-shadow: 0 0 0 2px rgba(
 const MILLS = [{"name": "BEASLEY FOREST PRODUCTS", "product": "YP", "vendor": "70328", "street": "712 Uvalda Hwy", "city": "Hazlehurst", "stateZip": "GA 31539", "address": "712 Uvalda Hwy, Hazlehurst, GA 31539"}, {"name": "BINDERHOLZ", "product": "YP", "vendor": "69974-2", "street": "17152 46th Trace", "city": "Live Oak", "stateZip": "FL 32060", "address": "17152 46th Trace, Live Oak, FL 32060"}, {"name": "BINDERHOLZ", "product": "YP", "vendor": "69974-1", "street": "260 Piper Ln", "city": "Enfield", "stateZip": "NC 27823", "address": "260 Piper Ln, Enfield, NC 27823"}, {"name": "CHARLES INGRAM LUMBER", "product": "YP", "vendor": "69893", "street": "4930 Planer Rd", "city": "Effingham", "stateZip": "SC 29541", "address": "4930 Planer Rd, Effingham, SC 29541"}, {"name": "CULP LUMBER", "product": "YP", "vendor": "70512", "street": "491 Old US 52", "city": "New London", "stateZip": "NC 28127", "address": "491 Old US 52, New London, NC 28127"}, {"name": "GEORGIA PACIFIC -  Clarendon OSB", "product": "OSB", "vendor": "5406-7", "street": "8250 Sumter Highway", "city": "Alcolu", "stateZip": "SC 29001", "address": "8250 Sumter Highway, Alcolu, SC 29001"}, {"name": "GEORGIA PACIFIC - Albany", "product": "YP", "vendor": "5406-81", "street": "3150 Sylvester Rd", "city": "Albany", "stateZip": "GA 31705", "address": "3150 Sylvester Rd, Albany, GA 31705"}, {"name": "GEORGIA PACIFIC - Dudley", "product": "YP", "vendor": "5406-82", "street": "139 Brewington Road", "city": "Dudley", "stateZip": "NC 28333", "address": "139 Brewington Road, Dudley, NC 28333"}, {"name": "GEORGIA PACIFIC - Hosford OSB", "product": "OSB", "vendor": "5406-12", "street": "12995 fl-65", "city": "Hosford", "stateZip": "FL  32334", "address": "12995 fl-65, Hosford, FL  32334"}, {"name": "GEORGIA PACIFIC - Mexia", "product": "YP", "vendor": "5406-83", "street": "372 Mexboro Rd", "city": "Frisco City", "stateZip": "AL 36445", "address": "372 Mexboro Rd, Frisco City, AL 36445"}, {"name": "GEORGIA PACIFIC - Prosperity", "product": "YP", "vendor": "5406-84", "street": "191 Georgia Pacific Blvd", "city": "Prosperity", "stateZip": "SC 29127", "address": "191 Georgia Pacific Blvd, Prosperity, SC 29127"}, {"name": "GEORGIA PACIFIC - Rome", "product": "YP", "vendor": "5406-85", "street": "80 Mays Bridge Road", "city": "Rome", "stateZip": "GA 30165", "address": "80 Mays Bridge Road, Rome, GA 30165"}, {"name": "GEORGIA PACIFIC - Talladega", "product": "YP", "vendor": "5406-86", "street": "400 Ironaton Cutoff Rd", "city": "Talladega", "stateZip": "AL 35160", "address": "400 Ironaton Cutoff Rd, Talladega, AL 35160"}, {"name": "GEORGIA PACIFIC - Taylorsville", "product": "YP", "vendor": "5406-87", "street": "105 Smith Co Rd 25", "city": "Taylorsville", "stateZip": "MS 39169", "address": "105 Smith Co Rd 25, Taylorsville, MS 39169"}, {"name": "GEORGIA PACIFIC - Warrenton", "product": "YP", "vendor": "5406-88", "street": "331 Thomson Hwy", "city": "Warrenton", "stateZip": "GA 30828", "address": "331 Thomson Hwy, Warrenton, GA 30828"}, {"name": "INLAND WHOLESALE - BLUE INLAND", "product": "RELOAD", "vendor": "4350-51", "street": "2101 Burr Oak Avenue", "city": "Blue Island", "stateZip": "IL 60406", "address": "2101 Burr Oak Avenue, Blue Island, IL 60406"}, {"name": "INLAND WHOLESALE - BUFFALO, NY", "product": "RELOAD", "vendor": "", "street": "S3100 Lake Shore Rd", "city": "Buffalo", "stateZip": "NY 14219", "address": "S3100 Lake Shore Rd, Buffalo, NY 14219"}, {"name": "INLAND WHOLESALE - DETROIT, MI", "product": "RELOAD", "vendor": "4350-4", "street": "11010 STATE FAIR EAST", "city": "DETROIT", "stateZip": "MI 48234", "address": "11010 STATE FAIR EAST, DETROIT, MI 48234"}, {"name": "INLAND WHOLESALE - WALBRIDGE, OH", "product": "RELOAD", "vendor": "4350-45", "street": "6373 Ayers Road", "city": "Walbridge", "stateZip": "OH 43465", "address": "6373 Ayers Road, Walbridge, OH 43465"}, {"name": "INTERFOR - BAXLEY, GA", "product": "YP", "vendor": "", "street": "1830 Golden Isles Easr", "city": "BAXLEY", "stateZip": "GA 31513", "address": "1830 Golden Isles Easr, BAXLEY, GA 31513"}, {"name": "INTERFOR - BAYSPRING, MS", "product": "YP", "vendor": "", "street": "71 GEORGIA-PACIFIC ROAD", "city": "Bays Springs", "stateZip": "MS 39422", "address": "71 GEORGIA-PACIFIC ROAD, Bays Springs, MS 39422"}, {"name": "INTERFOR - EATONTON, GA", "product": "YP", "vendor": "", "street": "370 DENNIS STATION ROAD SW", "city": "EATONTON", "stateZip": "GA 31024", "address": "370 DENNIS STATION ROAD SW, EATONTON, GA 31024"}, {"name": "INTERFOR - FAYETTE, AL", "product": "YP", "vendor": "", "street": "545 COUNTY ROAD 6", "city": "BELK", "stateZip": "AL 35545", "address": "545 COUNTY ROAD 6, BELK, AL 35545"}, {"name": "INTERFOR - GEORGETOWN, SC", "product": "YP", "vendor": "", "street": "2701 Indian Hut Rd", "city": "Georgetown", "stateZip": "SC 29440", "address": "2701 Indian Hut Rd, Georgetown, SC 29440"}, {"name": "INTERFOR - MELDRIM, GA", "product": "YP", "vendor": "", "street": "1291 Old River Rd", "city": "Bloomingdale", "stateZip": "GA 31302", "address": "1291 Old River Rd, Bloomingdale, GA 31302"}, {"name": "INTERFOR - PERRY, GA", "product": "YP", "vendor": "", "street": "903 JERNIGAN STREET", "city": "PERRY", "stateZip": "GA 31069", "address": "903 JERNIGAN STREET, PERRY, GA 31069"}, {"name": "INTERFOR - PRESTON, GA", "product": "YP", "vendor": "", "street": "378 TOLLESON ROAD", "city": "PRESTON", "stateZip": "GA 31824", "address": "378 TOLLESON ROAD, PRESTON, GA 31824"}, {"name": "INTERFOR - SUMMERVILLE,SC", "product": "YP", "vendor": "", "street": "200 N Maple St", "city": "SUMMERVILLE", "stateZip": "SC 29483", "address": "200 N Maple St, SUMMERVILLE, SC 29483"}, {"name": "INTERFOR - SWAINSBORO, GA", "product": "YP", "vendor": "", "street": "8796 HWY 297", "city": "SWAINSBORO", "stateZip": "GA 30401", "address": "8796 HWY 297, SWAINSBORO, GA 30401"}, {"name": "INTERFOR - THOMASTON, GA", "product": "YP", "vendor": "", "street": "75 BEN HILL ROAD", "city": "THOMASTON", "stateZip": "GA 30286", "address": "75 BEN HILL ROAD, THOMASTON, GA 30286"}, {"name": "JORDAN LUMBER", "product": "YP", "vendor": "70121", "street": "1939 N Carolina 109", "city": "Mount Gilead", "stateZip": "NC 27306", "address": "1939 N Carolina 109, Mount Gilead, NC 27306"}, {"name": "KRONOSPAN - PORT OF BALTIMORE", "product": "OSB", "vendor": "70517", "street": "2200 Broening Highway", "city": "Baltimore", "stateZip": "MD 21224", "address": "2200 Broening Highway, Baltimore, MD 21224"}, {"name": "Langdale FOREST", "product": "YP", "vendor": "70122", "street": "752 Grove St", "city": "Barnesville", "stateZip": "GA 30204", "address": "752 Grove St, Barnesville, GA 30204"}, {"name": "Louisiana-Pacific - HANCEVILLE OSB", "product": "OSB", "vendor": "66624-2", "street": "902 Main St SE", "city": "Hanceville", "stateZip": "AL 35077", "address": "902 Main St SE, Hanceville, AL 35077"}, {"name": "Louisiana-Pacific - ROXBORO OSB", "product": "OSB", "vendor": "66624-1", "street": "10475 Boston Rd", "city": "Roxboro", "stateZip": "NC 27574", "address": "10475 Boston Rd, Roxboro, NC 27574"}, {"name": "Louisiana-Pacific - THOMASVILLE OSB", "product": "OSB", "vendor": "66624-3", "street": "1500 N Clarke Industrial Rd", "city": "Thomasville", "stateZip": "AL 36784", "address": "1500 N Clarke Industrial Rd, Thomasville, AL 36784"}, {"name": "MARION, OH", "product": "RELOAD", "vendor": "", "street": "3177 HARDING HIGHWAY EAST", "city": "MARION", "stateZip": "OH 43302", "address": "3177 HARDING HIGHWAY EAST, MARION, OH 43302"}, {"name": "NATIONAL DISTRIBUTION", "product": "RELOAD", "vendor": "", "street": "3501 WEST 51 ST STREET", "city": "CHICAGO", "stateZip": "IL 60632", "address": "3501 WEST 51 ST STREET, CHICAGO, IL 60632"}, {"name": "PARTNERS WAREHOUSE", "product": "RELOAD", "vendor": "", "street": "675 Mcclure Rd", "city": "Aurora", "stateZip": "Il 60502", "address": "675 Mcclure Rd, Aurora, Il 60502"}, {"name": "Pollard Lumber Co., Inc", "product": "YP", "vendor": "67786", "street": "5863 Washington Rd", "city": "Appling", "stateZip": "GA 30802", "address": "5863 Washington Rd, Appling, GA 30802"}, {"name": "REX LUMBER - Bristol", "product": "YP", "vendor": "69273-2", "street": "18601 FL-12", "city": "Bristol", "stateZip": "FL 32321", "address": "18601 FL-12, Bristol, FL 32321"}, {"name": "REX LUMBER - Brookhaven", "product": "YP", "vendor": "69273-4", "street": "810 Wl Behan Rd", "city": "Brookhaven", "stateZip": "MS 39601", "address": "810 Wl Behan Rd, Brookhaven, MS 39601"}, {"name": "REX LUMBER - Graceville", "product": "YP", "vendor": "69273-3", "street": "5299 Alabama St", "city": "Graceville", "stateZip": "FL 32440", "address": "5299 Alabama St, Graceville, FL 32440"}, {"name": "REX LUMBER - TROY", "product": "YP", "vendor": "69273-1", "street": "1945 COUNTY ROAD 7714", "city": "TROY", "stateZip": "AL 36081", "address": "1945 COUNTY ROAD 7714, TROY, AL 36081"}, {"name": "TR MILLER", "product": "YP", "vendor": "70100", "street": "215 Deer St", "city": "Brewton", "stateZip": "AL 36426", "address": "215 Deer St, Brewton, AL 36426"}, {"name": "TROY LUMBER", "product": "YP", "vendor": "70030", "street": "110 Leslie St", "city": "Troy", "stateZip": "NC 27371", "address": "110 Leslie St, Troy, NC 27371"}, {"name": "WEST FRASER - Allendale", "product": "OSB", "vendor": "61210-2", "street": "9918 Bufford\u2019s Bridge Hwy", "city": "Fairfax", "stateZip": "SC 29827", "address": "9918 Bufford\u2019s Bridge Hwy, Fairfax, SC 29827"}, {"name": "WEST FRASER - Cordele", "product": "OSB", "vendor": "61210-3", "street": "964 US-280 W", "city": "Cordele", "stateZip": "GA 31015", "address": "964 US-280 W, Cordele, GA 31015"}, {"name": "WEST FRASER - Huguley", "product": "OSB", "vendor": "61210-4", "street": "4400 Barton Industrial Blvd", "city": "Lanett", "stateZip": "AL 36863", "address": "4400 Barton Industrial Blvd, Lanett, AL 36863"}, {"name": "WEST FRASER - Joanna", "product": "OSB", "vendor": "61210-1", "street": "564 Woodyard Road", "city": "Kinards", "stateZip": "sc 29355", "address": "564 Woodyard Road, Kinards, sc 29355"}, {"name": "WEST FRASER - Maplesville Mills", "product": "YP", "vendor": "61210-", "street": "7475 AL-22", "city": "Maplesville", "stateZip": "AL 36750", "address": "7475 AL-22, Maplesville, AL 36750"}, {"name": "WEST FRASER - McDavid", "product": "YP", "vendor": "5556-4", "street": "401 Champion Dr", "city": "McDavid", "stateZip": "FL 32568", "address": "401 Champion Dr, McDavid, FL 32568"}, {"name": "WEST FRASER - Opelika", "product": "YP", "vendor": "5556-3", "street": "2100 Industrial Blvd", "city": "Opelika", "stateZip": "AL 36801", "address": "2100 Industrial Blvd, Opelika, AL 36801"}, {"name": "WEST FRASER - Seaboard Mills", "product": "YP", "vendor": "61210-", "street": "4400 NC-186", "city": "Seaboard", "stateZip": "NC 27876", "address": "4400 NC-186, Seaboard, NC 27876"}, {"name": "WESTERVELT - Moundville", "product": "YP", "vendor": "70102-1", "street": "2500 Gulf States Pkwy", "city": "Moundville", "stateZip": "AL 35474", "address": "2500 Gulf States Pkwy, Moundville, AL 35474"}, {"name": "WESTERVELT - Thomasville", "product": "YP", "vendor": "70102-2", "street": "700 N Clarke Industrial Rd", "city": "Thomasville", "stateZip": "AL 36784", "address": "700 N Clarke Industrial Rd, Thomasville, AL 36784"}, {"name": "Weyerhaeuser - GREENVILLE", "product": "YP", "vendor": "", "street": "371 E Hanrahan Rd", "city": "Ayden", "stateZip": "NC 28513", "address": "371 E Hanrahan Rd, Ayden, NC 28513"}, {"name": "Weyerhaeuser - Plymouth Wood Plant", "product": "YP", "vendor": "", "street": "Pulp Mill Rd", "city": "Jamesville", "stateZip": "NC 27846", "address": "Pulp Mill Rd, Jamesville, NC 27846"}];
 const YARDS = [{"storeNumber": "900-549", "posNumber": "549", "storeType": "CCP", "street": "868 MURRAY RD", "city": "DOTHAN", "state": "AL", "zip": "36303", "lat": 31.257526, "lon": -85.403661, "manager": "Joe Hatton", "market": "Townsend Market"}, {"storeNumber": "900-750", "posNumber": "750", "storeType": "LUMBER", "street": "868 MURRAY RD", "city": "DOTHAN", "state": "AL", "zip": "36303", "lat": 31.257526, "lon": -85.403661, "manager": "Shane Johnson", "market": "Townsend Market"}, {"storeNumber": "900-752", "posNumber": "752", "storeType": "LUMBER", "street": "533 BOLL WEEVIL CIRCLE", "city": "ENTERPRISE", "state": "AL", "zip": "36330", "lat": 31.313058, "lon": -85.830703, "manager": "Russell Lynch", "market": "Townsend Market"}, {"storeNumber": "900-753", "posNumber": "753", "storeType": "LUMBER", "street": "1007 SOUTH BRUNDIDGE ST", "city": "TROY", "state": "AL", "zip": "36081", "lat": 31.795148, "lon": -85.966445, "manager": "Russell Lynch", "market": "Townsend Market"}, {"storeNumber": "0-0", "posNumber": "1897", "storeType": "TIMBER", "street": "618 WEST CENTRAL ST", "city": "WARREN", "state": "AR", "zip": "71671", "lat": 33.610037, "lon": -92.075229, "manager": "Gary Saunders", "market": "Non-Sales"}, {"storeNumber": "900-755", "posNumber": "755", "storeType": "LUMBER", "street": "1520 HIGHWAY 90 WEST", "city": "CHIPLEY", "state": "FL", "zip": "32428", "lat": 30.776226, "lon": -85.558957, "manager": "Michael Hazard", "market": "Townsend Market"}, {"storeNumber": "900-751", "posNumber": "751", "storeType": "LUMBER", "street": "3710 HIGHWAY 231N", "city": "PANAMA CITY", "state": "FL", "zip": "32404", "lat": 30.215292, "lon": -85.603667, "manager": "Daniel Turner", "market": "Townsend Market"}, {"storeNumber": "900-459", "posNumber": "459", "storeType": "LUMBER", "street": "800 15TH ST", "city": "COLUMBUS", "state": "GA", "zip": "31901", "lat": 32.47397, "lon": -84.98141, "manager": "Dylan Fessler", "market": "Mid Georgia Market"}, {"storeNumber": "0-0", "posNumber": "578", "storeType": "RELOAD", "street": "298 TEMPLE AVE.  NS DELV SDG B25", "city": "NEWNAN", "state": "GA", "zip": "30263", "lat": 33.389964, "lon": -84.822245, "manager": "", "market": "Reloads"}, {"storeNumber": "900-451", "posNumber": "539", "storeType": "CCP", "street": "4220 WEST WHITE RD", "city": "OAKWOOD", "state": "GA", "zip": "30566", "lat": 34.212962, "lon": -83.899649, "manager": "", "market": "Atlanta Market"}, {"storeNumber": "900-453", "posNumber": "453", "storeType": "LUMBER", "street": "3365 FLORENCE RD", "city": "POWDER SPRINGS", "state": "GA", "zip": "30127", "lat": 33.872544, "lon": -84.700557, "manager": "Cody Townes", "market": "Atlanta Market"}, {"storeNumber": "900-456", "posNumber": "456", "storeType": "DIRECT SHIP", "street": "24 JOE KENNEDY BLVD", "city": "STATESBORO", "state": "GA", "zip": "30458", "lat": 32.39411, "lon": -81.81425, "manager": "Ben Blaxton", "market": "Atlanta Market"}, {"storeNumber": "0-0", "posNumber": "582", "storeType": "RELOAD", "street": "472 EAGLES LANDING PARKWAY", "city": "STOCKBRIDGE", "state": "GA", "zip": "", "lat": 33.516541, "lon": -84.208471, "manager": "", "market": "Atlanta Market"}, {"storeNumber": "900-452", "posNumber": "452", "storeType": "LUMBER", "street": "472 EAGLES LANDING PARKWAY", "city": "STOCKBRIDGE", "state": "GA", "zip": "30281", "lat": 33.516541, "lon": -84.208471, "manager": "Wade Wood", "market": "Atlanta Market"}, {"storeNumber": "900-455", "posNumber": "455", "storeType": "DOOR SHOP", "street": "472 EAGLES LANDING PARKWAY", "city": "STOCKBRIDGE", "state": "GA", "zip": "30281", "lat": 33.516541, "lon": -84.208471, "manager": "Tyler Massie", "market": "Atlanta Market"}, {"storeNumber": "0-0", "posNumber": "713", "storeType": "RELOAD", "street": "1159 HOG MOUNTAIN RD", "city": "WINDER", "state": "GA", "zip": "30680", "lat": 41.101491, "lon": -81.371148, "manager": "", "market": "District Cost Center"}, {"storeNumber": "900-457", "posNumber": "457", "storeType": "KITCHEN AND BATH", "street": "1159 HOG MOUNTAIN RD", "city": "WINDER", "state": "GA", "zip": "30680", "lat": 33.953577, "lon": -83.655658, "manager": "Adam Schuman", "market": "Atlanta Market"}, {"storeNumber": "900-450", "posNumber": "450", "storeType": "LUMBER", "street": "1159 HOG MOUNTAIN RD", "city": "WINDER", "state": "GA", "zip": "30680", "lat": 33.953577, "lon": -83.655658, "manager": "Chris Burnett", "market": "Atlanta Market"}, {"storeNumber": "900-454", "posNumber": "454", "storeType": "HUB", "street": "1159 HOG MOUNTAIN RD", "city": "WINDER", "state": "GA", "zip": "30680", "lat": 33.953577, "lon": -83.655658, "manager": "Chris Burnett", "market": "Atlanta Market"}, {"storeNumber": "900-597", "posNumber": "597", "storeType": "EWP", "street": "1159 HOG MOUNTAIN RD", "city": "WINDER", "state": "GA", "zip": "30680", "lat": 33.953577, "lon": -83.655658, "manager": "", "market": "Atlanta Market"}, {"storeNumber": "0-0", "posNumber": "585", "storeType": "RELOAD", "street": "5521 OAK GROVE RD", "city": "EVANSVILLE", "state": "IN", "zip": "47715", "lat": 37.991697, "lon": -87.48451, "manager": "", "market": "Kight Home Center"}, {"storeNumber": "0-0", "posNumber": "1604", "storeType": "RELOAD", "street": "5521 OAK GROVE RD", "city": "EVANSVILLE", "state": "IN", "zip": "47715", "lat": 37.991697, "lon": -87.48451, "manager": "", "market": "Kight Home Center"}, {"storeNumber": "305-1", "posNumber": "492", "storeType": "LUMBER", "street": "5521 OAK GROVE RD", "city": "EVANSVILLE", "state": "IN", "zip": "47715", "lat": 37.991697, "lon": -87.48451, "manager": "Justin Nelson", "market": "Kight Home Center"}, {"storeNumber": "305-5", "posNumber": "493", "storeType": "KITCHEN AND BATH", "street": "5800 E VIRGINIA ST", "city": "EVANSVILLE", "state": "IN", "zip": "47715", "lat": 37.981407, "lon": -87.47978, "manager": "David Vannarsdall", "market": "Kight Home Center"}, {"storeNumber": "0-0", "posNumber": "1492", "storeType": "INSTALLED", "street": "5521 OAK GROVE RD", "city": "EVANSVILLE", "state": "IN", "zip": "47715", "lat": 37.991697, "lon": -87.48451, "manager": "Corey Taylor", "market": "Kight Home Center"}, {"storeNumber": "14-26", "posNumber": "281", "storeType": "LUMBER", "street": "6630 LINCOLN HWY EAST", "city": "FORT WAYNE", "state": "IN", "zip": "46803", "lat": 41.069389, "lon": -85.054108, "manager": "Luke Hughes", "market": "Fort Wayne Market"}, {"storeNumber": "310-0", "posNumber": "576", "storeType": "EWP", "street": "2901 N MORTON ST", "city": "FRANKLIN", "state": "IN", "zip": "46131", "lat": 39.515538, "lon": -86.073371, "manager": "Jeff Davidson", "market": "Indianapolis Market"}, {"storeNumber": "0-0", "posNumber": "1680", "storeType": "KITCHEN AND BATH", "street": "2901 N MORTON ST", "city": "FRANKLIN", "state": "IN", "zip": "46131", "lat": 39.515538, "lon": -86.073371, "manager": "Ian Brown", "market": "Indianapolis Market"}, {"storeNumber": "0-0", "posNumber": "1681", "storeType": "DOOR SHOP", "street": "2901 N MORTON ST", "city": "FRANKLIN", "state": "IN", "zip": "46131", "lat": 39.515538, "lon": -86.073371, "manager": "Ian Brown", "market": "Indianapolis Market"}, {"storeNumber": "310-40", "posNumber": "359", "storeType": "LUMBER", "street": "2901 N MORTON ST", "city": "FRANKLIN", "state": "IN", "zip": "46131", "lat": 39.515538, "lon": -86.073371, "manager": "Shane Ashton", "market": "Indianapolis Market"}, {"storeNumber": "310-41", "posNumber": "360", "storeType": "DOOR SHOP", "street": "2901 N MORTON ST", "city": "FRANKLIN", "state": "IN", "zip": "46131", "lat": 39.515538, "lon": -86.073371, "manager": "Jeff Davidson", "market": "Indianapolis Market"}, {"storeNumber": "310-2", "posNumber": "533", "storeType": "CCP", "street": "2901 N MORTON ST", "city": "FRANKLIN", "state": "IN", "zip": "46131", "lat": 39.515538, "lon": -86.073371, "manager": "Jeff Davidson", "market": "Indianapolis Market"}, {"storeNumber": "915-28", "posNumber": "277", "storeType": "LUMBER", "street": "3520 S WESTERN AVE", "city": "MARION", "state": "IN", "zip": "46953", "lat": 40.527137, "lon": -85.675061, "manager": "Tim Petty", "market": "Central Indiana Market"}, {"storeNumber": "28-1", "posNumber": "338", "storeType": "LUMBER", "street": "4900 NORTH OLD STATE ROAD 3", "city": "MUNCIE", "state": "IN", "zip": "47303", "lat": 40.233552, "lon": -85.367965, "manager": "Gregory Barnard", "market": "Indianapolis Market"}, {"storeNumber": "32-12", "posNumber": "352", "storeType": "LUMBER", "street": "2107 WESTFIELD RD", "city": "NOBLESVILLE", "state": "IN", "zip": "46062", "lat": 40.043336, "lon": -86.054041, "manager": "", "market": "Indianapolis Market"}, {"storeNumber": "17-23", "posNumber": "274", "storeType": "LUMBER", "street": "1400 MARKLEY DR", "city": "PLYMOUTH", "state": "IN", "zip": "46563", "lat": 41.359751, "lon": -86.324607, "manager": "Matt Lombard", "market": "Central Indiana Market"}, {"storeNumber": "70-35", "posNumber": "344", "storeType": "LUMBER", "street": "3783 CHESTER BLVD", "city": "RICHMOND", "state": "IN", "zip": "47374", "lat": 39.881424, "lon": -84.883651, "manager": "Tony Jefferson", "market": "Central Indiana Market"}, {"storeNumber": "6-17", "posNumber": "272", "storeType": "LUMBER", "street": "10475 W US HWY 6", "city": "WESTVILLE", "state": "IN", "zip": "46391", "lat": 41.538599, "lon": -86.904645, "manager": "Phil White", "market": "Central Indiana Market"}, {"storeNumber": "0-0", "posNumber": "536", "storeType": "CCP", "street": "106 COSMA DRIVE", "city": "BOWLING GREEN", "state": "KY", "zip": "42101", "lat": 37.03306, "lon": -86.3184, "manager": "Spencer Jenkins", "market": "Nashville Market"}, {"storeNumber": "0-0", "posNumber": "409", "storeType": "DOOR SHOP", "street": "106 COSMA DRIVE", "city": "BOWLING GREEN", "state": "KY", "zip": "42101", "lat": 37.03306, "lon": -86.3184, "manager": "Spencer Jenkins", "market": "Nashville Market"}, {"storeNumber": "0-0", "posNumber": "415", "storeType": "KITCHEN AND BATH", "street": "2475 SCOTTSVILLE RD", "city": "BOWLING GREEN", "state": "KY", "zip": "42104", "lat": 36.95224, "lon": -86.429102, "manager": "Marc Huther", "market": "Bowling Green Market"}, {"storeNumber": "31-1", "posNumber": "410", "storeType": "LUMBER", "street": "3975 LOUISVILLE RD", "city": "BOWLING GREEN", "state": "KY", "zip": "42101", "lat": 37.012453, "lon": -86.379698, "manager": "Salem Lockhart", "market": "Bowling Green Market"}, {"storeNumber": "25-2", "posNumber": "190", "storeType": "LUMBER", "street": "10060 DIXIE HWY", "city": "FLORENCE", "state": "KY", "zip": "41042", "lat": 38.955545, "lon": -84.618917, "manager": "Brayden Trattles", "market": "Cincinnati-Dayton Market"}, {"storeNumber": "0-0", "posNumber": "723", "storeType": "RELOAD", "street": "202 NORTH CHEROKEE TRACE BLVD", "city": "HOPKINSVILLE", "state": "KY", "zip": "42240", "lat": 36.84757, "lon": -87.45972, "manager": "", "market": "Clarksville Market"}, {"storeNumber": "0-0", "posNumber": "704", "storeType": "RELOAD", "street": "1806 E 9TH ST", "city": "HOPKINSVILLE", "state": "KY", "zip": "42240", "lat": 36.849131, "lon": -87.467437, "manager": "", "market": "Clarksville Market"}, {"storeNumber": "6841-7", "posNumber": "414", "storeType": "LUMBER", "street": "1806 E 9TH ST", "city": "HOPKINSVILLE", "state": "KY", "zip": "42240", "lat": 36.849131, "lon": -87.467437, "manager": "Scott Entsminger", "market": "Clarksville Market"}, {"storeNumber": "500-407", "posNumber": "407", "storeType": "KITCHEN AND BATH", "street": "2680 E KY-146", "city": "LA GRANGE", "state": "KY", "zip": "40031", "lat": 38.42003, "lon": -85.346691, "manager": "Brady Pfaadt", "market": "Louisville (KY)"}, {"storeNumber": "0-0", "posNumber": "406", "storeType": "LUMBER", "street": "2680 E KY-146", "city": "LA GRANGE", "state": "KY", "zip": "40031", "lat": 38.42003, "lon": -85.346691, "manager": "Brady Pfaadt", "market": "Louisville (KY)"}, {"storeNumber": "0-0", "posNumber": "405", "storeType": "CCM", "street": "4265 PRODUCE RD", "city": "LOUISVILLE", "state": "KY", "zip": "40218", "lat": 38.186554, "lon": -85.679756, "manager": "Brady Pfaadt", "market": "Louisville (KY)"}, {"storeNumber": "0-0", "posNumber": "416", "storeType": "KITCHEN AND BATH", "street": "2301 WIND HAVEN DRIVE", "city": "OWENSBORO", "state": "KY", "zip": "42303", "lat": 37.7648, "lon": -87.08048, "manager": "Marc Huther", "market": "Owensboro Market"}, {"storeNumber": "305-4", "posNumber": "498", "storeType": "LUMBER", "street": "2301 WIND HAVEN DRIVE", "city": "OWENSBORO", "state": "KY", "zip": "42303", "lat": 37.7648, "lon": -87.08048, "manager": "Brett Williamson", "market": "Owensboro Market"}, {"storeNumber": "0-0", "posNumber": "708", "storeType": "RELOAD", "street": "1103 N 8TH STREET", "city": "PADUCAH", "state": "KY", "zip": "42001", "lat": 37.09301, "lon": -88.61134, "manager": "", "market": "Reloads"}, {"storeNumber": "85-2", "posNumber": "463", "storeType": "LUMBER", "street": "7101 GEOFFREY WAY", "city": "FREDERICK", "state": "MD", "zip": "21704", "lat": 39.3538, "lon": -77.4191, "manager": "Ralph Dennis", "market": "BWE Market"}, {"storeNumber": "8168-0", "posNumber": "542", "storeType": "CCP", "street": "1743 DUAL HIGHWAY", "city": "HAGERSTOWN", "state": "MD", "zip": "21740", "lat": 39.612224, "lon": -77.693443, "manager": "Bobby Doberer", "market": "Mid Atlantic Truss (MD)"}, {"storeNumber": "0-0", "posNumber": "465", "storeType": "LUMBER", "street": "6 PENINSULA DRIVE", "city": "NORTH EAST", "state": "MD", "zip": "21901", "lat": 39.62067, "lon": -75.95425, "manager": "Ken Martin", "market": "New Jersey Market"}, {"storeNumber": "0-0", "posNumber": "700", "storeType": "EWP", "street": "6 PENINSULA DRIVE", "city": "NORTH EAST", "state": "MD", "zip": "21901", "lat": 39.62067, "lon": -75.95425, "manager": "Ken Martin", "market": "New Jersey Market"}, {"storeNumber": "8168-0", "posNumber": "556", "storeType": "EWP", "street": "10120 GOVERNOR LANE BLVD", "city": "WILLIAMSPORT", "state": "MD", "zip": "21795", "lat": 39.5924, "lon": -77.80839, "manager": "Ralph Dennis", "market": "BWE Market"}, {"storeNumber": "223-7", "posNumber": "135", "storeType": "LUMBER", "street": "1990 E US 223", "city": "ADRIAN", "state": "MI", "zip": "49221", "lat": 41.875204, "lon": -84.024243, "manager": "Pat Easter", "market": "Toledo Market"}, {"storeNumber": "89-31", "posNumber": "259", "storeType": "LUMBER", "street": "1151 LINCOLN RD", "city": "ALLEGAN", "state": "MI", "zip": "49010", "lat": 42.531, "lon": -85.869, "manager": "Jeff Kaylor", "market": "West Michigan Market"}, {"storeNumber": "121-12", "posNumber": "236", "storeType": "LUMBER", "street": "3178 E BRISTOL RD", "city": "BURTON", "state": "MI", "zip": "48529", "lat": 42.974717, "lon": -83.646659, "manager": "Michael Gustafson", "market": "Flint Market"}, {"storeNumber": "810-39", "posNumber": "247", "storeType": "LUMBER", "street": "1250 CARTER DRIVE", "city": "CARO", "state": "MI", "zip": "48723", "lat": 43.474524, "lon": -83.41787, "manager": "Jayson Mays", "market": "Flint Market"}, {"storeNumber": "0-0", "posNumber": "1685", "storeType": "KITCHEN AND BATH", "street": "5317 ALPINE AVE", "city": "COMSTOCK PARK", "state": "MI", "zip": "49321", "lat": 43.05996, "lon": -85.69095, "manager": "Curtiss Beach", "market": "West Michigan Market"}, {"storeNumber": "37-3", "posNumber": "255", "storeType": "LUMBER", "street": "7474 ALPINE AVE", "city": "COMSTOCK PARK", "state": "MI", "zip": "49321", "lat": 43.099469, "lon": -85.68717, "manager": "Curtiss Beach", "market": "West Michigan Market"}, {"storeNumber": "0-0", "posNumber": "552", "storeType": "RELOAD", "street": "", "city": "DETROIT", "state": "MI", "zip": "48234", "lat": 42.44052, "lon": -83.01408, "manager": "", "market": "Reloads"}, {"storeNumber": "0-0", "posNumber": "336", "storeType": "KITCHEN AND BATH", "street": "6189 PIERSON RD", "city": "FLUSHING", "state": "MI", "zip": "48433", "lat": 43.05995, "lon": -83.79996, "manager": "Jamie Richmond", "market": "Flint Market"}, {"storeNumber": "0-0", "posNumber": "337", "storeType": "RELOAD", "street": "6189 PIERSON RD", "city": "FLUSHING", "state": "MI", "zip": "48433", "lat": 43.05995, "lon": -83.79996, "manager": "", "market": "Flint Market"}, {"storeNumber": "43-21", "posNumber": "260", "storeType": "LUMBER", "street": "6216 GULL RD (M-43)", "city": "KALAMAZOO", "state": "MI", "zip": "49048", "lat": 42.33, "lon": -85.51, "manager": "Todd Ernst", "market": "West Michigan Market"}, {"storeNumber": "0-0", "posNumber": "266", "storeType": "LUMBER", "street": "3750 US 131 NE", "city": "KALKASKA", "state": "MI", "zip": "49646", "lat": 44.76957, "lon": -85.16038, "manager": "Dean Easter", "market": "West Michigan Market"}, {"storeNumber": "0-0", "posNumber": "228", "storeType": "WINDOW SHOP", "street": "16700 S US 27", "city": "LANSING", "state": "MI", "zip": "48906", "lat": 42.774046, "lon": -84.543614, "manager": "Bailey Jackson", "market": "Lansing - Windows"}, {"storeNumber": "27-0", "posNumber": "577", "storeType": "EWP", "street": "16700 S US 27", "city": "LANSING", "state": "MI", "zip": "48906", "lat": 42.774046, "lon": -84.543614, "manager": "Jon Korn", "market": "Michigan Manufacturing"}, {"storeNumber": "0-0", "posNumber": "229", "storeType": "DOOR SHOP", "street": "1155 MAK-TECH DRIVE", "city": "LANSING", "state": "MI", "zip": "48906", "lat": 42.775596, "lon": -84.546554, "manager": "Lance Eldridge", "market": "Lansing Door Shop"}, {"storeNumber": "27-17", "posNumber": "541", "storeType": "CCP", "street": "16700 S US 27", "city": "LANSING", "state": "MI", "zip": "48906", "lat": 42.774046, "lon": -84.543614, "manager": "Adam Fritz", "market": "Michigan Manufacturing"}, {"storeNumber": "27-17", "posNumber": "239", "storeType": "LUMBER", "street": "16700 S US 27", "city": "LANSING", "state": "MI", "zip": "48906", "lat": 42.774046, "lon": -84.543614, "manager": "Terry Wooley", "market": "West Michigan Market"}, {"storeNumber": "1031-34", "posNumber": "251", "storeType": "LUMBER", "street": "2323 WEST US HWY 10", "city": "LUDINGTON", "state": "MI", "zip": "49431", "lat": 43.954954, "lon": -86.337857, "manager": "Kim Wild", "market": "West Michigan Market"}, {"storeNumber": "0-0", "posNumber": "249", "storeType": "DOOR SHOP", "street": "46401 ERB DR", "city": "MACOMB", "state": "MI", "zip": "48042", "lat": 42.640746, "lon": -82.859725, "manager": "Steven Bell", "market": "Detroit Market"}, {"storeNumber": "0-0", "posNumber": "1682", "storeType": "DOOR SHOP", "street": "46401 ERB DR", "city": "MACOMB", "state": "MI", "zip": "48042", "lat": 42.640746, "lon": -82.859725, "manager": "Steven Bell", "market": "Detroit Market"}, {"storeNumber": "530-0", "posNumber": "559", "storeType": "EWP", "street": "46401 ERB DRIVE", "city": "MACOMB", "state": "MI", "zip": "48042", "lat": 42.640746, "lon": -82.859725, "manager": "Steven Bell", "market": "Detroit Market"}, {"storeNumber": "0-0", "posNumber": "227", "storeType": "KITCHEN AND BATH", "street": "46301 ERB DRIVE", "city": "MACOMB", "state": "MI", "zip": "48042", "lat": 42.640746, "lon": -82.859725, "manager": "Steven Bell", "market": "Detroit Kitchen & Bath"}, {"storeNumber": "530-40", "posNumber": "248", "storeType": "LUMBER", "street": "46401 ERB DRIVE", "city": "MACOMB", "state": "MI", "zip": "48042", "lat": 42.640746, "lon": -82.859725, "manager": "Steven Bell", "market": "Detroit Market"}, {"storeNumber": "50-5", "posNumber": "123", "storeType": "LUMBER", "street": "850 DIXIE N", "city": "MONROE", "state": "MI", "zip": "48162", "lat": 41.9232, "lon": -83.373862, "manager": "Taryn Young", "market": "Toledo Market"}, {"storeNumber": "46-15", "posNumber": "242", "storeType": "LUMBER", "street": "8500 GRATIOT RD", "city": "SAGINAW", "state": "MI", "zip": "48609", "lat": 43.417113, "lon": -84.082471, "manager": "Bruce Fenskie", "market": "Saginaw (MI)"}, {"storeNumber": "0-0", "posNumber": "233", "storeType": "LUMBER", "street": "6600 HIGHLAND RD", "city": "WHITE LAKE", "state": "MI", "zip": "48383", "lat": 42.647048, "lon": -83.5243, "manager": "Steven Bell", "market": "Detroit Market"}, {"storeNumber": "59-20", "posNumber": "232", "storeType": "LUMBER", "street": "6600 HIGHLAND RD", "city": "WHITE LAKE", "state": "MI", "zip": "48383", "lat": 42.647048, "lon": -83.5243, "manager": "Steven Bell", "market": "Detroit Market"}, {"storeNumber": "275-22", "posNumber": "230", "storeType": "LUMBER", "street": "2800 E MICHIGAN AVE", "city": "YPSILANTI", "state": "MI", "zip": "48198", "lat": 42.250959, "lon": -83.556352, "manager": "Steven Bell", "market": "Detroit Market"}, {"storeNumber": "605-4", "posNumber": "481", "storeType": "LUMBER", "street": "47371 BUXTON BACK RD", "city": "BUXTON", "state": "NC", "zip": "27920", "lat": 35.263623, "lon": -75.53546, "manager": "Dee James", "market": "Outer Banks Market"}, {"storeNumber": "0-0", "posNumber": "581", "storeType": "RELOAD", "street": "", "city": "CHARLOTTE", "state": "NC", "zip": "", "lat": 35.13009, "lon": -80.94885, "manager": "Martin Munson", "market": "Charlotte/Triad Market"}, {"storeNumber": "424-0", "posNumber": "586", "storeType": "EWP", "street": "4401 PETE BROWN RD", "city": "CHARLOTTE", "state": "NC", "zip": "28269", "lat": 35.321407, "lon": -80.827118, "manager": "Brian Turner", "market": "Charlotte/Triad Market"}, {"storeNumber": "0-0", "posNumber": "1621", "storeType": "KITCHEN AND BATH", "street": "7010 SMITH CORNERS BLVD SUITE A", "city": "CHARLOTTE", "state": "NC", "zip": "28269", "lat": 35.350154, "lon": -80.842932, "manager": "", "market": "Charlotte/Triad Market"}, {"storeNumber": "0-0", "posNumber": "561", "storeType": "RELOAD", "street": "4401 PETE BROWN RD", "city": "CHARLOTTE", "state": "NC", "zip": "28269", "lat": 35.321407, "lon": -80.827118, "manager": "Jordan Smithers", "market": "Charlotte/Triad Market"}, {"storeNumber": "0-0", "posNumber": "206", "storeType": "KITCHEN AND BATH", "street": "2601 WESTINGHOUSE BLVD", "city": "CHARLOTTE", "state": "NC", "zip": "28273", "lat": 35.130509, "lon": -80.948861, "manager": "", "market": "Charlotte/Triad Market"}, {"storeNumber": "601-418", "posNumber": "418", "storeType": "LUMBER", "street": "7135 LOGISTICS CENTER DRIVE", "city": "CHARLOTTE", "state": "NC", "zip": "28273", "lat": 35.130488, "lon": -80.948818, "manager": "Martin Munson", "market": "Charlotte/Triad Market"}, {"storeNumber": "601-424", "posNumber": "424", "storeType": "LUMBER", "street": "4401 PETE BROWN RD", "city": "CHARLOTTE", "state": "NC", "zip": "28269", "lat": 35.321407, "lon": -80.827118, "manager": "Rob Layton", "market": "Charlotte/Triad Market"}, {"storeNumber": "601-424", "posNumber": "428", "storeType": "LUMBER", "street": "7010 SMITH CORNERS BLVD SUITE A", "city": "CHARLOTTE", "state": "NC", "zip": "28269", "lat": 35.350154, "lon": -80.842932, "manager": "Randi Sento", "market": "Charlotte/Triad Market"}, {"storeNumber": "601-427", "posNumber": "427", "storeType": "DOOR SHOP", "street": "2601 WESTINGHOUSE BLVD", "city": "CHARLOTTE", "state": "NC", "zip": "28273", "lat": 35.130509, "lon": -80.948861, "manager": "Martin Munson", "market": "Charlotte/Triad Market"}, {"storeNumber": "605-3", "posNumber": "482", "storeType": "LUMBER", "street": "109 IMPACT BLVD", "city": "ELIZABETH CITY", "state": "NC", "zip": "27909", "lat": 36.26163, "lon": -76.30495, "manager": "Michael Gandy", "market": "Outer Banks Market"}, {"storeNumber": "601-540", "posNumber": "540", "storeType": "CCP", "street": "747 OLD HARGRAVE RD", "city": "LEXINGTON", "state": "NC", "zip": "27295", "lat": 35.786507, "lon": -80.30977, "manager": "", "market": "Charlotte/Triad Market"}, {"storeNumber": "605-1", "posNumber": "480", "storeType": "LUMBER", "street": "8917 CARATOKE HIGHWAY", "city": "POINT HARBOR", "state": "NC", "zip": "27964", "lat": 36.09115, "lon": -75.80522, "manager": "Michael Gandy", "market": "Outer Banks Market"}, {"storeNumber": "900-770", "posNumber": "770", "storeType": "LUMBER", "street": "877 OZONE DR", "city": "SALUDA", "state": "NC", "zip": "28773", "lat": 35.24419, "lon": -82.32997, "manager": "Jamey Sias", "market": "Greenville Market"}, {"storeNumber": "0-0", "posNumber": "543", "storeType": "CCP", "street": "298 HARVEY FAULK RD", "city": "SANFORD", "state": "NC", "zip": "27332", "lat": 35.435219, "lon": -79.129202, "manager": "", "market": "Raleigh Market"}, {"storeNumber": "605-6", "posNumber": "485", "storeType": "LUMBER", "street": "298 HARVEY FAULK RD", "city": "SANFORD", "state": "NC", "zip": "27332", "lat": 35.435219, "lon": -79.129202, "manager": "", "market": "Raleigh Market"}, {"storeNumber": "0-0", "posNumber": "580", "storeType": "RELOAD", "street": "9376 OLD US HWY 52", "city": "WELCOME", "state": "NC", "zip": "27374", "lat": 35.945389, "lon": -80.222157, "manager": "Jordan Smithers", "market": "Charlotte/Triad Market"}, {"storeNumber": "601-419", "posNumber": "419", "storeType": "LUMBER", "street": "9376 OLD US HWY 52", "city": "WELCOME", "state": "NC", "zip": "27374", "lat": 35.945389, "lon": -80.222157, "manager": "Ryan Williams", "market": "Triad Market"}, {"storeNumber": "201-393", "posNumber": "393", "storeType": "LUMBER", "street": "731 CUTHBERT BLVD", "city": "CHERRY HILL", "state": "NJ", "zip": "8002", "lat": 39.93183, "lon": -75.05518, "manager": "Wesley Stinson Jr", "market": "New Jersey Market"}, {"storeNumber": "0-0", "posNumber": "548", "storeType": "CCP", "street": "102 NJ-73S", "city": "HAMMONTON", "state": "NJ", "zip": "8037", "lat": 39.70513, "lon": -74.89515, "manager": "Chris Pitts", "market": "New Jersey Market"}, {"storeNumber": "201-390", "posNumber": "390", "storeType": "LUMBER", "street": "102 NJ-73 S", "city": "HAMMONTON", "state": "NJ", "zip": "8037", "lat": 39.70513, "lon": -74.89515, "manager": "Brandin Decker", "market": "New Jersey Market"}, {"storeNumber": "201-391", "posNumber": "391", "storeType": "LUMBER", "street": "148 RT 70 EAST", "city": "MEDFORD", "state": "NJ", "zip": "8055", "lat": 39.89999, "lon": -74.83849, "manager": "Robert Cleary", "market": "New Jersey Market"}, {"storeNumber": "201-395", "posNumber": "395", "storeType": "DOOR SHOP", "street": "148 RT 70 EAST", "city": "MEDFORD", "state": "NJ", "zip": "8055", "lat": 39.89999, "lon": -74.83849, "manager": "Doug Watson", "market": "New Jersey Market"}, {"storeNumber": "0-0", "posNumber": "706", "storeType": "EWP", "street": "1601 EDEN RD", "city": "MILLVILLE", "state": "NJ", "zip": "8332", "lat": 39.37981, "lon": -75.014992, "manager": "Erik Prock", "market": "New Jersey Market"}, {"storeNumber": "201-396", "posNumber": "396", "storeType": "HUB", "street": "1601 EDEN RD", "city": "MILLVILLE", "state": "NJ", "zip": "8332", "lat": 39.37981, "lon": -75.014992, "manager": "", "market": "New Jersey Market"}, {"storeNumber": "201-544", "posNumber": "544", "storeType": "CCP", "street": "1601 EDEN RD", "city": "MILLVILLE", "state": "NJ", "zip": "8332", "lat": 39.37981, "lon": -75.014992, "manager": "Matt Householder", "market": "New Jersey Market"}, {"storeNumber": "201-392", "posNumber": "392", "storeType": "LUMBER", "street": "111 DEVINS LANE", "city": "PLEASANTVILLE", "state": "NJ", "zip": "8232", "lat": 39.39549, "lon": -74.54066, "manager": "Luis Arocho", "market": "New Jersey Market"}, {"storeNumber": "201-394", "posNumber": "394", "storeType": "LUMBER", "street": "270 NORTH ORCHARD RD", "city": "VINELAND", "state": "NJ", "zip": "8360", "lat": 39.49139, "lon": -75.05274, "manager": "Bill Sutter", "market": "New Jersey Market"}, {"storeNumber": "0-0", "posNumber": "119", "storeType": "CLEARANCE", "street": "3779 MANCHESTER RD", "city": "AKRON", "state": "OH", "zip": "44319", "lat": 40.996384, "lon": -81.556758, "manager": "Dave Lentz", "market": "Clearance Center"}, {"storeNumber": "499-0", "posNumber": "583", "storeType": "EWP", "street": "172 NORTH CASE AVE", "city": "AKRON", "state": "OH", "zip": "44305", "lat": 41.07384, "lon": -81.48316, "manager": "", "market": "Northeast Ohio Market"}, {"storeNumber": "1-1", "posNumber": "499", "storeType": "LUMBER", "street": "172 NORTH CASE AVE", "city": "AKRON", "state": "OH", "zip": "44305", "lat": 41.07384, "lon": -81.48316, "manager": "Shane Bolon", "market": "Northeast Ohio Market"}, {"storeNumber": "261-1", "posNumber": "54", "storeType": "HUB", "street": "1763 WADSWORTH RD", "city": "AKRON", "state": "OH", "zip": "44320", "lat": 41.05883, "lon": -81.59356, "manager": "Russ Murphy", "market": "Northeast Ohio Market"}, {"storeNumber": "0-0", "posNumber": "531", "storeType": "CCP", "street": "172 NORTH CASE AVE", "city": "AKRON", "state": "OH", "zip": "44305", "lat": 41.07384, "lon": -81.48316, "manager": "Russ Murphy", "market": "Northeast Ohio Market"}, {"storeNumber": "62-72", "posNumber": "74", "storeType": "LUMBER", "street": "23611 SR 62", "city": "ALLIANCE", "state": "OH", "zip": "44601", "lat": 40.900701, "lon": -81.056614, "manager": "Brendon Simmons", "market": "Alliance-Louisville Market"}, {"storeNumber": "0-0", "posNumber": "710", "storeType": "RELOAD", "street": "2938 STATE ROUTE 752", "city": "ASHVILLE", "state": "OH", "zip": "43103", "lat": 39.723729, "lon": -82.963681, "manager": "", "market": "Columbus Market"}, {"storeNumber": "101-175", "posNumber": "175", "storeType": "LUMBER", "street": "2938 STATE ROUTE 752", "city": "ASHVILLE", "state": "OH", "zip": "43103", "lat": 39.723729, "lon": -82.963681, "manager": "Mike Broderick", "market": "Columbus Market"}, {"storeNumber": "50-53", "posNumber": "155", "storeType": "LUMBER", "street": "5330 HEBBARDSVILLE RD", "city": "ATHENS", "state": "OH", "zip": "45701", "lat": 39.277501, "lon": -82.153178, "manager": "James Pennington (JP)", "market": "Athens-Nelsonville Market"}, {"storeNumber": "32-39", "posNumber": "191", "storeType": "LUMBER", "street": "2600 OLD STATE ROUTE 32", "city": "BATAVIA", "state": "OH", "zip": "45103", "lat": 39.066433, "lon": -84.1185, "manager": "Bob Hamblen", "market": "Cincinnati-Dayton Market"}, {"storeNumber": "675-56", "posNumber": "193", "storeType": "LUMBER", "street": "1312 GRANGE HALL RD", "city": "BEAVERCREEK", "state": "OH", "zip": "45430", "lat": 39.728283, "lon": -84.083547, "manager": "Josh Gross", "market": "Cincinnati-Dayton Market"}, {"storeNumber": "25-0", "posNumber": "558", "storeType": "EWP", "street": "12859 KRAMER RD", "city": "BOWLING GREEN", "state": "OH", "zip": "43402", "lat": 41.341107, "lon": -83.64657, "manager": "Jon Korn", "market": "Toledo Market"}, {"storeNumber": "25-31", "posNumber": "126", "storeType": "LUMBER", "street": "12859 KRAMER RD", "city": "BOWLING GREEN", "state": "OH", "zip": "43402", "lat": 41.341107, "lon": -83.64657, "manager": "Kevin Stoots", "market": "Toledo Market"}, {"storeNumber": "209-24", "posNumber": "150", "storeType": "LUMBER", "street": "60696 SOUTHGATE RD", "city": "BYESVILLE", "state": "OH", "zip": "43723", "lat": 39.982429, "lon": -81.555894, "manager": "Kyle Moyer", "market": "Zanesville Market"}, {"storeNumber": "0-0", "posNumber": "53", "storeType": "HUB", "street": "567 ELM RIDGE AVE", "city": "CANAL FULTON", "state": "OH", "zip": "44614", "lat": 40.88446, "lon": -81.56453, "manager": "", "market": "Northeast Ohio Market"}, {"storeNumber": "0-3", "posNumber": "297", "storeType": "LUMBER", "street": "1532 PERRY DRIVE SW", "city": "CANTON", "state": "OH", "zip": "44710", "lat": 40.785629, "lon": -81.446227, "manager": "Greg Barnes", "market": "Northeast Ohio Market"}, {"storeNumber": "0-3", "posNumber": "497", "storeType": "LUMBER", "street": "1532 PERRY DRIVE SW", "city": "CANTON", "state": "OH", "zip": "44710", "lat": 40.785629, "lon": -81.446227, "manager": "Greg Barnes", "market": "Northeast Ohio Market"}, {"storeNumber": "28-67", "posNumber": "180", "storeType": "LUMBER", "street": "2800 WESTERN AVE", "city": "CHILLICOTHE", "state": "OH", "zip": "45601", "lat": 39.348258, "lon": -83.042506, "manager": "Tyler Hettinger", "market": "Chillicothe-Piketon Market"}, {"storeNumber": "65-8", "posNumber": "214", "storeType": "LUMBER", "street": "9300 OTTAWA RD", "city": "COLUMBUS GROVE", "state": "OH", "zip": "45830", "lat": 40.873159, "lon": -84.072318, "manager": "Don Malone", "market": "Toledo Market"}, {"storeNumber": "305-27", "posNumber": "100", "storeType": "LUMBER", "street": "2167 ELM RD NE", "city": "CORTLAND", "state": "OH", "zip": "44410", "lat": 41.277577, "lon": -80.775824, "manager": "AJ Baltes", "market": "Youngstown Market"}, {"storeNumber": "39-6", "posNumber": "77", "storeType": "LUMBER", "street": "1047 N TUSCARAWAS AVE", "city": "DOVER", "state": "OH", "zip": "44622", "lat": 40.52724, "lon": -81.489782, "manager": "Ben Stephens", "market": "East Central Ohio Market"}, {"storeNumber": "301-26", "posNumber": "143", "storeType": "LUMBER", "street": "41625 GRISWOLD RD", "city": "ELYRIA", "state": "OH", "zip": "44035", "lat": 41.399888, "lon": -82.128968, "manager": "Chris Collins", "market": "Northeast Ohio Market"}, {"storeNumber": "0-0", "posNumber": "600", "storeType": "OFFICE", "street": "601 TALLMADGE RD", "city": "KENT", "state": "OH", "zip": "44240", "lat": 41.101491, "lon": -81.371148, "manager": "", "market": "Non-Sales"}, {"storeNumber": "0-0", "posNumber": "701", "storeType": "RELOAD", "street": "2455 SOUTH FONTAINE ST", "city": "KENTON", "state": "OH", "zip": "43226", "lat": 40.617396, "lon": -83.625115, "manager": "", "market": "Reloads"}, {"storeNumber": "33-28", "posNumber": "160", "storeType": "LUMBER", "street": "1890 LOGAN-LANCASTER RD", "city": "LANCASTER", "state": "OH", "zip": "43130", "lat": 39.696328, "lon": -82.584878, "manager": "Matt Callicoat", "market": "Columbus Market"}, {"storeNumber": "45-22", "posNumber": "71", "storeType": "LUMBER", "street": "704 E LINCOLN WAY", "city": "LISBON", "state": "OH", "zip": "44432", "lat": 40.771919, "lon": -80.757179, "manager": "Sean Balint", "market": "Alliance-Louisville Market"}, {"storeNumber": "44-21", "posNumber": "72", "storeType": "LUMBER", "street": "720 N CHAPEL ST", "city": "LOUISVILLE", "state": "OH", "zip": "44641", "lat": 40.841888, "lon": -81.25939, "manager": "Timothy Young", "market": "Alliance-Louisville Market"}, {"storeNumber": "528-70", "posNumber": "68", "storeType": "LUMBER", "street": "6320 N RIDGE RD", "city": "MADISON", "state": "OH", "zip": "44057", "lat": 41.803097, "lon": -81.061928, "manager": "Shawn Steigner", "market": "Madison (OH)"}, {"storeNumber": "0-0", "posNumber": "179", "storeType": "DOOR SHOP", "street": "1242 READING RD", "city": "MASON", "state": "OH", "zip": "45040", "lat": 39.3343, "lon": -84.3445, "manager": "Matthew Hubbard", "market": "Cincinnati-Dayton Market"}, {"storeNumber": "7142-98", "posNumber": "199", "storeType": "LUMBER", "street": "1242 READING RD", "city": "MASON", "state": "OH", "zip": "45040", "lat": 39.3343, "lon": -84.3445, "manager": "Ron King", "market": "Cincinnati-Dayton Market"}, {"storeNumber": "7142-0", "posNumber": "537", "storeType": "CCP", "street": "1242 READING RD", "city": "MASON", "state": "OH", "zip": "45040", "lat": 39.3343, "lon": -84.3445, "manager": "Rich Flores", "market": "Cincinnati-Dayton Market"}, {"storeNumber": "0-0", "posNumber": "159", "storeType": "KITCHEN AND BATH", "street": "3725 MEDINA RD", "city": "MEDINA", "state": "OH", "zip": "44256", "lat": 41.137737, "lon": -81.821043, "manager": "Russ Murphy", "market": "Northeast Ohio Market"}, {"storeNumber": "87-79", "posNumber": "70", "storeType": "LUMBER", "street": "14601 KINSMAN RD", "city": "MIDDLEFIELD", "state": "OH", "zip": "44062", "lat": 41.462448, "lon": -81.120151, "manager": "Lenny Barcikoski", "market": "Middlefield (OH)"}, {"storeNumber": "0-0", "posNumber": "594", "storeType": "EWP", "street": "", "city": "MILLBURY", "state": "OH", "zip": "43447", "lat": 41.561, "lon": -83.453, "manager": "Jon Korn", "market": "Michigan Manufacturing"}, {"storeNumber": "0-0", "posNumber": "598", "storeType": "RELOAD", "street": "3521 MOLINE-MARTIN RD", "city": "MILLBURY", "state": "OH", "zip": "43447", "lat": 41.561, "lon": -83.449, "manager": "", "market": "Toledo Market"}, {"storeNumber": "795-1", "posNumber": "532", "storeType": "CCP", "street": "3520 MOLINE MARTIN RD", "city": "MILLBURY", "state": "OH", "zip": "43447", "lat": 41.561, "lon": -83.453, "manager": "Jason Thompson", "market": "Michigan Manufacturing"}, {"storeNumber": "100-889", "posNumber": "889", "storeType": "CCM", "street": "6000 STATE ROUTE 39", "city": "MILLERSBURG", "state": "OH", "zip": "44654", "lat": 40.55345, "lon": -81.83876, "manager": "", "market": "Carter Custom Millwork"}, {"storeNumber": "0-1", "posNumber": "495", "storeType": "LUMBER", "street": "6139 SR 39", "city": "MILLERSBURG", "state": "OH", "zip": "44654", "lat": 40.553248, "lon": -81.843419, "manager": "Dan Troyer", "market": "East Central Ohio Market"}, {"storeNumber": "0-6", "posNumber": "489", "storeType": "CCM", "street": "5158 TR 353 (TOWNSHIP RD)", "city": "MILLERSBURG", "state": "OH", "zip": "44654", "lat": 40.551694, "lon": -81.838583, "manager": "", "market": "Carter Custom Millwork"}, {"storeNumber": "532-3", "posNumber": "51", "storeType": "LUMBER", "street": "38 N CLEVELAND AVE", "city": "MOGADORE", "state": "OH", "zip": "44260", "lat": 41.05246, "lon": -81.395265, "manager": "Derik Francis", "market": "Portage Market"}, {"storeNumber": "100-177", "posNumber": "177", "storeType": "LUMBER", "street": "351 APPLE STREET", "city": "MOUNT ORAB", "state": "OH", "zip": "45154", "lat": 39.03251, "lon": -83.91298, "manager": "", "market": "Cincinnati-Dayton Market"}, {"storeNumber": "100-178", "posNumber": "178", "storeType": "LUMBER", "street": "351 APPLE STREET", "city": "MOUNT ORAB", "state": "OH", "zip": "45154", "lat": 39.03251, "lon": -83.91298, "manager": "Bob Hamblen", "market": "Cincinnati-Dayton Market"}, {"storeNumber": "657-11", "posNumber": "165", "storeType": "LUMBER", "street": "818 MT VERNON RD", "city": "NEWARK", "state": "OH", "zip": "43055", "lat": 40.079184, "lon": -82.414385, "manager": "William Kopp", "market": "Columbus Market"}, {"storeNumber": "534-3", "posNumber": "534", "storeType": "CCP", "street": "3747 ST RT 5", "city": "NEWTON FALLS", "state": "OH", "zip": "44444", "lat": 41.215575, "lon": -80.93335, "manager": "Mitch Thomas", "market": "Northeast Ohio Market"}, {"storeNumber": "4518-44", "posNumber": "103", "storeType": "LUMBER", "street": "11768 MAHONING AVE", "city": "NORTH JACKSON", "state": "OH", "zip": "44451", "lat": 41.100944, "lon": -80.872146, "manager": "Jeff Ohlinger", "market": "Youngstown Market"}, {"storeNumber": "2501-77", "posNumber": "139", "storeType": "LUMBER", "street": "399 MILAN AVE", "city": "NORWALK", "state": "OH", "zip": "44857", "lat": 41.272594, "lon": -82.60972, "manager": "Jack Brittain", "market": "Northern Ohio Lakeshore Market"}, {"storeNumber": "0-0", "posNumber": "205", "storeType": "KITCHEN AND BATH", "street": "8730 BROOKPARK ROAD", "city": "PARMA", "state": "OH", "zip": "44129", "lat": 41.42093, "lon": -81.74719, "manager": "Stacy Reynolds", "market": "Northeast Ohio Market"}, {"storeNumber": "161-15", "posNumber": "166", "storeType": "LUMBER", "street": "10271 SR 161", "city": "PLAIN CITY", "state": "OH", "zip": "43064", "lat": 40.1035, "lon": -83.2108, "manager": "David Thompson", "market": "Columbus Market"}, {"storeNumber": "53-69", "posNumber": "140", "storeType": "LUMBER", "street": "840 S E CATAWBA RD", "city": "PORT CLINTON", "state": "OH", "zip": "43452", "lat": 41.51003, "lon": -82.861035, "manager": "Richard Riedmaier", "market": "Northern Ohio Lakeshore Market"}, {"storeNumber": "59-80", "posNumber": "50", "storeType": "LUMBER", "street": "4929 S R 59", "city": "RAVENNA", "state": "OH", "zip": "44266", "lat": 41.156813, "lon": -81.215187, "manager": "Zack Price", "market": "Portage Market"}, {"storeNumber": "0-0", "posNumber": "174", "storeType": "CCP", "street": "13431 NATIONAL RD SW", "city": "REYNOLDSBURG", "state": "OH", "zip": "43068", "lat": 39.9557, "lon": -82.7405, "manager": "Shawn McIntire", "market": "Columbus Market"}, {"storeNumber": "40-0", "posNumber": "170", "storeType": "DOOR SHOP", "street": "13431 NATIONAL RD SW", "city": "REYNOLDSBURG", "state": "OH", "zip": "43068", "lat": 39.9557, "lon": -82.7405, "manager": "Shawn McIntire", "market": "Columbus Market"}, {"storeNumber": "40-58", "posNumber": "167", "storeType": "LUMBER", "street": "13431 NATIONAL RD SW", "city": "REYNOLDSBURG", "state": "OH", "zip": "43068", "lat": 39.9557, "lon": -82.7405, "manager": "Shawn McIntire", "market": "Columbus Market"}, {"storeNumber": "93-49", "posNumber": "152", "storeType": "LUMBER", "street": "4546 ROSEVILLE RD", "city": "ROSEVILLE", "state": "OH", "zip": "43777", "lat": 39.866772, "lon": -82.063723, "manager": "Shane Good (Petey)", "market": "Zanesville Market"}, {"storeNumber": "3971-91", "posNumber": "223", "storeType": "LUMBER", "street": "3835 MANSFIELD RD", "city": "SHELBY", "state": "OH", "zip": "44875", "lat": 40.858969, "lon": -82.634163, "manager": "Curt Adelman", "market": "Shelby (OH)"}, {"storeNumber": "91-33", "posNumber": "58", "storeType": "LUMBER", "street": "6199 S O M CENTER RD", "city": "SOLON", "state": "OH", "zip": "44139", "lat": 41.391438, "lon": -81.437716, "manager": "Chris Sheridan", "market": "Northeast Ohio Market"}, {"storeNumber": "68-25", "posNumber": "188", "storeType": "LUMBER", "street": "585 W COUNTY LINE RD", "city": "SPRINGFIELD", "state": "OH", "zip": "45502", "lat": 40.026455, "lon": -83.799688, "manager": "Rich Turnmire", "market": "Cincinnati-Dayton Market"}, {"storeNumber": "0-2", "posNumber": "496", "storeType": "LUMBER", "street": "216 E MAIN ST", "city": "SUGARCREEK", "state": "OH", "zip": "44681", "lat": 40.50194, "lon": -81.6391, "manager": "Arlen Mullet", "market": "East Central Ohio Market"}, {"storeNumber": "605-0", "posNumber": "579", "storeType": "EWP", "street": "3477 NORTH COUNTY RD 605", "city": "SUNBURY", "state": "OH", "zip": "43074", "lat": 40.257669, "lon": -82.789698, "manager": "Ed Shanor", "market": "Columbus Market"}, {"storeNumber": "0-0", "posNumber": "172", "storeType": "LUMBER", "street": "3573 NORTH COUNTY RD 605", "city": "SUNBURY", "state": "OH", "zip": "43074", "lat": 40.257669, "lon": -82.789698, "manager": "Andrew Nichols", "market": "Columbus Market"}, {"storeNumber": "605-45", "posNumber": "168", "storeType": "LUMBER", "street": "3573 NORTH COUNTY RD 605", "city": "SUNBURY", "state": "OH", "zip": "43074", "lat": 40.257669, "lon": -82.789698, "manager": "Russ Wiley", "market": "Columbus Market"}, {"storeNumber": "605-0", "posNumber": "538", "storeType": "CCP", "street": "3477 NORTH COUNTY RD 605", "city": "SUNBURY", "state": "OH", "zip": "43074", "lat": 40.257669, "lon": -82.789698, "manager": "Ed Shanor", "market": "Columbus Market"}, {"storeNumber": "0-0", "posNumber": "712", "storeType": "RELOAD", "street": "2716 REYNOLDS RD N", "city": "TOLEDO", "state": "OH", "zip": "43615", "lat": 41.671018, "lon": -83.668086, "manager": "", "market": "Reloads"}, {"storeNumber": "0-0", "posNumber": "306", "storeType": "KITCHEN AND BATH", "street": "2716 REYNOLDS RD N", "city": "TOLEDO", "state": "OH", "zip": "43615", "lat": 41.67144, "lon": -83.66686, "manager": "Jason Fischer", "market": "National Kitchen & Bath"}, {"storeNumber": "20-14", "posNumber": "133", "storeType": "LUMBER", "street": "2716 REYNOLDS RD N", "city": "TOLEDO", "state": "OH", "zip": "43615", "lat": 41.671018, "lon": -83.668086, "manager": "Dave Smithmyer", "market": "Toledo Market"}, {"storeNumber": "20-5", "posNumber": "134", "storeType": "KITCHEN AND BATH", "street": "2714 REYNOLDS RD N", "city": "TOLEDO", "state": "OH", "zip": "43615", "lat": 41.670761, "lon": -83.668079, "manager": "Rick Maxfield", "market": "Toledo Market"}, {"storeNumber": "6-64", "posNumber": "145", "storeType": "CLEARANCE", "street": "3020 LIBERTY AVE", "city": "VERMILION", "state": "OH", "zip": "44089", "lat": 41.426087, "lon": -82.305596, "manager": "Cliff Riley", "market": "Clearance Center"}, {"storeNumber": "6-51", "posNumber": "146", "storeType": "CLEARANCE", "street": "3026 LIBERTY AVE", "city": "VERMILION", "state": "OH", "zip": "44089", "lat": 41.426087, "lon": -82.305596, "manager": "Paul McKenna", "market": "Clearance Center"}, {"storeNumber": "22-20", "posNumber": "182", "storeType": "LUMBER", "street": "4994 US 22 NW", "city": "WASHINGTON COURT HOUSE", "state": "OH", "zip": "43160", "lat": 39.516776, "lon": -83.523664, "manager": "Wendy Whitaker", "market": "Chillicothe-Piketon Market"}, {"storeNumber": "22-11", "posNumber": "183", "storeType": "LUMBER", "street": "4974 US 22 NW", "city": "WASHINGTON COURT HOUSE", "state": "OH", "zip": "43160", "lat": 39.523799, "lon": -83.483429, "manager": "Josh Clifton", "market": "Chillicothe-Piketon Market"}, {"storeNumber": "41-73", "posNumber": "185", "storeType": "LUMBER", "street": "11856 ST RT 41", "city": "WEST UNION", "state": "OH", "zip": "45693", "lat": 38.787752, "lon": -83.554719, "manager": "Travis Wilson", "market": "Chillicothe-Piketon Market"}, {"storeNumber": "0-0", "posNumber": "173", "storeType": "HUB", "street": "173 HEATHERDOWN DRIVE", "city": "WESTERVILLE", "state": "OH", "zip": "43081", "lat": 40.104628, "lon": -82.930156, "manager": "Brady Kingry", "market": "Columbus Market"}, {"storeNumber": "81-12", "posNumber": "381", "storeType": "LUMBER", "street": "1840 HARRISBURG PIKE", "city": "CARLISLE", "state": "PA", "zip": "17015", "lat": 40.2338, "lon": -77.1201, "manager": "Nick Geppi", "market": "BWE Market"}, {"storeNumber": "0-0", "posNumber": "703", "storeType": "HUB", "street": "870 S MAIN ST", "city": "CHAMBERSBURG", "state": "PA", "zip": "17201", "lat": 39.92367, "lon": -77.66446, "manager": "Derek Jordan", "market": "Hanover Door Shop"}, {"storeNumber": "0-0", "posNumber": "591", "storeType": "RELOAD", "street": "2155 WAYNE RD", "city": "CHAMBERSBURG", "state": "PA", "zip": "17202", "lat": 39.90047, "lon": -77.64305, "manager": "", "market": "Mid Atlantic Reload"}, {"storeNumber": "0-0", "posNumber": "553", "storeType": "EWP", "street": "2155 WAYNE RD", "city": "CHAMBERSBURG", "state": "PA", "zip": "17202", "lat": 39.900469, "lon": -77.643052, "manager": "", "market": "BWE Market"}, {"storeNumber": "316-6", "posNumber": "380", "storeType": "LUMBER", "street": "2155 WAYNE RD", "city": "CHAMBERSBURG", "state": "PA", "zip": "17202", "lat": 39.900469, "lon": -77.643052, "manager": "Derek Jordan", "market": "BWE Market"}, {"storeNumber": "3226-23", "posNumber": "97", "storeType": "LUMBER", "street": "12925 CONNEAUT LAKE RD", "city": "CONNEAUT LAKE", "state": "PA", "zip": "16316", "lat": 41.609305, "lon": -80.277303, "manager": "Buck Nagle", "market": "Allegheny Market"}, {"storeNumber": "230-10", "posNumber": "386", "storeType": "LUMBER", "street": "2128 S MARKET ST", "city": "ELIZABETHTOWN", "state": "PA", "zip": "17022", "lat": 40.133962, "lon": -76.572314, "manager": "Kyle Lucas", "market": "BWE Market"}, {"storeNumber": "20-3", "posNumber": "63", "storeType": "LUMBER", "street": "4710 BUFFALO RD", "city": "ERIE", "state": "PA", "zip": "16510", "lat": 42.149695, "lon": -79.996032, "manager": "Nathan Spears", "market": "Erie Market"}, {"storeNumber": "98-4", "posNumber": "65", "storeType": "LUMBER", "street": "2801 W AVONIA RD (RT 98)", "city": "FAIRVIEW", "state": "PA", "zip": "16415", "lat": 42.038, "lon": -80.261, "manager": "Nathan Spears", "market": "Erie Market"}, {"storeNumber": "0-0", "posNumber": "595", "storeType": "RELOAD", "street": "8 BARNHART DRIVE", "city": "HANOVER", "state": "PA", "zip": "17331", "lat": 39.818778, "lon": -76.964846, "manager": "", "market": "Hanover Door Shop"}, {"storeNumber": "0-0", "posNumber": "389", "storeType": "DOOR SHOP", "street": "8 BARNHART DRIVE", "city": "HANOVER", "state": "PA", "zip": "17331", "lat": 39.818778, "lon": -76.964846, "manager": "Derek Bettencourt", "market": "Hanover Door Shop"}, {"storeNumber": "340-0", "posNumber": "565", "storeType": "EWP", "street": "2275 OLD PHILA PIKE", "city": "LANCASTER", "state": "PA", "zip": "17602", "lat": 40.039881, "lon": -76.21909, "manager": "Stan Foster", "market": "BWE Market"}, {"storeNumber": "340-5", "posNumber": "388", "storeType": "LUMBER", "street": "2275 OLD PHILA PIKE", "city": "LANCASTER", "state": "PA", "zip": "17602", "lat": 40.039881, "lon": -76.21909, "manager": "Trevor Goodman", "market": "BWE Market"}, {"storeNumber": "79-8", "posNumber": "372", "storeType": "LUMBER", "street": "675 PIKE ST", "city": "MEADOW LANDS", "state": "PA", "zip": "15347", "lat": 40.213246, "lon": -80.226154, "manager": "Chad Byrum", "market": "Pittsburgh Market"}, {"storeNumber": "0-0", "posNumber": "707", "storeType": "EWP", "street": "418 S CASCADE ST", "city": "NEW CASTLE", "state": "PA", "zip": "16101", "lat": 40.99578, "lon": -80.32157, "manager": "", "market": "Pittsburgh Market"}, {"storeNumber": "422-22", "posNumber": "108", "storeType": "LUMBER", "street": "3005 NEW BUTLER RD", "city": "NEW CASTLE", "state": "PA", "zip": "16101", "lat": 40.977319, "lon": -80.28402, "manager": "Dan Bernice", "market": "Pittsburgh Market"}, {"storeNumber": "200-716", "posNumber": "716", "storeType": "RELOAD", "street": "17 MEADOW LANE", "city": "PARADISE", "state": "PA", "zip": "17562", "lat": 40.010005, "lon": -76.121173, "manager": "", "market": "BWE Market"}, {"storeNumber": "8-21", "posNumber": "92", "storeType": "LUMBER", "street": "1553 ALLEGHENY BLVD", "city": "RENO", "state": "PA", "zip": "16343", "lat": 41.415285, "lon": -79.765638, "manager": "Mike Miller", "market": "Allegheny Market"}, {"storeNumber": "322-11", "posNumber": "93", "storeType": "LUMBER", "street": "731 MAIN ST", "city": "STRATTANVILLE", "state": "PA", "zip": "16258", "lat": 41.202927, "lon": -79.331023, "manager": "Mike Morris", "market": "Western PA"}, {"storeNumber": "62-7", "posNumber": "95", "storeType": "LUMBER", "street": "116 PRESTON RD", "city": "WARREN", "state": "PA", "zip": "16365", "lat": 41.838676, "lon": -79.199453, "manager": "Brian Kerstin", "market": "Allegheny Market"}, {"storeNumber": "900-435", "posNumber": "435", "storeType": "LUMBER", "street": "2440 CLEMENTS FERRY ROAD", "city": "CHARLESTON", "state": "SC", "zip": "29492", "lat": 32.90011, "lon": -79.92149, "manager": "", "market": "Charleston Market"}, {"storeNumber": "0-0", "posNumber": "429", "storeType": "LUMBER", "street": "1325 VETERANS RD", "city": "COLUMBIA", "state": "SC", "zip": "29209", "lat": 33.952367, "lon": -80.961181, "manager": "Gareth Rumley", "market": "Columbia Market"}, {"storeNumber": "123-2", "posNumber": "422", "storeType": "LUMBER", "street": "4588 CALHOUN MEMORIAL HWY", "city": "EASLEY", "state": "SC", "zip": "29640", "lat": 34.828789, "lon": -82.535541, "manager": "", "market": "Greenville Market"}, {"storeNumber": "901-486", "posNumber": "486", "storeType": "DOOR SHOP", "street": "305 WEST MYRTLE BEACH HWY", "city": "JOHNSONVILLE", "state": "SC", "zip": "29555", "lat": 33.882383, "lon": -79.46092, "manager": "Tim Taylor", "market": "Myrtle Beach Market"}, {"storeNumber": "0-0", "posNumber": "546", "storeType": "CCP", "street": "305 WEST MYRTLE BEACH HWY", "city": "JOHNSONVILLE", "state": "SC", "zip": "29555", "lat": 33.882383, "lon": -79.46092, "manager": "Terry Dale", "market": "Myrtle Beach Market"}, {"storeNumber": "901-487", "posNumber": "487", "storeType": "LUMBER", "street": "305 WEST MYRTLE BEACH HWY", "city": "JOHNSONVILLE", "state": "SC", "zip": "29555", "lat": 33.882383, "lon": -79.46092, "manager": "Tim Taylor", "market": "Myrtle Beach Market"}, {"storeNumber": "274-1", "posNumber": "423", "storeType": "LUMBER", "street": "126 HANDS MILL HWY", "city": "ROCK HILL", "state": "SC", "zip": "29732", "lat": 34.991925, "lon": -81.100661, "manager": "Rob Layton", "market": "Charlotte/Triad Market"}, {"storeNumber": "0-0", "posNumber": "443", "storeType": "KITCHEN AND BATH", "street": "2766 WILMA RUDOLPH  BLVD", "city": "CLARKSVILLE", "state": "TN", "zip": "37040", "lat": 36.58619, "lon": -87.296722, "manager": "Marc Huther", "market": "Clarksville Market"}, {"storeNumber": "305-7", "posNumber": "445", "storeType": "LUMBER", "street": "444 DICK BUCHANAN ST", "city": "LA VERGNE", "state": "TN", "zip": "37086", "lat": 36.021129, "lon": -86.553934, "manager": "Scott Dayton", "market": "Nashville Market"}, {"storeNumber": "445-7", "posNumber": "584", "storeType": "EWP", "street": "444 DICK BUCHANAN ST", "city": "LA VERGNE", "state": "TN", "zip": "37086", "lat": 36.021129, "lon": -86.553934, "manager": "Scott Dayton", "market": "Nashville Market"}, {"storeNumber": "0-0", "posNumber": "1445", "storeType": "INSTALLED", "street": "444 DICK BUCHANAN ST", "city": "LA VERGNE", "state": "TN", "zip": "37086", "lat": 36.021129, "lon": -86.553934, "manager": "Scott Dayton", "market": "Nashville Market"}, {"storeNumber": "900-446", "posNumber": "446", "storeType": "LABOR HUB", "street": "444C DICK BUCHANAN ST", "city": "LA VERGNE", "state": "TN", "zip": "37086", "lat": 36.021129, "lon": -86.553934, "manager": "Dave King", "market": "Nashville Market"}, {"storeNumber": "0-0", "posNumber": "444", "storeType": "KITCHEN AND BATH", "street": "516 FONTANA DRIVE", "city": "NASHVILLE", "state": "TN", "zip": "37204", "lat": 36.110143, "lon": -86.756227, "manager": "Marc Huther", "market": "Nashville Market"}, {"storeNumber": "0-0", "posNumber": "702", "storeType": "HUB", "street": "12144 WASHINGTON HIGHWAY", "city": "ASHLAND", "state": "VA", "zip": "23005", "lat": 37.73513, "lon": -77.469686, "manager": "Wayne Weeden", "market": "Hanover Door Shop"}, {"storeNumber": "0-0", "posNumber": "705", "storeType": "EWP", "street": "12144 WASHINGTON HIGHWAY", "city": "ASHLAND", "state": "VA", "zip": "23005", "lat": 37.73513, "lon": -77.469686, "manager": "Wayne Weeden", "market": "BWE Market"}, {"storeNumber": "0-0", "posNumber": "1570", "storeType": "EWP", "street": "3300 BUSINESS CENTER DRIVE", "city": "CHESAPEAKE", "state": "VA", "zip": "23323", "lat": 36.788614, "lon": -76.351066, "manager": "", "market": "VA Beach/Chesapeake Market"}, {"storeNumber": "805-1", "posNumber": "1470", "storeType": "INSTALLED", "street": "3300 BUSINESS CENTER DRIVE", "city": "CHESAPEAKE", "state": "VA", "zip": "23323", "lat": 36.788614, "lon": -76.351066, "manager": "Brett Paciulli", "market": "VA Beach/Chesapeake Market"}, {"storeNumber": "805-1", "posNumber": "470", "storeType": "LUMBER", "street": "3300 BUSINESS CENTER DRIVE", "city": "CHESAPEAKE", "state": "VA", "zip": "23323", "lat": 36.788614, "lon": -76.351066, "manager": "", "market": "VA Beach/Chesapeake Market"}, {"storeNumber": "805-5", "posNumber": "471", "storeType": "DOOR SHOP", "street": "3300 BUSINESS CENTER DRIVE", "city": "CHESAPEAKE", "state": "VA", "zip": "23323", "lat": 36.788614, "lon": -76.351066, "manager": "", "market": "VA Beach/Chesapeake Market"}, {"storeNumber": "805-6", "posNumber": "535", "storeType": "CCP", "street": "3300 BUSINESS CENTER DRIVE", "city": "CHESAPEAKE", "state": "VA", "zip": "23323", "lat": 36.788614, "lon": -76.351066, "manager": "", "market": "VA Beach/Chesapeake Market"}, {"storeNumber": "0-0", "posNumber": "1574", "storeType": "EWP", "street": "14500 EMANCIPATION HWY", "city": "CHESTER", "state": "VA", "zip": "23831", "lat": 37.325166, "lon": -77.409373, "manager": "", "market": "VA Beach/Chesapeake Market"}, {"storeNumber": "0-0", "posNumber": "740", "storeType": "DOOR SHOP", "street": "184 PLEASANT SHADE DRIVE", "city": "EMPORIA", "state": "VA", "zip": "23847", "lat": 36.707513, "lon": -77.56569, "manager": "", "market": ""}, {"storeNumber": "0-0", "posNumber": "587", "storeType": "RELOAD", "street": "", "city": "FREDERICKSBURG", "state": "VA", "zip": "", "lat": 38.27652, "lon": -77.464493, "manager": "", "market": "BWE Market"}, {"storeNumber": "800-464", "posNumber": "464", "storeType": "LUMBER", "street": "11631 SHANNON DR", "city": "FREDERICKSBURG", "state": "VA", "zip": "22408", "lat": 38.277071, "lon": -77.463179, "manager": "Richard Thompson", "market": "BWE Market"}, {"storeNumber": "805-4", "posNumber": "472", "storeType": "LUMBER", "street": "814 CHAPMAN WAY", "city": "NEWPORT NEWS", "state": "VA", "zip": "23608", "lat": 37.168212, "lon": -76.53522, "manager": "", "market": "VA Beach/Chesapeake Market"}, {"storeNumber": "0-0", "posNumber": "475", "storeType": "LUMBER", "street": "2890 SEVEN HILLS BLVD", "city": "RICHMOND", "state": "VA", "zip": "23231", "lat": 37.491845, "lon": -77.342596, "manager": "", "market": "Richmond Market"}, {"storeNumber": "805-7", "posNumber": "473", "storeType": "LUMBER", "street": "500 LASKIN ROAD", "city": "VIRGINIA BEACH", "state": "VA", "zip": "23451", "lat": 36.85881, "lon": -75.98218, "manager": "", "market": "VA Beach/Chesapeake Market"}, {"storeNumber": "0-0", "posNumber": "1684", "storeType": "KITCHEN AND BATH", "street": "1961 SOUTH LOUDOUN ST", "city": "WINCHESTER", "state": "VA", "zip": "22601", "lat": 39.164077, "lon": -78.173196, "manager": "", "market": "Winchester Market"}, {"storeNumber": "50-9", "posNumber": "461", "storeType": "LUMBER", "street": "1961 SOUTH LOUDOUN ST", "city": "WINCHESTER", "state": "VA", "zip": "22601", "lat": 39.164077, "lon": -78.173196, "manager": "Gary Trenary", "market": "Winchester Market"}, {"storeNumber": "8132-4", "posNumber": "462", "storeType": "LUMBER", "street": "5443 TABLER STATION RD", "city": "INWOOD", "state": "WV", "zip": "25428", "lat": 39.4004, "lon": -78.0095, "manager": "Gary Trenary", "market": "Winchester Market"}, {"storeNumber": "1-1", "posNumber": "111", "storeType": "LUMBER", "street": "195 NORTH STATE ROUTE 2", "city": "NEW MARTINSVILLE", "state": "WV", "zip": "26155", "lat": 39.671129, "lon": -80.857304, "manager": "Bob Thompson", "market": "West Virginia Market"}, {"storeNumber": "3-2", "posNumber": "112", "storeType": "LUMBER", "street": "6001 PIKE ST", "city": "PARKERSBURG", "state": "WV", "zip": "26101", "lat": 39.215206, "lon": -81.544647, "manager": "Adam Cooper", "market": "West Virginia Market"}, {"storeNumber": "0-0", "posNumber": "596", "storeType": "RELOAD", "street": "1 CARTER POINT", "city": "RIPLEY", "state": "WV", "zip": "25271", "lat": 38.82124, "lon": -81.73158, "manager": "", "market": "West Virginia Market"}, {"storeNumber": "3377-3", "posNumber": "113", "storeType": "LUMBER", "street": "1 CARTER POINT", "city": "RIPLEY", "state": "WV", "zip": "25271", "lat": 38.821241, "lon": -81.731575, "manager": "Mark Freed", "market": "West Virginia Market"}];
 
-// State
-let map, routeLayer, millMarker, yardMarker, millCoords = null;
+let map, routeLayer, millMarker, yardMarker, millCoords = null, batchMillCoords = null;
 const geocodeCache = {};
+let batchResults = [];
+let batchAbort = false;
 
-// Init map
 map = L.map('map').setView([35.5, -82.5], 6);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap contributors',
-  maxZoom: 18
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
+  subdomains: 'abcd',
+  maxZoom: 19
 }).addTo(map);
 routeLayer = L.layerGroup().addTo(map);
 
-// Populate dropdowns
-const millSel = document.getElementById('millSelect');
-const yardSel = document.getElementById('yardSelect');
-
-// Sort mills alphabetically
-const sortedMills = MILLS.map((m, i) => ({...m, idx: i})).sort((a, b) => a.name.localeCompare(b.name));
-sortedMills.forEach(m => {
-  const opt = document.createElement('option');
-  opt.value = m.idx;
-  opt.textContent = `${m.name} (${m.product}) — ${m.city}, ${m.stateZip}`;
-  millSel.appendChild(opt);
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
 });
 
-// Sort yards by state then city
+// Populate all dropdowns
+const millSel = document.getElementById('millSelect');
+const yardSel = document.getElementById('yardSelect');
+const batchMillSel = document.getElementById('batchMillSelect');
+
+const sortedMills = MILLS.map((m, i) => ({...m, idx: i})).sort((a, b) => a.name.localeCompare(b.name));
+sortedMills.forEach(m => {
+  const opt1 = document.createElement('option');
+  opt1.value = m.idx;
+  opt1.textContent = `${m.name} (${m.product}) — ${m.city}, ${m.stateZip}`;
+  millSel.appendChild(opt1);
+  const opt2 = opt1.cloneNode(true);
+  batchMillSel.appendChild(opt2);
+});
+
 const sortedYards = YARDS.map((y, i) => ({...y, idx: i})).sort((a, b) => {
   const sc = a.state.localeCompare(b.state);
   return sc !== 0 ? sc : a.city.localeCompare(b.city);
@@ -126,7 +183,7 @@ sortedYards.forEach(y => {
   yardSel.appendChild(opt);
 });
 
-// Mill selection
+// --- SINGLE ROUTE LOGIC ---
 millSel.addEventListener('change', async () => {
   const det = document.getElementById('millDetails');
   millCoords = null;
@@ -135,24 +192,21 @@ millSel.addEventListener('change', async () => {
   const m = MILLS[parseInt(millSel.value)];
   det.innerHTML = `<strong>${m.name}</strong><br>${m.street}<br>${m.city}, ${m.stateZip}<br>Product: ${m.product} | Vendor: ${m.vendor}`;
   det.style.display = 'block';
-  // Geocode
-  showStatus('Geocoding mill address...', false);
+  showStatus('statusMsg', 'Geocoding mill address...', false);
   const coords = await geocodeAddress(m.address);
   if (coords) {
     millCoords = coords;
-    showStatus('', false);
+    showStatus('statusMsg', '', false);
     if (millMarker) map.removeLayer(millMarker);
     millMarker = L.circleMarker([coords.lat, coords.lon], {radius: 8, color: '#c62828', fillColor: '#e53935', fillOpacity: 0.9, weight: 2})
-      .bindPopup(`<b>${m.name}</b><br>${m.address}`)
-      .addTo(map);
+      .bindPopup(`<b>${m.name}</b><br>${m.address}`).addTo(map);
     map.setView([coords.lat, coords.lon], 8);
   } else {
-    showStatus('Could not geocode mill address. Try a different selection.', true);
+    showStatus('statusMsg', 'Could not geocode mill address.', true);
   }
   checkReady();
 });
 
-// Yard selection
 yardSel.addEventListener('change', () => {
   const det = document.getElementById('yardDetails');
   if (yardSel.value === '') { det.style.display = 'none'; checkReady(); return; }
@@ -161,8 +215,7 @@ yardSel.addEventListener('change', () => {
   det.style.display = 'block';
   if (yardMarker) map.removeLayer(yardMarker);
   yardMarker = L.circleMarker([y.lat, y.lon], {radius: 8, color: '#1565c0', fillColor: '#1e88e5', fillOpacity: 0.9, weight: 2})
-    .bindPopup(`<b>${y.storeNumber}</b> — ${y.city}, ${y.state}<br>${y.street}`)
-    .addTo(map);
+    .bindPopup(`<b>${y.storeNumber}</b> — ${y.city}, ${y.state}`).addTo(map);
   checkReady();
 });
 
@@ -170,48 +223,14 @@ function checkReady() {
   document.getElementById('routeBtn').disabled = !(millCoords && yardSel.value !== '');
 }
 
-// Geocode with Nominatim
-async function geocodeAddress(addr) {
-  if (geocodeCache[addr]) return geocodeCache[addr];
-  try {
-    const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(addr)}`, {
-      headers: {'Accept': 'application/json'}
-    });
-    const data = await resp.json();
-    if (data && data.length > 0) {
-      const result = {lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon)};
-      geocodeCache[addr] = result;
-      return result;
-    }
-    // Fallback: try without street
-    const parts = addr.split(',');
-    if (parts.length >= 2) {
-      const fallback = parts.slice(1).join(',').trim();
-      const resp2 = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(fallback)}`, {
-        headers: {'Accept': 'application/json'}
-      });
-      const data2 = await resp2.json();
-      if (data2 && data2.length > 0) {
-        const result = {lat: parseFloat(data2[0].lat), lon: parseFloat(data2[0].lon)};
-        geocodeCache[addr] = result;
-        return result;
-      }
-    }
-  } catch (e) { console.error('Geocode error:', e); }
-  return null;
-}
-
-// Route button
 document.getElementById('routeBtn').addEventListener('click', async () => {
   if (!millCoords || yardSel.value === '') return;
   const y = YARDS[parseInt(yardSel.value)];
   const m = MILLS[parseInt(millSel.value)];
   const btn = document.getElementById('routeBtn');
-  btn.disabled = true;
-  btn.textContent = 'Calculating route...';
-  showStatus('Fetching route from OSRM...', false);
+  btn.disabled = true; btn.textContent = 'Calculating route...';
+  showStatus('statusMsg', 'Fetching route from OSRM...', false);
   routeLayer.clearLayers();
-
   try {
     const url = `https://router.project-osrm.org/route/v1/driving/${millCoords.lon},${millCoords.lat};${y.lon},${y.lat}?overview=full&geometries=geojson`;
     const resp = await fetch(url);
@@ -223,21 +242,8 @@ document.getElementById('routeBtn').addEventListener('click', async () => {
       const durSec = route.duration;
       const hours = Math.floor(durSec / 3600);
       const mins = Math.round((durSec % 3600) / 60);
-
-      // Draw route
-      const geojson = L.geoJSON(route.geometry, {
-        style: {color: '#2e7d32', weight: 4, opacity: 0.8}
-      });
-      routeLayer.addLayer(geojson);
-
-      // Fit bounds
-      const bounds = L.latLngBounds(
-        [millCoords.lat, millCoords.lon],
-        [y.lat, y.lon]
-      ).pad(0.15);
-      map.fitBounds(bounds);
-
-      // Show results
+      routeLayer.addLayer(L.geoJSON(route.geometry, {style: {color: '#2e7d32', weight: 4, opacity: 0.8}}));
+      map.fitBounds(L.latLngBounds([millCoords.lat, millCoords.lon],[y.lat, y.lon]).pad(0.15));
       document.getElementById('distMiles').textContent = `${distMi.toFixed(1)} miles`;
       document.getElementById('distKm').textContent = `${distKm.toFixed(1)} km`;
       document.getElementById('driveTime').textContent = hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
@@ -245,26 +251,21 @@ document.getElementById('routeBtn').addEventListener('click', async () => {
       document.getElementById('toName').textContent = `${y.storeNumber} — ${y.city}, ${y.state}`;
       document.getElementById('resultBox').style.display = 'block';
       document.getElementById('clearBtn').style.display = 'block';
-      showStatus('', false);
+      showStatus('statusMsg', '', false);
     } else {
-      showStatus('OSRM could not find a route between these locations.', true);
+      showStatus('statusMsg', 'OSRM could not find a route.', true);
     }
   } catch (e) {
-    showStatus('Error fetching route. Check your internet connection.', true);
-    console.error(e);
+    showStatus('statusMsg', 'Error fetching route.', true);
   }
-  btn.disabled = false;
-  btn.textContent = 'Get Route & Distance';
+  btn.disabled = false; btn.textContent = 'Get Route & Distance';
 });
 
-// Clear
 document.getElementById('clearBtn').addEventListener('click', () => {
   routeLayer.clearLayers();
   if (millMarker) { map.removeLayer(millMarker); millMarker = null; }
   if (yardMarker) { map.removeLayer(yardMarker); yardMarker = null; }
-  millCoords = null;
-  millSel.value = '';
-  yardSel.value = '';
+  millCoords = null; millSel.value = ''; yardSel.value = '';
   document.getElementById('millDetails').style.display = 'none';
   document.getElementById('yardDetails').style.display = 'none';
   document.getElementById('resultBox').style.display = 'none';
@@ -274,8 +275,180 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   map.setView([35.5, -82.5], 6);
 });
 
-function showStatus(msg, isError) {
-  const el = document.getElementById('statusMsg');
+// --- BATCH ROUTE LOGIC ---
+batchMillSel.addEventListener('change', async () => {
+  const det = document.getElementById('batchMillDetails');
+  batchMillCoords = null;
+  document.getElementById('batchBtn').disabled = true;
+  if (batchMillSel.value === '') { det.style.display = 'none'; return; }
+  const m = MILLS[parseInt(batchMillSel.value)];
+  det.innerHTML = `<strong>${m.name}</strong><br>${m.street}<br>${m.city}, ${m.stateZip}<br>Product: ${m.product}`;
+  det.style.display = 'block';
+  showStatus('batchStatus', 'Geocoding mill address...', false);
+  const coords = await geocodeAddress(m.address);
+  if (coords) {
+    batchMillCoords = coords;
+    showStatus('batchStatus', 'Ready — click to calculate all yard distances.', false);
+    document.getElementById('batchBtn').disabled = false;
+  } else {
+    showStatus('batchStatus', 'Could not geocode mill address.', true);
+  }
+});
+
+document.getElementById('batchBtn').addEventListener('click', async () => {
+  if (!batchMillCoords) return;
+  const m = MILLS[parseInt(batchMillSel.value)];
+  const btn = document.getElementById('batchBtn');
+  batchAbort = false;
+  batchResults = [];
+  btn.textContent = 'Stop';
+  btn.classList.remove('btn-primary');
+  btn.classList.add('btn-secondary');
+  btn.onclick = () => { batchAbort = true; };
+  
+  document.getElementById('batchProgress').style.display = 'block';
+  document.getElementById('batchSummary').style.display = 'none';
+  document.getElementById('batchResultsTable').style.display = 'block';
+  document.getElementById('exportCsvBtn').style.display = 'none';
+  
+  // Clear map
+  routeLayer.clearLayers();
+  if (millMarker) map.removeLayer(millMarker);
+  millMarker = L.circleMarker([batchMillCoords.lat, batchMillCoords.lon], {radius: 8, color: '#c62828', fillColor: '#e53935', fillOpacity: 0.9, weight: 2})
+    .bindPopup(`<b>${m.name}</b><br>${m.address}`).addTo(map);
+  
+  // Build table header
+  const tableEl = document.getElementById('batchResultsTable');
+  tableEl.innerHTML = '<table><thead><tr><th>POS #</th><th>Store #</th><th>City, State</th><th>Type</th><th>Miles</th><th>Drive Time</th></tr></thead><tbody id="batchTbody"></tbody></table>';
+  const tbody = document.getElementById('batchTbody');
+  
+  let completed = 0;
+  const total = YARDS.length;
+  
+  for (let i = 0; i < total; i++) {
+    if (batchAbort) break;
+    const y = YARDS[i];
+    showStatus('batchStatus', `Calculating ${i+1} of ${total}: ${y.city}, ${y.state}...`, false);
+    document.getElementById('batchProgressFill').style.width = `${((i+1)/total)*100}%`;
+    
+    try {
+      const url = `https://router.project-osrm.org/route/v1/driving/${batchMillCoords.lon},${batchMillCoords.lat};${y.lon},${y.lat}?overview=false`;
+      const resp = await fetch(url);
+      const data = await resp.json();
+      
+      if (data.code === 'Ok' && data.routes.length > 0) {
+        const distMi = (data.routes[0].distance / 1000) * 0.621371;
+        const durSec = data.routes[0].duration;
+        const hours = Math.floor(durSec / 3600);
+        const mins = Math.round((durSec % 3600) / 60);
+        const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+        
+        batchResults.push({
+          posNumber: y.posNumber,
+          storeNumber: y.storeNumber,
+          storeType: y.storeType,
+          street: y.street,
+          city: y.city,
+          state: y.state,
+          zip: y.zip,
+          market: y.market,
+          miles: Math.round(distMi * 10) / 10,
+          driveTime: timeStr,
+          durationSec: durSec
+        });
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${y.posNumber}</td><td>${y.storeNumber}</td><td>${y.city}, ${y.state}</td><td>${y.storeType}</td><td>${distMi.toFixed(1)}</td><td>${timeStr}</td>`;
+        tbody.appendChild(tr);
+        completed++;
+      }
+    } catch (e) {
+      // Brief pause on error then continue
+      await new Promise(r => setTimeout(r, 2000));
+    }
+    // Small delay to avoid rate limiting
+    if (i < total - 1) await new Promise(r => setTimeout(r, 250));
+  }
+  
+  // Sort results by miles
+  batchResults.sort((a, b) => a.miles - b.miles);
+  
+  // Rebuild table sorted
+  tbody.innerHTML = '';
+  batchResults.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.posNumber}</td><td>${r.storeNumber}</td><td>${r.city}, ${r.state}</td><td>${r.storeType}</td><td>${r.miles}</td><td>${r.driveTime}</td>`;
+    tbody.appendChild(tr);
+  });
+  
+  // Show summary
+  if (batchResults.length > 0) {
+    const closest = batchResults[0];
+    const farthest = batchResults[batchResults.length - 1];
+    document.getElementById('batchCount').textContent = `${batchResults.length} of ${total}`;
+    document.getElementById('batchClosest').textContent = `${closest.city}, ${closest.state} (${closest.miles} mi)`;
+    document.getElementById('batchFarthest').textContent = `${farthest.city}, ${farthest.state} (${farthest.miles} mi)`;
+    document.getElementById('batchSummary').style.display = 'block';
+  }
+  
+  showStatus('batchStatus', batchAbort ? 'Stopped by user.' : `Done! ${completed} routes calculated.`, false);
+  document.getElementById('exportCsvBtn').style.display = 'block';
+  document.getElementById('exportCsvBtn').disabled = false;
+  
+  // Reset button
+  btn.textContent = 'Calculate Distance to All Yards';
+  btn.classList.remove('btn-secondary');
+  btn.classList.add('btn-primary');
+  btn.disabled = false;
+  btn.onclick = null;
+  document.getElementById('batchBtn').addEventListener('click', arguments.callee);
+});
+
+// CSV Export
+document.getElementById('exportCsvBtn').addEventListener('click', () => {
+  if (batchResults.length === 0) return;
+  const m = MILLS[parseInt(batchMillSel.value)];
+  let csv = 'Mill/Supplier,Mill Address,POS Number,Store Number,Store Type,Yard Street,Yard City,Yard State,Yard Zip,Market,Distance (miles),Est. Drive Time\n';
+  batchResults.forEach(r => {
+    csv += `"${m.name}","${m.address}","${r.posNumber}","${r.storeNumber}","${r.storeType}","${r.street}","${r.city}","${r.state}","${r.zip}","${r.market}",${r.miles},"${r.driveTime}"\n`;
+  });
+  const blob = new Blob([csv], {type: 'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Routes_${m.name.replace(/[^a-zA-Z0-9]/g, '_')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// --- SHARED FUNCTIONS ---
+async function geocodeAddress(addr) {
+  if (geocodeCache[addr]) return geocodeCache[addr];
+  try {
+    const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(addr)}`);
+    const data = await resp.json();
+    if (data && data.length > 0) {
+      const result = {lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon)};
+      geocodeCache[addr] = result;
+      return result;
+    }
+    const parts = addr.split(',');
+    if (parts.length >= 2) {
+      const fallback = parts.slice(1).join(',').trim();
+      const resp2 = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(fallback)}`);
+      const data2 = await resp2.json();
+      if (data2 && data2.length > 0) {
+        const result = {lat: parseFloat(data2[0].lat), lon: parseFloat(data2[0].lon)};
+        geocodeCache[addr] = result;
+        return result;
+      }
+    }
+  } catch (e) { console.error('Geocode error:', e); }
+  return null;
+}
+
+function showStatus(elId, msg, isError) {
+  const el = document.getElementById(elId);
   if (!msg) { el.style.display = 'none'; return; }
   el.textContent = msg;
   el.className = isError ? 'status-msg error' : 'status-msg';
