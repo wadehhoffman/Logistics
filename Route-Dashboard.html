@@ -323,47 +323,65 @@ document.getElementById('batchBtn').addEventListener('click', async () => {
   const tbody = document.getElementById('batchTbody');
   
   let completed = 0;
+  let apiCalls = 0;
+  let copied = 0;
   const total = YARDS.length;
-  
+  const coordCache = {}; // Cache results by lat,lon key
+
   for (let i = 0; i < total; i++) {
     if (batchAbort) break;
     const y = YARDS[i];
-    showStatus('batchStatus', `Calculating ${i+1} of ${total}: ${y.city}, ${y.state}...`, false);
+    const coordKey = `${Math.round(y.lat*100000)},${Math.round(y.lon*100000)}`;
+
     document.getElementById('batchProgressFill').style.width = `${((i+1)/total)*100}%`;
-    
+
+    // Check if we already routed to this exact address
+    if (coordCache[coordKey]) {
+      const cached = coordCache[coordKey];
+      showStatus('batchStatus', `${i+1} of ${total}: ${y.city}, ${y.state} (copied from same address)`, false);
+      batchResults.push({
+        posNumber: y.posNumber, storeNumber: y.storeNumber, storeType: y.storeType,
+        street: y.street, city: y.city, state: y.state, zip: y.zip, market: y.market,
+        miles: cached.miles, driveTime: cached.driveTime, durationSec: cached.durationSec
+      });
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${y.posNumber}</td><td>${y.storeNumber}</td><td>${y.city}, ${y.state}</td><td>${y.storeType}</td><td>${cached.miles}</td><td>${cached.driveTime}</td>`;
+      tbody.appendChild(tr);
+      completed++; copied++;
+      continue;
+    }
+
+    showStatus('batchStatus', `Calculating ${i+1} of ${total}: ${y.city}, ${y.state} (${apiCalls} API calls, ${copied} copied)...`, false);
+
     try {
       const url = `https://router.project-osrm.org/route/v1/driving/${batchMillCoords.lon},${batchMillCoords.lat};${y.lon},${y.lat}?overview=false`;
       const resp = await fetch(url);
       const data = await resp.json();
-      
+      apiCalls++;
+
       if (data.code === 'Ok' && data.routes.length > 0) {
         const distMi = (data.routes[0].distance / 1000) * 0.621371;
         const durSec = data.routes[0].duration;
         const hours = Math.floor(durSec / 3600);
         const mins = Math.round((durSec % 3600) / 60);
         const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-        
+        const miles = Math.round(distMi * 10) / 10;
+
+        // Cache this result for duplicate addresses
+        coordCache[coordKey] = { miles, driveTime: timeStr, durationSec: durSec };
+
         batchResults.push({
-          posNumber: y.posNumber,
-          storeNumber: y.storeNumber,
-          storeType: y.storeType,
-          street: y.street,
-          city: y.city,
-          state: y.state,
-          zip: y.zip,
-          market: y.market,
-          miles: Math.round(distMi * 10) / 10,
-          driveTime: timeStr,
-          durationSec: durSec
+          posNumber: y.posNumber, storeNumber: y.storeNumber, storeType: y.storeType,
+          street: y.street, city: y.city, state: y.state, zip: y.zip, market: y.market,
+          miles, driveTime: timeStr, durationSec: durSec
         });
-        
+
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${y.posNumber}</td><td>${y.storeNumber}</td><td>${y.city}, ${y.state}</td><td>${y.storeType}</td><td>${distMi.toFixed(1)}</td><td>${timeStr}</td>`;
         tbody.appendChild(tr);
         completed++;
       }
     } catch (e) {
-      // Brief pause on error then continue
       await new Promise(r => setTimeout(r, 2000));
     }
     // Small delay to avoid rate limiting
@@ -391,7 +409,7 @@ document.getElementById('batchBtn').addEventListener('click', async () => {
     document.getElementById('batchSummary').style.display = 'block';
   }
   
-  showStatus('batchStatus', batchAbort ? 'Stopped by user.' : `Done! ${completed} routes calculated.`, false);
+  showStatus('batchStatus', batchAbort ? 'Stopped by user.' : `Done! ${completed} routes calculated (${apiCalls} API calls + ${copied} copied from duplicate addresses).`, false);
   document.getElementById('exportCsvBtn').style.display = 'block';
   document.getElementById('exportCsvBtn').disabled = false;
   
