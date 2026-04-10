@@ -1,0 +1,12 @@
+# Local secrets — never commit
+secrets.js
+
+# Excel temp files
+~$*.xlsx
+~$*.xls
+
+# macOS
+.DS_Store
+
+# Node
+node_modules/
