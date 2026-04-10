@@ -68,6 +68,14 @@ select:focus { outline: none; border-color: #2c5f8a; box-shadow: 0 0 0 2px rgba(
 .diesel-popup-header { font-weight: 700; font-size: 14px; color: #1a3a5c; margin-bottom: 4px; }
 .diesel-popup-price { font-size: 20px; font-weight: 800; color: #2e7d32; }
 .diesel-popup-detail { font-size: 11px; color: #666; margin-top: 4px; }
+.truck-label { background: #1a3a5c; color: white; font-size: 11px; font-weight: 700; padding: 3px 7px; border-radius: 10px; white-space: nowrap; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.35); }
+.truck-label.moving  { background: #1565c0; }
+.truck-label.idle    { background: #e65100; }
+.truck-label.stopped { background: #b71c1c; }
+.truck-toggle { background: #1a3a5c; color: white; border: none; border-radius: 6px; padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+.truck-toggle:hover { background: #2c5f8a; }
+.truck-toggle.active { background: #1565c0; }
+.truck-status-bar { font-size: 11px; color: #555; padding: 4px 0; min-height: 16px; }
 .legend { display: flex; gap: 16px; align-items: center; font-size: 12px; padding: 8px 0; }
 .legend-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 4px; vertical-align: middle; }
 .loc-details { font-size: 12px; color: #666; line-height: 1.6; padding: 8px 0; }
@@ -199,6 +207,13 @@ select:focus { outline: none; border-color: #2c5f8a; box-shadow: 0 0 0 2px rgba(
     </div>
   </div>
   <div id="map"></div>
+  <div style="position:absolute; bottom:24px; right:12px; z-index:1000; display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+    <div style="display:flex; gap:6px; align-items:center;">
+      <button class="truck-toggle" id="truckToggleBtn" onclick="toggleTrucks()">🚛 Show Branch 570 Trucks</button>
+      <button class="truck-toggle" id="truckRefreshBtn" onclick="refreshTrucks()" title="Refresh truck positions now" style="display:none; padding:7px 10px;">🔄</button>
+    </div>
+    <div class="truck-status-bar" id="truckStatusBar"></div>
+  </div>
 </div>
 
 <script>
@@ -734,6 +749,112 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r
   maxZoom: 19
 }).addTo(map);
 routeLayer = L.layerGroup().addTo(map);
+
+// --- IntelliShift Live Truck Layer ---
+const truckLayer = L.layerGroup().addTo(map);
+let trucksVisible = false;
+let truckRefreshTimer = null;
+let preloadedAssets = null; // { id, name } — loaded once at startup
+
+// Preload asset metadata silently on page load
+async function preloadTruckAssets() {
+  try {
+    const resp = await fetch('/api/intellishift/assets');
+    if (!resp.ok) return;
+    const data = await resp.json();
+    preloadedAssets = data.assets || [];
+    console.log(`[Trucks] Preloaded ${preloadedAssets.length} branch 570 assets`);
+    // Update button to show count
+    const btn = document.getElementById('truckToggleBtn');
+    if (btn && preloadedAssets.length > 0) btn.textContent = `🚛 Show Branch 570 Trucks (${preloadedAssets.length})`;
+  } catch(e) { console.warn('[Trucks] Preload skipped:', e.message); }
+}
+
+async function loadTrucks() {
+  const statusBar = document.getElementById('truckStatusBar');
+  statusBar.textContent = 'Updating locations…';
+  try {
+    const resp = await fetch('/api/intellishift/vehicles');
+    const data = await resp.json();
+    if (data.error) { statusBar.textContent = '⚠️ ' + data.error; return; }
+
+    truckLayer.clearLayers();
+    const vehicles = data.vehicles || [];
+
+    if (vehicles.length === 0) {
+      statusBar.textContent = `${data.total || 0} assets found but no location data yet. Check server log for probe results.`;
+      return;
+    }
+
+    vehicles.forEach(v => {
+      const isMoving = parseFloat(v.speed) > 0;
+      const statusIcon = v.engineOn ? (isMoving ? '🟢' : '🟡') : '🔴';
+      const statusText = v.engineOn ? (isMoving ? 'Moving' : 'Idling') : 'Engine Off';
+      const icon = L.divIcon({
+        className: '',
+        html: `<div class="truck-label ${isMoving ? 'moving' : (v.engineOn ? 'idle' : 'stopped')}">${statusIcon} ${v.name}</div>`,
+        iconAnchor: [35, 12]
+      });
+      const lastSeen = v.updated ? new Date(v.updated).toLocaleString() : 'Unknown';
+      const location = [v.street, v.city, v.state].filter(Boolean).join(', ') || 'Location unknown';
+      const driverLine = v.driver ? `<br>Driver: ${v.driver}` : '';
+      const stopLine = !isMoving && v.stopDuration ? `<br>Stopped for: ${v.stopDuration}` : '';
+      L.marker([v.lat, v.lon], { icon })
+        .bindPopup(`
+          <strong>${v.name}</strong>${driverLine}<br>
+          ${statusIcon} ${statusText}${isMoving ? ' — ' + Math.round(v.speed) + ' mph' : ''}<br>
+          📍 ${location}${stopLine}<br>
+          <small>Updated: ${lastSeen}</small>
+        `)
+        .addTo(truckLayer);
+    });
+
+    const moving  = vehicles.filter(v => parseFloat(v.speed) > 0).length;
+    const idling  = vehicles.filter(v => parseFloat(v.speed) === 0 && v.engineOn).length;
+    const stopped = vehicles.filter(v => !v.engineOn).length;
+    statusBar.textContent = `${vehicles.length} trucks — 🟢 ${moving} moving, 🟡 ${idling} idling, 🔴 ${stopped} off. Updated ${new Date().toLocaleTimeString()}`;
+    console.log(`[Trucks] ${vehicles.length} located via ${data.endpoint}`);
+  } catch(e) {
+    document.getElementById('truckStatusBar').textContent = '⚠️ Could not connect to IntelliShift.';
+    console.error('[Trucks] Error:', e);
+  }
+}
+
+async function refreshTrucks() {
+  const btn = document.getElementById('truckRefreshBtn');
+  btn.textContent = '⏳';
+  btn.disabled = true;
+  await loadTrucks();
+  btn.textContent = '🔄';
+  btn.disabled = false;
+}
+
+function toggleTrucks() {
+  const btn = document.getElementById('truckToggleBtn');
+  const refreshBtn = document.getElementById('truckRefreshBtn');
+  const statusBar = document.getElementById('truckStatusBar');
+  if (!trucksVisible) {
+    trucksVisible = true;
+    refreshBtn.style.display = '';
+    const count = preloadedAssets ? ` (${preloadedAssets.length})` : '';
+    btn.textContent = `🚛 Hide Branch 570 Trucks${count}`;
+    btn.classList.add('active');
+    loadTrucks();
+    truckRefreshTimer = setInterval(loadTrucks, 60000);
+  } else {
+    trucksVisible = false;
+    refreshBtn.style.display = 'none';
+    const count = preloadedAssets ? ` (${preloadedAssets.length})` : '';
+    btn.textContent = `🚛 Show Branch 570 Trucks${count}`;
+    btn.classList.remove('active');
+    truckLayer.clearLayers();
+    statusBar.textContent = '';
+    clearInterval(truckRefreshTimer);
+  }
+}
+
+// Preload truck assets silently in the background on page load
+preloadTruckAssets();
 
 // Tab switching
 document.querySelectorAll('.tab-btn').forEach(btn => {

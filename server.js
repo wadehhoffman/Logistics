@@ -11,6 +11,201 @@ const DIR = __dirname;
 let secrets = {};
 try { secrets = require('./secrets'); } catch(e) {}
 const MAPBOX_TOKEN = secrets.MAPBOX_TOKEN || process.env.MAPBOX_TOKEN || '';
+const IS_EMAIL    = secrets.INTELLISHIFT_EMAIL    || process.env.IS_EMAIL    || '';
+const IS_PASSWORD = secrets.INTELLISHIFT_PASSWORD || process.env.IS_PASSWORD || '';
+
+// Known branch IDs for "570: Traffic" (discovered, hardcoded to skip branch lookup)
+// 34911 = 570: Traffic-CMV  |  34914 = 570: Traffic-Trailers  |  30215 = 570: Traffic (parent)
+const IS_BRANCH_IDS = [34911, 34914, 30215];
+
+// --- IntelliShift token + asset cache ---
+let isToken = null;
+let isTokenExpiry = 0;
+let cachedAssets = null;     // { id, name, branchId } for all branch 570 assets
+let assetsLoadedAt = 0;
+const ASSET_CACHE_TTL = 4 * 60 * 60 * 1000; // refresh asset list every 4 hours
+
+function intellishiftRequest(options, postBody) {
+  return new Promise((resolve, reject) => {
+    const req = https.request(options, (res) => {
+      const chunks = [];
+      res.on('data', c => chunks.push(c));
+      res.on('end', () => {
+        try {
+          resolve({ status: res.status || res.statusCode, body: JSON.parse(Buffer.concat(chunks).toString()) });
+        } catch(e) {
+          resolve({ status: res.statusCode, body: Buffer.concat(chunks).toString() });
+        }
+      });
+    });
+    req.on('error', reject);
+    req.setTimeout(20000, () => { req.destroy(); reject(new Error('Timeout')); });
+    if (postBody) req.write(postBody);
+    req.end();
+  });
+}
+
+let isTokenPromise = null; // prevent concurrent auth requests
+async function getIntelliShiftToken() {
+  if (isToken && Date.now() < isTokenExpiry) return isToken;
+  if (isTokenPromise) return isTokenPromise; // reuse in-flight request
+  isTokenPromise = (async () => {
+    console.log('  [IS] Fetching new auth token...');
+    const body = JSON.stringify({ email: IS_EMAIL, password: IS_PASSWORD });
+    const result = await intellishiftRequest({
+      hostname: 'auth.intellishift.com',
+      path: '/oauth/token',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
+    }, body);
+    if (result.body && result.body.access_token) {
+      isToken = result.body.access_token;
+      isTokenExpiry = Date.now() + ((result.body.expires_in || 86400) * 1000) - 60000;
+      console.log('  [IS] Token acquired, valid for 24h');
+      return isToken;
+    }
+    throw new Error('IntelliShift auth failed: ' + JSON.stringify(result.body));
+  })().finally(() => { isTokenPromise = null; });
+  return isTokenPromise;
+}
+
+async function isGet(token, path) {
+  return intellishiftRequest({
+    hostname: 'connect.intellishift.com',
+    path, method: 'GET',
+    headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+  });
+}
+
+// Load branch 570 asset metadata — filtered by branchId, cached for 4 hours
+async function loadBranch570Assets() {
+  if (cachedAssets && Date.now() - assetsLoadedAt < ASSET_CACHE_TTL) return cachedAssets;
+  const token = await getIntelliShiftToken();
+
+  // branchId URL filter not supported by API — fetch all pages and filter in memory
+  console.log('  [IS] Fetching all assets (branchId filter not supported by API, will filter in memory)...');
+  let allBranchAssets = [];
+  let page = 1, totalPages = 1;
+  do {
+    let r;
+    try {
+      r = await isGet(token, `/api/assets?pageNumber=${page}&pageSize=100`);
+    } catch(e) {
+      console.log(`  [IS] Request error page ${page}: ${e.message}`);
+      break;
+    }
+    if (r.status !== 200) { console.log(`  [IS] Page ${page}: status ${r.status}`); break; }
+    const data = r.body;
+    const items = Array.isArray(data) ? data : (data.collection || []);
+    allBranchAssets = allBranchAssets.concat(items);
+    totalPages = data.totalPages || 1;
+    if (page === 1 || page === totalPages) console.log(`  [IS] Page ${page}/${totalPages}: ${items.length} items`);
+    page++;
+  } while (page <= totalPages);
+
+  // Deduplicate, then filter to only branch 570 assets
+  const seen = new Set();
+  const branchIdSet = new Set(IS_BRANCH_IDS);
+  cachedAssets = allBranchAssets
+    .filter(a => { if (seen.has(a.id)) return false; seen.add(a.id); return true; })
+    .filter(a => branchIdSet.has(a.branchId))
+    .map(a => ({ id: a.id, name: a.name || String(a.id), branchId: a.branchId }));
+  assetsLoadedAt = Date.now();
+  console.log(`  [IS] Asset cache loaded: ${cachedAssets.length} branch 570 assets (filtered from ${seen.size} total)`);
+  return cachedAssets;
+}
+
+// Fetch current locations for branch 570 assets
+async function fetchBranch570Locations() {
+  const assets = await loadBranch570Assets();
+  const token = await getIntelliShiftToken();
+  const idSet = new Set(assets.map(a => a.id));
+
+  // Primary: /api/assets/current-locations returns VehicleTelematics[] (no required params)
+  // vehicleId in VehicleTelematics matches id in asset records
+  try {
+    const r = await isGet(token, `/api/assets/current-locations`);
+    if (r.status === 200) {
+      const items = Array.isArray(r.body) ? r.body : (r.body.collection || []);
+      console.log(`  [IS] /api/assets/current-locations: ${items.length} total records`);
+      if (items.length > 0) {
+        const locMap = {};
+        items.forEach(loc => {
+          const id = loc.vehicleId || loc.assetId || loc.id;
+          if (idSet.has(id)) locMap[id] = loc;
+        });
+        console.log(`  [IS] Matched ${Object.keys(locMap).length} branch 570 vehicles with location data`);
+        if (Object.keys(locMap).length > 0) {
+          return { locMap, endpoint: '/api/assets/current-locations' };
+        }
+        // Got records but none matched our asset IDs — log a sample to debug
+        if (items.length > 0) {
+          console.log(`  [IS] Sample record (no ID match):`, JSON.stringify(items[0]).substring(0, 400));
+        }
+      }
+    } else {
+      console.log(`  [IS] /api/assets/current-locations status: ${r.status}`);
+    }
+  } catch(e) {
+    console.log(`  [IS] /api/assets/current-locations error: ${e.message}`);
+  }
+
+  // Fallback bulk endpoints
+  const fallbackEndpoints = [
+    `/api/assets/locations`,
+    `/api/telemetry/latest`,
+    `/api/vehicles/locations`,
+  ];
+  for (const ep of fallbackEndpoints) {
+    try {
+      const r = await isGet(token, ep + '?pageSize=500');
+      if (r.status === 200) {
+        const items = Array.isArray(r.body) ? r.body : (r.body.collection || []);
+        if (items.length > 0) {
+          const locMap = {};
+          items.forEach(loc => {
+            const id = loc.vehicleId || loc.assetId || loc.id;
+            if (idSet.has(id)) locMap[id] = loc;
+          });
+          console.log(`  [IS] Fallback ${ep}: ${items.length} records, ${Object.keys(locMap).length} matched`);
+          if (Object.keys(locMap).length > 0) return { locMap, endpoint: ep };
+        }
+      }
+    } catch(e) { /* try next */ }
+  }
+
+  console.log('  [IS] No location data found for branch 570 vehicles');
+  return { locMap: {}, endpoint: 'none' };
+}
+
+// Build final vehicle list merging asset metadata + locations
+async function getVehiclesWithLocations() {
+  const assets = await loadBranch570Assets();
+  const { locMap, endpoint } = await fetchBranch570Locations();
+
+  const vehicles = assets.map(a => {
+    const loc = locMap[a.id] || {};
+    return {
+      id:         a.id,
+      name:       loc.vehicleName || a.name,
+      lat:        parseFloat(loc.latitude  || loc.lat  || 0),
+      lon:        parseFloat(loc.longitude || loc.lon  || 0),
+      speed:      loc.speed       || 0,
+      heading:    loc.headingDegrees !== undefined ? loc.headingDegrees : (loc.heading || 0),
+      engineOn:   loc.engineOn    || false,
+      driver:     loc.driverName  || '',
+      street:     loc.street      || '',
+      city:       loc.city        || '',
+      state:      loc.state       || '',
+      updated:    loc.lastUpdate  || loc.lastUpdated || '',
+      isSpeeding: loc.isSpeeding  || false,
+      stopDuration: loc.stopDuration || '',
+    };
+  }).filter(v => v.lat !== 0 && v.lon !== 0);
+
+  console.log(`  [IS] getVehiclesWithLocations: ${assets.length} total assets, ${vehicles.length} with location`);
+  return { vehicles, total: assets.length, withLocation: vehicles.length, endpoint };
+}
 
 const MIME_TYPES = {
   '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript',
@@ -212,6 +407,58 @@ const server = http.createServer((req, res) => {
     return simpleProxy(`https://api.eia.gov/v2/petroleum/pri/gnd/data/?${qs}`, res);
   }
 
+  // IntelliShift: preload asset metadata (fast, cached)
+  if (pathname === '/api/intellishift/assets') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+    (async () => { try {
+      const assets = await loadBranch570Assets();
+      res.writeHead(200);
+      res.end(JSON.stringify({ assets, total: assets.length, cachedAt: new Date(assetsLoadedAt).toISOString() }));
+    } catch(e) {
+      res.writeHead(500); res.end(JSON.stringify({ error: e.message }));
+    }})();
+    return;
+  }
+
+  // IntelliShift: live locations only (called on toggle + refresh)
+  if (pathname === '/api/intellishift/vehicles') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+    if (!IS_EMAIL || !IS_PASSWORD) {
+      res.writeHead(503);
+      return res.end(JSON.stringify({ error: 'IntelliShift credentials not configured in secrets.js' }));
+    }
+    (async () => { try {
+      const result = await getVehiclesWithLocations();
+      res.writeHead(200);
+      res.end(JSON.stringify(result));
+    } catch(e) {
+      console.error('  [IS] Error:', e.message);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: e.message }));
+    }})();
+    return;
+  }
+
+  // IntelliShift debug probe — hit any IS path and return raw response
+  if (pathname === '/api/intellishift/probe') {
+    const probePath = parsed.query.path || '';
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+    (async () => { try {
+      const token = await getIntelliShiftToken();
+      const r = await isGet(token, probePath);
+      console.log(`  [IS probe] ${probePath} -> ${r.status}: ${JSON.stringify(r.body).substring(0, 400)}`);
+      res.writeHead(200);
+      res.end(JSON.stringify({ status: r.status, body: r.body }));
+    } catch(e) {
+      res.writeHead(200);
+      res.end(JSON.stringify({ error: e.message }));
+    }})();
+    return;
+  }
+
   // Open-Meteo weather (single call, no API key needed)
   if (pathname === '/api/weather') {
     const { lat, lon } = parsed.query;
@@ -235,6 +482,11 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, () => {
   console.log(`\n  Carter Lumber Route Dashboard`);
   console.log(`  http://localhost:${PORT}`);
-  console.log(`\n  Routing: OSRM -> FOSSGIS mirror -> haversine estimate`);
+  console.log(`\n  Routing: Mapbox -> OSRM fallback -> haversine estimate`);
   console.log(`  Logs:\n`);
+
+  // Warm up IntelliShift asset cache in the background at startup
+  if (IS_EMAIL && IS_PASSWORD) {
+    loadBranch570Assets().catch(e => console.warn('  [IS] Startup preload failed:', e.message));
+  }
 });
