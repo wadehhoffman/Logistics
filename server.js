@@ -388,11 +388,13 @@ const server = http.createServer((req, res) => {
   if (pathname === '/api/route') {
     const coords = parsed.query.coords || '';
     const overview = parsed.query.overview || 'full';
-    const qs = `?geometries=geojson&overview=${overview}&access_token=${MAPBOX_TOKEN}`;
-    const mapbox = `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}${qs}`;
-    const osrmFallback = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=${overview}&geometries=geojson`;
-    console.log('  Route request — Mapbox primary, OSRM fallback, haversine estimate');
-    return proxyRequest(mapbox, res, [osrmFallback], () => generateFallbackRoute(coords, overview));
+    // driving-traffic uses real-time traffic for accurate ETAs; falls back to driving profile if needed
+    const qs = `?geometries=geojson&overview=${overview}&annotations=duration,distance,congestion&access_token=${MAPBOX_TOKEN}`;
+    const mapbox         = `https://api.mapbox.com/directions/v5/mapbox/driving-traffic/${coords}${qs}`;
+    const mapboxFallback = `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}${qs}`;
+    const osrmFallback   = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=${overview}&geometries=geojson`;
+    console.log('  Route request — Mapbox driving-traffic -> driving -> OSRM -> haversine');
+    return proxyRequest(mapbox, res, [mapboxFallback, osrmFallback], () => generateFallbackRoute(coords, overview));
   }
 
   // Nominatim geocoding
@@ -457,6 +459,12 @@ const server = http.createServer((req, res) => {
       res.end(JSON.stringify({ error: e.message }));
     }})();
     return;
+  }
+
+  // Client config — vends public tokens safe for browser use
+  if (pathname === '/api/config') {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    return res.end(JSON.stringify({ mapboxToken: MAPBOX_TOKEN }));
   }
 
   // Open-Meteo weather (single call, no API key needed)
