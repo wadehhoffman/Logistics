@@ -522,6 +522,18 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // App version check — iOS app calls this to check for updates
+  if (pathname === '/api/app-version') {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    return res.end(JSON.stringify({
+      version: '1.0.0',             // Bump this when you release a new version
+      minVersion: '1.0.0',          // Minimum supported version (for force-update)
+      installURL: null,             // Set to your OTA install URL when ready, e.g.:
+      // installURL: 'itms-services://?action=download-manifest&url=https://yourserver.com/app/manifest.plist',
+      releaseNotes: 'Initial release with route planning, truck routing, and scheduling.',
+    }));
+  }
+
   // Client config — vends public tokens safe for browser use
   if (pathname === '/api/config') {
     res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });

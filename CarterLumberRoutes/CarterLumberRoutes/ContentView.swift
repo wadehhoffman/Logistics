@@ -917,6 +917,20 @@ struct TruckKPICardView: View {
 
 struct SettingsContentView: View {
     @Environment(AppConfiguration.self) private var config
+    @State private var updateStatus: UpdateCheckStatus = .idle
+    @State private var latestVersion: String?
+    @State private var updateURL: String?
+
+    private var currentVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+    }
+    private var buildNumber: String {
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+    }
+
+    enum UpdateCheckStatus {
+        case idle, checking, upToDate, updateAvailable, error(String)
+    }
 
     var body: some View {
         @Bindable var config = config
@@ -940,6 +954,7 @@ struct SettingsContentView: View {
                 }
                 Text("Get a free API key at eia.gov").font(.caption2).foregroundStyle(.secondary)
             }
+
             Section("IntelliShift") {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Server URL")
@@ -950,6 +965,7 @@ struct SettingsContentView: View {
                 Text("Connects to your Node.js server for truck data.")
                     .font(.caption2).foregroundStyle(.secondary)
             }
+
             Section("Mapbox") {
                 HStack {
                     Text("Token"); Spacer()
@@ -961,14 +977,125 @@ struct SettingsContentView: View {
                     }
                 }
             }
-            Section("About") {
-                HStack { Text("App"); Spacer(); Text("Carter Lumber Route Planner").foregroundStyle(.secondary) }
-                HStack { Text("Version"); Spacer(); Text("1.0.0").foregroundStyle(.secondary) }
-                HStack { Text("Data"); Spacer(); Text("58 mills, 238 yards").foregroundStyle(.secondary) }
+
+            Section("App Info") {
+                HStack {
+                    Text("App")
+                    Spacer()
+                    Text("Carter Lumber Route Planner").foregroundStyle(.secondary)
+                }
+                HStack {
+                    Text("Version")
+                    Spacer()
+                    Text("\(currentVersion) (\(buildNumber))")
+                        .font(.system(.body, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                }
+                HStack {
+                    Text("Data")
+                    Spacer()
+                    Text("58 mills, 238 yards").foregroundStyle(.secondary)
+                }
+            }
+
+            Section("Updates") {
+                Button {
+                    Task { await checkForUpdates() }
+                } label: {
+                    HStack {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                        Text("Check for Updates")
+                        Spacer()
+                        switch updateStatus {
+                        case .idle:
+                            EmptyView()
+                        case .checking:
+                            ProgressView().controlSize(.small)
+                        case .upToDate:
+                            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                        case .updateAvailable:
+                            Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.orange)
+                        case .error:
+                            Image(systemName: "xmark.circle.fill").foregroundStyle(.red)
+                        }
+                    }
+                }
+
+                switch updateStatus {
+                case .upToDate:
+                    Text("You're running the latest version (\(currentVersion))")
+                        .font(.caption).foregroundStyle(.green)
+                case .updateAvailable:
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Version \(latestVersion ?? "?") is available!")
+                            .font(.caption).fontWeight(.semibold).foregroundStyle(.orange)
+                        if let url = updateURL {
+                            Text("Contact your administrator or visit the update link to install.")
+                                .font(.caption2).foregroundStyle(.secondary)
+                            Link("Install Update", destination: URL(string: url)!)
+                                .font(.caption).fontWeight(.semibold)
+                        } else {
+                            Text("Contact your administrator for the update.")
+                                .font(.caption2).foregroundStyle(.secondary)
+                        }
+                    }
+                case .error(let msg):
+                    Text(msg).font(.caption).foregroundStyle(.red)
+                default:
+                    EmptyView()
+                }
             }
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { Button("Save") { config.save() } }
         }
+    }
+
+    private func checkForUpdates() async {
+        updateStatus = .checking
+
+        // Check the server for a version manifest
+        let urlStr = "\(config.intelliShiftBaseURL)/api/app-version"
+        guard let url = URL(string: urlStr) else {
+            updateStatus = .error("Invalid server URL")
+            return
+        }
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: URLRequest(url: url))
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                updateStatus = .error("Server returned an error")
+                return
+            }
+            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let latest = json["version"] as? String else {
+                updateStatus = .error("Invalid version response")
+                return
+            }
+
+            latestVersion = latest
+            updateURL = json["installURL"] as? String
+
+            if compareVersions(current: currentVersion, latest: latest) {
+                updateStatus = .updateAvailable
+            } else {
+                updateStatus = .upToDate
+            }
+        } catch {
+            updateStatus = .error("Could not reach server: \(error.localizedDescription)")
+        }
+    }
+
+    /// Returns true if latest > current
+    private func compareVersions(current: String, latest: String) -> Bool {
+        let c = current.split(separator: ".").compactMap { Int($0) }
+        let l = latest.split(separator: ".").compactMap { Int($0) }
+        for i in 0..<max(c.count, l.count) {
+            let cv = i < c.count ? c[i] : 0
+            let lv = i < l.count ? l[i] : 0
+            if lv > cv { return true }
+            if lv < cv { return false }
+        }
+        return false
     }
 }
