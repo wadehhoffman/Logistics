@@ -1119,6 +1119,7 @@ truckRouteMillSel.addEventListener('change', async () => {
   const coords = await geocodeAddress(m.address);
   if (coords) {
     truckRouteMillCoords = coords;
+    window._lastTruckMillCoord = { lat: coords.lat, lon: coords.lon };
     showStatus('truckRouteStatus', '', false);
     if (truckRouteMillMarker) map.removeLayer(truckRouteMillMarker);
     truckRouteMillMarker = L.circleMarker([coords.lat, coords.lon], {radius: 8, color: '#c62828', fillColor: '#e53935', fillOpacity: 0.9, weight: 2})
@@ -1340,6 +1341,7 @@ millSel.addEventListener('change', async () => {
   const coords = await geocodeAddress(m.address);
   if (coords) {
     millCoords = coords;
+    window._lastMillCoord = { lat: coords.lat, lon: coords.lon };
     showStatus('statusMsg', '', false);
     if (millMarker) map.removeLayer(millMarker);
     millMarker = L.circleMarker([coords.lat, coords.lon], {radius: 8, color: '#c62828', fillColor: '#e53935', fillOpacity: 0.9, weight: 2})
@@ -1524,6 +1526,111 @@ let scheduleCalendarMonth = new Date().getMonth(); // 0-indexed
 let allSchedules = [];
 let lastSingleRouteDurationSec = 0;
 let lastTruckRouteDurationSec = 0;
+let scheduleSelectedTruck = null; // {id, name, driver} selected in schedule modal
+let scheduleMillCoord = null;     // {lat, lon} of the mill for distance calc
+
+async function toggleScheduleTruckPicker() {
+  const picker = document.getElementById('scheduleTruckPicker');
+  if (picker.style.display !== 'none') {
+    picker.style.display = 'none';
+    return;
+  }
+  picker.style.display = 'block';
+  const listEl = document.getElementById('scheduleTruckList');
+  listEl.innerHTML = '<div style="text-align:center;padding:12px;color:#888;">Loading trucks...</div>';
+
+  try {
+    const resp = await fetch('/api/intellishift/vehicles');
+    if (!resp.ok) throw new Error('Could not load trucks');
+    const data = await resp.json();
+    const vehicles = data.vehicles || [];
+
+    if (vehicles.length === 0) {
+      listEl.innerHTML = '<div style="text-align:center;padding:12px;color:#888;">No trucks available</div>';
+      return;
+    }
+
+    // Get the scheduled date to check for conflicts
+    const schedDate = document.getElementById('scheduleDate').value; // "2026-04-15"
+
+    // Fetch existing schedules for that date to find booked trucks
+    let bookedTruckIds = new Set();
+    try {
+      const month = schedDate.substring(0, 7);
+      const schedResp = await fetch(`/api/schedule?month=${month}`);
+      if (schedResp.ok) {
+        const schedData = await schedResp.json();
+        (schedData.schedules || []).forEach(s => {
+          if (s.scheduledAt && s.scheduledAt.startsWith(schedDate) && s.status === 'scheduled' && s.truck) {
+            if (s.truck.id) bookedTruckIds.add(String(s.truck.id));
+            if (s.truck.name) bookedTruckIds.add(s.truck.name);
+          }
+        });
+      }
+    } catch(e) { /* ignore */ }
+
+    // Calculate distance and sort
+    const trucksWithDist = vehicles.map(v => {
+      let distMi = null;
+      if (scheduleMillCoord && v.lat && v.lon) {
+        const km = haversine(v.lat, v.lon, scheduleMillCoord.lat, scheduleMillCoord.lon);
+        distMi = km * 0.621371;
+      }
+      const booked = bookedTruckIds.has(String(v.id)) || bookedTruckIds.has(v.name);
+      return { ...v, distMi, booked };
+    });
+
+    // Sort: available first, then by distance
+    trucksWithDist.sort((a, b) => {
+      if (a.booked !== b.booked) return a.booked ? 1 : -1;
+      if (a.distMi === null && b.distMi === null) return 0;
+      if (a.distMi === null) return 1;
+      if (b.distMi === null) return -1;
+      return a.distMi - b.distMi;
+    });
+
+    listEl.innerHTML = trucksWithDist.map(v => {
+      const statusColor = v.speed > 0 ? '#1565c0' : (!v.engineOn ? '#b71c1c' : '#e65100');
+      const statusLabel = v.speed > 0 ? 'Moving' : (!v.engineOn ? 'Stopped' : 'Idle');
+      const distLabel = v.distMi !== null ? `${v.distMi.toFixed(0)} mi` : '—';
+      const loc = [v.city, v.state].filter(Boolean).join(', ');
+      const opacity = v.booked ? '0.45' : '1';
+      const bookedBadge = v.booked ? '<span style="background:#fde8e8;color:#c62828;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:6px;">BOOKED</span>' : '';
+      const cursor = v.booked ? 'default' : 'pointer';
+      const onclick = v.booked ? '' : `onclick="selectScheduleTruck('${v.id}','${(v.name||'').replace(/'/g,"\\'")}','${(v.driver||'').replace(/'/g,"\\'")}')"`;
+      return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #eee;cursor:${cursor};opacity:${opacity};transition:background 0.15s;" ${v.booked ? '' : 'onmouseover="this.style.background=\'#f0f4f8\'" onmouseout="this.style.background=\'\'"'} ${onclick}>
+        <div style="width:8px;height:8px;border-radius:50%;background:${v.booked ? '#999' : statusColor};flex-shrink:0;"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;">${v.name}${bookedBadge}</div>
+          <div style="font-size:10px;color:#888;">${loc}${v.driver ? ' — ' + v.driver : ''}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-weight:700;color:${v.booked ? '#999' : '#1a3a5c'};">${distLabel}</div>
+          <div style="font-size:9px;color:${v.booked ? '#c62828' : statusColor};font-weight:600;">${v.booked ? 'Scheduled' : statusLabel}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    listEl.innerHTML = `<div style="text-align:center;padding:12px;color:#c62828;">Error: ${e.message}</div>`;
+  }
+}
+
+function selectScheduleTruck(id, name, driver) {
+  scheduleSelectedTruck = { id, name, driver };
+  document.getElementById('scheduleTruckLabel').innerHTML =
+    `<span style="color:#1a3a5c;font-weight:600;">🚛 ${name}</span>` +
+    (driver ? `<span style="color:#888;margin-left:4px;">— ${driver}</span>` : '');
+  document.getElementById('scheduleTruckAction').textContent = '✕ Remove';
+  document.getElementById('scheduleTruckAction').onclick = function(e) {
+    e.stopPropagation();
+    scheduleSelectedTruck = null;
+    document.getElementById('scheduleTruckLabel').textContent = 'None — tap to assign';
+    document.getElementById('scheduleTruckAction').textContent = '🚛 Assign';
+    document.getElementById('scheduleTruckAction').onclick = null;
+    document.getElementById('scheduleTruckPicker').style.display = 'none';
+  };
+  document.getElementById('scheduleTruckPicker').style.display = 'none';
+}
 
 function openScheduleModal(type) {
   const modal = document.getElementById('scheduleModal');
@@ -1536,6 +1643,14 @@ function openScheduleModal(type) {
   document.getElementById('scheduleTime').value = '06:00';
   document.getElementById('scheduleNotes').value = '';
 
+  // Reset truck picker
+  scheduleSelectedTruck = null;
+  scheduleMillCoord = null;
+  document.getElementById('scheduleTruckLabel').textContent = 'None — tap to assign';
+  document.getElementById('scheduleTruckAction').textContent = '🚛 Assign';
+  document.getElementById('scheduleTruckAction').onclick = null;
+  document.getElementById('scheduleTruckPicker').style.display = 'none';
+
   let summary = '';
   if (type === 'single') {
     const millOpt = document.getElementById('millSelect').selectedOptions[0];
@@ -1544,7 +1659,8 @@ function openScheduleModal(type) {
     summary = `<strong>Mill:</strong> ${millOpt ? millOpt.textContent : '—'}<br>` +
               `<strong>Yard:</strong> ${yardOpt ? yardOpt.textContent : '—'}<br>` +
               `<strong>Distance:</strong> ${dist}`;
-    document.getElementById('scheduleTruckDisplay').textContent = 'None';
+    // Store mill coord for truck distance calc (use the geocoded mill marker if available)
+    if (window._lastMillCoord) scheduleMillCoord = window._lastMillCoord;
   } else {
     const truckOpt = document.getElementById('truckRouteSelect').selectedOptions[0];
     const millOpt = document.getElementById('truckRouteMillSelect').selectedOptions[0];
@@ -1554,7 +1670,11 @@ function openScheduleModal(type) {
               `<strong>Mill:</strong> ${millOpt ? millOpt.textContent : '—'}<br>` +
               `<strong>Yard:</strong> ${yardOpt ? yardOpt.textContent : '—'}<br>` +
               `<strong>Total Distance:</strong> ${dist}`;
-    document.getElementById('scheduleTruckDisplay').textContent = truckOpt ? truckOpt.textContent : 'None';
+    // Pre-select the truck from the truck route tab
+    if (truckOpt && truckOpt.value) {
+      selectScheduleTruck(truckOpt.value, truckOpt.textContent.trim(), '');
+    }
+    if (window._lastTruckMillCoord) scheduleMillCoord = window._lastTruckMillCoord;
   }
   document.getElementById('scheduleModalSummary').innerHTML = summary;
   modal.style.display = 'flex';
@@ -1574,6 +1694,11 @@ async function submitSchedule() {
 
   let payload = { date, time, notes, type };
 
+  // Always include selected truck if one was picked in the modal
+  if (scheduleSelectedTruck) {
+    payload.truck = { id: scheduleSelectedTruck.id, name: scheduleSelectedTruck.name, driver: scheduleSelectedTruck.driver };
+  }
+
   if (type === 'single') {
     const millOpt = document.getElementById('millSelect').selectedOptions[0];
     const yardOpt = document.getElementById('yardSelect').selectedOptions[0];
@@ -1591,12 +1716,8 @@ async function submitSchedule() {
     payload.duration = lastSingleRouteDurationSec;
     payload.fuelCost = document.getElementById('fuelCostTotal').textContent;
   } else {
-    const truckOpt = document.getElementById('truckRouteSelect').selectedOptions[0];
     const millOpt = document.getElementById('truckRouteMillSelect').selectedOptions[0];
     const yardOpt = document.getElementById('truckRouteYardSelect').selectedOptions[0];
-    if (truckOpt && truckOpt.value) {
-      payload.truck = { id: truckOpt.value, name: truckOpt.textContent };
-    }
     if (millOpt && millOpt.value) {
       const mIdx = parseInt(millOpt.value);
       const m = MILLS[mIdx];
@@ -1942,7 +2063,15 @@ function switchScheduleView(view) {
     <label>Time</label>
     <input type="time" id="scheduleTime" value="06:00" />
     <label>Truck Assignment</label>
-    <div id="scheduleTruckDisplay" style="font-size:13px;color:#555;padding:8px 10px;background:#f0f2f5;border-radius:4px;">None</div>
+    <div id="scheduleTruckArea">
+      <div id="scheduleTruckDisplay" style="font-size:13px;color:#555;padding:8px 10px;background:#f0f2f5;border-radius:4px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;" onclick="toggleScheduleTruckPicker()">
+        <span id="scheduleTruckLabel">None — tap to assign</span>
+        <span style="color:#e65100;font-weight:600;font-size:12px;" id="scheduleTruckAction">🚛 Assign</span>
+      </div>
+      <div id="scheduleTruckPicker" style="display:none;border:1px solid #dde3ea;border-radius:6px;margin-top:4px;max-height:200px;overflow-y:auto;">
+        <div id="scheduleTruckList" style="font-size:12px;"></div>
+      </div>
+    </div>
     <label>Notes</label>
     <textarea id="scheduleNotes" placeholder="Optional notes for this scheduled route..."></textarea>
     <input type="hidden" id="scheduleType" value="single" />
