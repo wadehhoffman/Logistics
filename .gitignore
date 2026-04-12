@@ -10,3 +10,10 @@ secrets.js
 
 # Node
 node_modules/
+
+# iOS / Xcode
+CarterLumberRoutes/CarterLumberRoutes.xcodeproj/xcuserdata/
+CarterLumberRoutes/CarterLumberRoutes.xcodeproj/project.xcworkspace/xcuserdata/
+CarterLumberRoutes/DerivedData/
+CarterLumberRoutes/.build/
+*.xcuserstate
