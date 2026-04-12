@@ -121,9 +121,10 @@ extension MKCoordinateRegion {
             latitude: (minLat + maxLat) / 2,
             longitude: (minLon + maxLon) / 2
         )
+        // Extra padding: shift center up slightly so route isn't hidden behind bottom-right overlay
         let span = MKCoordinateSpan(
-            latitudeDelta: max(0.02, (maxLat - minLat) * 1.3),
-            longitudeDelta: max(0.02, (maxLon - minLon) * 1.3)
+            latitudeDelta: max(0.05, (maxLat - minLat) * 1.6),
+            longitudeDelta: max(0.05, (maxLon - minLon) * 1.5)
         )
         self = MKCoordinateRegion(center: center, span: span)
     }

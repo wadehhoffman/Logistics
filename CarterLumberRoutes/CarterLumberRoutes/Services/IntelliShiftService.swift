@@ -9,30 +9,46 @@ actor IntelliShiftService {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 20
         self.session = URLSession(configuration: config)
+        print("[IntelliShift] Initialized with baseURL: \(self.baseURL)")
     }
 
-    /// Fetch vehicle locations from the Node.js proxy server.
-    /// The server handles IntelliShift authentication and Branch 570 filtering.
     func fetchVehicles() async throws -> [Vehicle] {
-        guard let url = URL(string: "\(baseURL)/api/intellishift/vehicles") else {
+        let urlString = "\(baseURL)/api/intellishift/vehicles"
+        print("[IntelliShift] Fetching vehicles from: \(urlString)")
+
+        guard let url = URL(string: urlString) else {
+            print("[IntelliShift] ERROR: Invalid URL")
             throw IntelliShiftError.invalidURL
         }
 
-        let (data, response) = try await session.data(for: URLRequest(url: url))
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw IntelliShiftError.networkError("Invalid response")
-        }
+        do {
+            let (data, response) = try await session.data(for: URLRequest(url: url))
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("[IntelliShift] ERROR: Invalid response type")
+                throw IntelliShiftError.networkError("Invalid response")
+            }
 
-        if httpResponse.statusCode == 503 {
-            throw IntelliShiftError.notConfigured
-        }
+            print("[IntelliShift] Response status: \(httpResponse.statusCode), bytes: \(data.count)")
 
-        guard httpResponse.statusCode == 200 else {
-            throw IntelliShiftError.networkError("Status \(httpResponse.statusCode)")
-        }
+            if httpResponse.statusCode == 503 {
+                throw IntelliShiftError.notConfigured
+            }
 
-        let vehiclesResponse = try JSONDecoder().decode(VehiclesResponse.self, from: data)
-        return vehiclesResponse.vehicles
+            guard httpResponse.statusCode == 200 else {
+                let body = String(data: data, encoding: .utf8) ?? "n/a"
+                print("[IntelliShift] ERROR body: \(body.prefix(200))")
+                throw IntelliShiftError.networkError("Status \(httpResponse.statusCode)")
+            }
+
+            let vehiclesResponse = try JSONDecoder().decode(VehiclesResponse.self, from: data)
+            print("[IntelliShift] Decoded \(vehiclesResponse.vehicles.count) vehicles")
+            return vehiclesResponse.vehicles
+        } catch let error as IntelliShiftError {
+            throw error
+        } catch {
+            print("[IntelliShift] NETWORK ERROR: \(error.localizedDescription)")
+            throw IntelliShiftError.networkError(error.localizedDescription)
+        }
     }
 
     enum IntelliShiftError: Error, LocalizedError {

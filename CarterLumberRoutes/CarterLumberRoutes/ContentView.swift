@@ -9,22 +9,22 @@ struct ContentView: View {
     enum AppPage: String, CaseIterable, Identifiable {
         case singleRoute = "Route Planner"
         case truckRoute = "Truck Route"
+        case schedule = "Schedule"
         case settings = "Settings"
-
         var id: String { rawValue }
-
         var icon: String {
             switch self {
             case .singleRoute: return "arrow.triangle.turn.up.right.diamond"
             case .truckRoute: return "truck.box.fill"
+            case .schedule: return "calendar"
             case .settings: return "gear"
             }
         }
-
         var subtitle: String {
             switch self {
             case .singleRoute: return "Mill to Yard routing"
             case .truckRoute: return "Live truck + 2-leg route"
+            case .schedule: return "View & manage scheduled routes"
             case .settings: return "API keys, fuel settings"
             }
         }
@@ -33,88 +33,77 @@ struct ContentView: View {
     var body: some View {
         ZStack {
             mainContent.disabled(showMenu)
-
             if showMenu {
-                Color.black.opacity(0.4)
-                    .ignoresSafeArea()
+                Color.black.opacity(0.4).ignoresSafeArea()
                     .onTapGesture { withAnimation(.easeOut(duration: 0.25)) { showMenu = false } }
                     .transition(.opacity)
             }
-
             sideMenu
         }
         .animation(.easeOut(duration: 0.25), value: showMenu)
     }
 
-    // MARK: - Main Content
-
     @ViewBuilder
     private var mainContent: some View {
-        NavigationStack {
-            Group {
-                switch selectedPage {
-                case .singleRoute:  SingleRouteContentView()
-                case .truckRoute:   TruckRouteContentView()
-                case .settings:     SettingsContentView()
-                }
-            }
-            .navigationTitle(selectedPage.rawValue)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        withAnimation(.easeOut(duration: 0.25)) { showMenu = true }
-                    } label: {
-                        Image(systemName: "line.3.horizontal")
-                            .font(.title3)
-                            .foregroundStyle(Color.carterBlue)
+        switch selectedPage {
+        case .singleRoute:
+            SingleRouteContentView(showMenu: $showMenu)
+        case .truckRoute:
+            TruckRouteContentView(showMenu: $showMenu)
+        case .schedule:
+            NavigationStack {
+                ScheduleContentView()
+                    .navigationTitle("Schedule")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button { withAnimation(.easeOut(duration: 0.25)) { showMenu = true } } label: {
+                                Image(systemName: "line.3.horizontal").font(.title3).foregroundStyle(Color.carterBlue)
+                            }
+                        }
                     }
-                }
+            }
+        case .settings:
+            NavigationStack {
+                SettingsContentView()
+                    .navigationTitle("Settings")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button { withAnimation(.easeOut(duration: 0.25)) { showMenu = true } } label: {
+                                Image(systemName: "line.3.horizontal").font(.title3).foregroundStyle(Color.carterBlue)
+                            }
+                        }
+                    }
             }
         }
     }
-
-    // MARK: - Side Menu
 
     private var sideMenu: some View {
         HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 0) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Image(systemName: "building.2.fill")
-                        .font(.system(size: 32)).foregroundStyle(.white)
-                    Text("Carter Lumber")
-                        .font(.title2).fontWeight(.bold).foregroundStyle(.white)
-                    Text("Route Planner")
-                        .font(.subheadline).foregroundStyle(.white.opacity(0.8))
+                    Image(systemName: "building.2.fill").font(.system(size: 32)).foregroundStyle(.white)
+                    Text("Carter Lumber").font(.title2).fontWeight(.bold).foregroundStyle(.white)
+                    Text("Route Planner").font(.subheadline).foregroundStyle(.white.opacity(0.8))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(24).padding(.top, 20)
-                .background(LinearGradient(
-                    colors: [Color.carterDarkBlue, Color.carterBlue],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
-                ))
+                .background(LinearGradient(colors: [Color.carterDarkBlue, Color.carterBlue], startPoint: .topLeading, endPoint: .bottomTrailing))
 
-                VStack(spacing: 4) {
-                    ForEach(AppPage.allCases) { page in menuItem(page: page) }
-                }
-                .padding(.top, 12).padding(.horizontal, 12)
-
+                VStack(spacing: 4) { ForEach(AppPage.allCases) { page in menuItem(page: page) } }
+                    .padding(.top, 12).padding(.horizontal, 12)
                 Spacer()
-
                 VStack(alignment: .leading, spacing: 4) {
                     Divider()
                     Text("58 mills / 238 yards").font(.caption2).foregroundStyle(.tertiary)
                     Text("v1.0.0").font(.caption2).foregroundStyle(.quaternary)
-                }
-                .padding(.horizontal, 24).padding(.bottom, 24)
+                }.padding(.horizontal, 24).padding(.bottom, 24)
             }
-            .frame(maxWidth: .infinity)
-            .background(Color(.systemBackground))
+            .frame(maxWidth: .infinity).background(Color(.systemBackground))
             .offset(x: showMenu ? 0 : -UIScreen.main.bounds.width)
-
             Spacer(minLength: 0)
-        }
-        .ignoresSafeArea()
+        }.ignoresSafeArea()
     }
 
     private func menuItem(page: AppPage) -> some View {
@@ -123,8 +112,7 @@ struct ContentView: View {
             withAnimation(.easeOut(duration: 0.25)) { showMenu = false }
         } label: {
             HStack(spacing: 14) {
-                Image(systemName: page.icon)
-                    .font(.title3).frame(width: 28)
+                Image(systemName: page.icon).font(.title3).frame(width: 28)
                     .foregroundStyle(selectedPage == page ? .white : Color.carterBlue)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(page.rawValue).font(.body).fontWeight(.semibold)
@@ -138,23 +126,45 @@ struct ContentView: View {
                 }
             }
             .padding(.horizontal, 16).padding(.vertical, 14)
-            .background(selectedPage == page ? Color.carterBlue : Color.clear)
-            .cornerRadius(12)
-        }
-        .buttonStyle(.plain)
+            .background(selectedPage == page ? Color.carterBlue : Color.clear).cornerRadius(12)
+        }.buttonStyle(.plain)
     }
 }
 
-// MARK: - Single Route (collapsing picker → metrics)
+// MARK: - Floating hamburger button overlay
+
+struct FloatingMenuButton: View {
+    @Binding var showMenu: Bool
+
+    var body: some View {
+        Button {
+            withAnimation(.easeOut(duration: 0.25)) { showMenu = true }
+        } label: {
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 40, height: 40)
+                .background(.ultraThinMaterial)
+                .background(Color.black.opacity(0.35))
+                .clipShape(Circle())
+                .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
+        }
+    }
+}
+
+// MARK: - Single Route
 
 struct SingleRouteContentView: View {
+    @Binding var showMenu: Bool
     @Environment(AppConfiguration.self) private var config
     @Environment(LocationDataStore.self) private var locationStore
     @State private var viewModel: SingleRouteViewModel?
     @State private var mapViewModel = MapViewModel()
     @State private var showingMillPicker = false
     @State private var showingYardPicker = false
-    @State private var pickersExpanded = true
+    @State private var showingKPICard = false
+    @State private var showingScheduleSheet = false
+    @State private var scheduleVM: ScheduleViewModel?
 
     var body: some View {
         if let viewModel {
@@ -167,179 +177,284 @@ struct SingleRouteContentView: View {
 
     @ViewBuilder
     private func mainContent(vm: SingleRouteViewModel) -> some View {
-        GeometryReader { geo in
-            VStack(spacing: 0) {
-                // Top half: Map
-                MapContainerView(
-                    routeCoordinates: mapViewModel.routeCoordinates,
-                    annotations: mapViewModel.allAnnotations,
-                    isFallbackRoute: mapViewModel.isFallbackRoute,
-                    showTrafficLayer: mapViewModel.showTrafficLayer
-                )
-                .frame(height: geo.size.height * 0.5)
-
-                Divider()
-
-                // Bottom half: pickers or results
-                ScrollView {
-                    VStack(spacing: 12) {
-                        // Collapsed route summary strip (when route exists and pickers hidden)
-                        if vm.routeResult != nil {
-                            collapsedPickerStrip(vm: vm)
-                        }
-
-                        // Expanded pickers
-                        if pickersExpanded || vm.routeResult == nil {
-                            pickerSection(vm: vm)
-                        }
-
-                        // Error
-                        if let error = vm.errorMessage {
-                            Text(error).font(.caption).foregroundStyle(.red)
-                                .padding(10).frame(maxWidth: .infinity)
-                                .background(Color.red.opacity(0.1)).cornerRadius(6)
-                        }
-
-                        // Results metrics
-                        if let route = vm.routeResult {
-                            RouteSummaryCard(route: route)
-                            if let fuel = vm.fuelEstimate { FuelEstimateCard(estimate: fuel) }
-                            if !vm.weatherPoints.isEmpty {
-                                WeatherAlongRouteCard(points: vm.weatherPoints)
-                            } else if vm.isFetchingWeather {
-                                ProgressView("Fetching weather...").padding()
-                            }
-
-                            Button {
-                                withAnimation(.spring(duration: 0.3)) {
-                                    vm.clearRoute()
-                                    mapViewModel.clearRoute()
-                                    pickersExpanded = true
-                                }
-                            } label: {
-                                Label("New Route", systemImage: "arrow.counterclockwise")
-                                    .font(.subheadline).fontWeight(.semibold)
-                                    .frame(maxWidth: .infinity).padding(12)
-                                    .background(Color(.systemGray5)).cornerRadius(8)
-                            }
-                            .buttonStyle(.plain)
-                            .padding(.top, 4)
-                        }
-                    }
-                    .padding()
-                }
-            }
-        }
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { mapViewModel.showTrafficLayer.toggle() } label: {
-                    Image(systemName: mapViewModel.showTrafficLayer ? "car.fill" : "car")
-                }
+        ZStack {
+            if vm.routeResult != nil {
+                fullScreenMapView(vm: vm)
+            } else {
+                pickerModeView(vm: vm)
             }
         }
         .sheet(isPresented: $showingMillPicker) {
-            MillPickerView(mills: locationStore.mills) { mill in
-                Task { await vm.selectMill(mill) }
-            }
+            MillPickerView(mills: locationStore.mills) { mill in Task { await vm.selectMill(mill) } }
         }
         .sheet(isPresented: $showingYardPicker) {
-            YardPickerView(yards: locationStore.yards) { yard in
-                vm.selectedYard = yard
+            YardPickerView(yards: locationStore.yards) { yard in vm.selectedYard = yard }
+        }
+        .fullScreenCover(isPresented: $showingKPICard) {
+            if let vm = viewModel {
+                RouteKPICardView(vm: vm, mapViewModel: mapViewModel) { showingKPICard = false }
             }
+        }
+        .sheet(isPresented: $showingScheduleSheet) {
+            if let vm = viewModel {
+                ScheduleRouteSheet(
+                    routeType: "single",
+                    mill: vm.selectedMill,
+                    yard: vm.selectedYard,
+                    truck: nil,
+                    distance: vm.routeResult?.formattedDistance,
+                    duration: vm.routeResult?.duration,
+                    fuelCost: vm.fuelEstimate?.totalCost,
+                    vm: scheduleVM ?? ScheduleViewModel(config: config),
+                    onDone: { }
+                )
+            }
+        }
+        .onAppear {
+            if scheduleVM == nil { scheduleVM = ScheduleViewModel(config: config) }
         }
     }
 
     @ViewBuilder
-    private func collapsedPickerStrip(vm: SingleRouteViewModel) -> some View {
-        Button {
-            withAnimation(.spring(duration: 0.3)) { pickersExpanded.toggle() }
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "building.2.fill").foregroundStyle(.red).font(.caption)
-                Text(vm.selectedMill?.name ?? "").font(.caption).lineLimit(1)
-                Image(systemName: "arrow.right").font(.caption2).foregroundStyle(.secondary)
-                Image(systemName: "house.fill").foregroundStyle(Color.carterBlue).font(.caption)
-                Text(vm.selectedYard?.displayName ?? "").font(.caption).lineLimit(1)
+    private func fullScreenMapView(vm: SingleRouteViewModel) -> some View {
+        MapContainerView(
+            routeCoordinates: mapViewModel.routeCoordinates,
+            annotations: mapViewModel.allAnnotations,
+            isFallbackRoute: mapViewModel.isFallbackRoute,
+            showTrafficLayer: mapViewModel.showTrafficLayer
+        )
+        .ignoresSafeArea()
+
+        // Top-left: hamburger
+        VStack {
+            HStack {
+                FloatingMenuButton(showMenu: $showMenu)
                 Spacer()
-                Image(systemName: pickersExpanded ? "chevron.up" : "chevron.down")
-                    .font(.caption).foregroundStyle(.secondary)
             }
-            .padding(10)
-            .background(Color(.systemGray6))
-            .cornerRadius(8)
+            .padding(.leading, 16)
+            .padding(.top, 4)
+
+            Spacer()
+
+            // Bottom bar: distance left, buttons right
+            HStack(alignment: .bottom) {
+                // Bottom-left: distance label
+                if let route = vm.routeResult {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(route.formattedDistance)
+                            .font(.system(size: 28, weight: .heavy))
+                        Text(route.formattedDuration)
+                            .font(.system(size: 15, weight: .semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 18).padding(.vertical, 12)
+                    .background(.ultraThinMaterial)
+                    .background(Color.black.opacity(0.45))
+                    .cornerRadius(14)
+                    .shadow(color: .black.opacity(0.35), radius: 10, y: 5)
+                }
+
+                Spacer()
+
+                // Bottom-right: action buttons
+                VStack(spacing: 12) {
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) {
+                            vm.clearRoute(); mapViewModel.clearRoute()
+                        }
+                    } label: {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
+                            .frame(width: 46, height: 46)
+                            .background(.ultraThinMaterial)
+                            .background(Color.black.opacity(0.4))
+                            .clipShape(Circle())
+                            .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
+                    }
+
+                    Button { showingScheduleSheet = true } label: {
+                        Image(systemName: "calendar.badge.plus")
+                            .font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
+                            .frame(width: 46, height: 46)
+                            .background(Color.orange)
+                            .clipShape(Circle())
+                            .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
+                    }
+
+                    Button { showingKPICard = true } label: {
+                        Image(systemName: "info.circle.fill")
+                            .font(.system(size: 18, weight: .bold)).foregroundStyle(.white)
+                            .frame(width: 46, height: 46)
+                            .background(Color.carterBlue)
+                            .clipShape(Circle())
+                            .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 36)
         }
-        .buttonStyle(.plain)
     }
 
     @ViewBuilder
-    private func pickerSection(vm: SingleRouteViewModel) -> some View {
-        VStack(spacing: 12) {
-            // Mill Picker
-            VStack(alignment: .leading, spacing: 4) {
-                Text("MILL / SUPPLIER").font(.caption2).fontWeight(.bold).foregroundStyle(.secondary)
-                Button { showingMillPicker = true } label: {
-                    HStack {
-                        Text(vm.selectedMill?.shortName ?? "Select a mill or supplier")
-                            .foregroundStyle(vm.selectedMill != nil ? .primary : .secondary)
-                        Spacer()
-                        if vm.isGeocodingMill { ProgressView().controlSize(.small) }
-                        else { Image(systemName: "chevron.right").foregroundStyle(.secondary) }
-                    }
-                    .padding(12).background(Color(.systemGray6)).cornerRadius(8)
-                }
-                .buttonStyle(.plain)
-                if let mill = vm.selectedMill {
-                    Text(mill.address).font(.caption).foregroundStyle(.secondary)
-                }
-            }
+    private func pickerModeView(vm: SingleRouteViewModel) -> some View {
+        NavigationStack {
+            GeometryReader { geo in
+                VStack(spacing: 0) {
+                    MapContainerView(
+                        routeCoordinates: mapViewModel.routeCoordinates,
+                        annotations: mapViewModel.allAnnotations,
+                        isFallbackRoute: mapViewModel.isFallbackRoute,
+                        showTrafficLayer: mapViewModel.showTrafficLayer
+                    )
+                    .frame(height: geo.size.height * 0.5)
 
-            // Yard Picker
-            VStack(alignment: .leading, spacing: 4) {
-                Text("YARD").font(.caption2).fontWeight(.bold).foregroundStyle(.secondary)
-                Button { showingYardPicker = true } label: {
-                    HStack {
-                        Text(vm.selectedYard?.displayName ?? "Select a yard")
-                            .foregroundStyle(vm.selectedYard != nil ? .primary : .secondary)
-                        Spacer()
-                        Image(systemName: "chevron.right").foregroundStyle(.secondary)
-                    }
-                    .padding(12).background(Color(.systemGray6)).cornerRadius(8)
-                }
-                .buttonStyle(.plain)
-                if let yard = vm.selectedYard {
-                    Text("\(yard.fullAddress) — \(yard.manager)")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-            }
+                    Divider()
 
-            // Route Button
-            Button {
-                Task {
-                    await vm.calculateRoute()
-                    if let result = vm.routeResult, let mill = vm.selectedMill,
-                       let coord = vm.millCoordinate, let yard = vm.selectedYard {
-                        mapViewModel.setRoute(result: result, mill: mill, millCoord: coord, yard: yard)
-                        withAnimation(.spring(duration: 0.3)) { pickersExpanded = false }
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            if let error = vm.errorMessage {
+                                Text(error).font(.caption).foregroundStyle(.red)
+                                    .padding(10).frame(maxWidth: .infinity)
+                                    .background(Color.red.opacity(0.1)).cornerRadius(6)
+                            }
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("MILL / SUPPLIER").font(.caption2).fontWeight(.bold).foregroundStyle(.secondary)
+                                Button { showingMillPicker = true } label: {
+                                    HStack {
+                                        Text(vm.selectedMill?.shortName ?? "Select a mill or supplier")
+                                            .foregroundStyle(vm.selectedMill != nil ? .primary : .secondary)
+                                        Spacer()
+                                        if vm.isGeocodingMill { ProgressView().controlSize(.small) }
+                                        else { Image(systemName: "chevron.right").foregroundStyle(.secondary) }
+                                    }
+                                    .padding(12).background(Color(.systemGray6)).cornerRadius(8)
+                                }.buttonStyle(.plain)
+                                if let mill = vm.selectedMill {
+                                    Text(mill.address).font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("YARD").font(.caption2).fontWeight(.bold).foregroundStyle(.secondary)
+                                Button { showingYardPicker = true } label: {
+                                    HStack {
+                                        Text(vm.selectedYard?.displayName ?? "Select a yard")
+                                            .foregroundStyle(vm.selectedYard != nil ? .primary : .secondary)
+                                        Spacer()
+                                        Image(systemName: "chevron.right").foregroundStyle(.secondary)
+                                    }
+                                    .padding(12).background(Color(.systemGray6)).cornerRadius(8)
+                                }.buttonStyle(.plain)
+                                if let yard = vm.selectedYard {
+                                    Text("\(yard.fullAddress) — \(yard.manager)")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
+
+                            Button {
+                                Task {
+                                    await vm.calculateRoute()
+                                    if let result = vm.routeResult, let mill = vm.selectedMill,
+                                       let coord = vm.millCoordinate, let yard = vm.selectedYard {
+                                        mapViewModel.setRoute(result: result, mill: mill, millCoord: coord, yard: yard)
+                                    }
+                                }
+                            } label: {
+                                HStack {
+                                    if vm.isCalculating { ProgressView().controlSize(.small).tint(.white) }
+                                    Text(vm.isCalculating ? "Calculating..." : "Get Route & Distance").fontWeight(.semibold)
+                                }
+                                .frame(maxWidth: .infinity).padding(14)
+                                .background(vm.canCalculate ? Color.carterBlue : Color.gray)
+                                .foregroundStyle(.white).cornerRadius(8)
+                            }.disabled(!vm.canCalculate)
+                        }
+                        .padding()
                     }
                 }
-            } label: {
-                HStack {
-                    if vm.isCalculating { ProgressView().controlSize(.small).tint(.white) }
-                    Text(vm.isCalculating ? "Calculating..." : "Get Route & Distance")
-                        .fontWeight(.semibold)
-                }
-                .frame(maxWidth: .infinity).padding(14)
-                .background(vm.canCalculate ? Color.carterBlue : Color.gray)
-                .foregroundStyle(.white).cornerRadius(8)
             }
-            .disabled(!vm.canCalculate)
+            .navigationTitle("Route Planner")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { withAnimation(.easeOut(duration: 0.25)) { showMenu = true } } label: {
+                        Image(systemName: "line.3.horizontal").font(.title3).foregroundStyle(Color.carterBlue)
+                    }
+                }
+            }
         }
     }
 }
 
-// MARK: - Truck Route (collapsing picker → metrics)
+// MARK: - Route KPI Full Screen Card
+
+struct RouteKPICardView: View {
+    let vm: SingleRouteViewModel
+    let mapViewModel: MapViewModel
+    let onDismiss: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 16) {
+                    if let mill = vm.selectedMill, let yard = vm.selectedYard {
+                        HStack(spacing: 8) {
+                            Image(systemName: "building.2.fill").foregroundStyle(.red)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(mill.name).font(.subheadline).fontWeight(.semibold)
+                                Text("\(mill.city), \(mill.state)").font(.caption).foregroundStyle(.secondary)
+                            }
+                        }.frame(maxWidth: .infinity, alignment: .leading)
+
+                        Image(systemName: "arrow.down").foregroundStyle(.secondary)
+
+                        HStack(spacing: 8) {
+                            Image(systemName: "house.fill").foregroundStyle(Color.carterBlue)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(yard.displayName).font(.subheadline).fontWeight(.semibold)
+                                Text(yard.fullAddress).font(.caption).foregroundStyle(.secondary)
+                            }
+                        }.frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
+                    Divider()
+
+                    if let route = vm.routeResult { RouteSummaryCard(route: route) }
+                    if let fuel = vm.fuelEstimate { FuelEstimateCard(estimate: fuel) }
+                    if !vm.weatherPoints.isEmpty {
+                        WeatherAlongRouteCard(points: vm.weatherPoints)
+                    } else if vm.isFetchingWeather {
+                        ProgressView("Fetching weather...").padding()
+                    }
+
+                    Button {
+                        vm.clearRoute(); mapViewModel.clearRoute(); onDismiss()
+                    } label: {
+                        Label("New Route", systemImage: "arrow.counterclockwise")
+                            .font(.subheadline).fontWeight(.semibold)
+                            .frame(maxWidth: .infinity).padding(14)
+                            .background(Color(.systemGray5)).cornerRadius(8)
+                    }.buttonStyle(.plain).padding(.top, 8)
+                }
+                .padding()
+            }
+            .navigationTitle("Route Details")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { onDismiss() }.fontWeight(.semibold)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Truck Route
 
 struct TruckRouteContentView: View {
+    @Binding var showMenu: Bool
     @Environment(AppConfiguration.self) private var config
     @Environment(LocationDataStore.self) private var locationStore
     @State private var viewModel: TruckRouteViewModel?
@@ -347,7 +462,9 @@ struct TruckRouteContentView: View {
     @State private var showingTruckPicker = false
     @State private var showingMillPicker = false
     @State private var showingYardPicker = false
-    @State private var pickersExpanded = true
+    @State private var showingKPICard = false
+    @State private var showingScheduleSheet = false
+    @State private var scheduleVM: ScheduleViewModel?
 
     var body: some View {
         if let viewModel {
@@ -360,198 +477,312 @@ struct TruckRouteContentView: View {
 
     @ViewBuilder
     private func mainContent(vm: TruckRouteViewModel) -> some View {
-        GeometryReader { geo in
-            VStack(spacing: 0) {
-                // Top half: Map
-                MapContainerView(
-                    routeCoordinates: mapViewModel.routeCoordinates,
-                    annotations: mapViewModel.allAnnotations,
-                    isFallbackRoute: mapViewModel.isFallbackRoute,
-                    showTrafficLayer: mapViewModel.showTrafficLayer
-                )
-                .frame(height: geo.size.height * 0.5)
-
-                Divider()
-
-                // Bottom half
-                ScrollView {
-                    VStack(spacing: 12) {
-                        // Collapsed strip
-                        if vm.twoLegRoute != nil {
-                            collapsedPickerStrip(vm: vm)
-                        }
-
-                        // Expanded pickers
-                        if pickersExpanded || vm.twoLegRoute == nil {
-                            pickerSection(vm: vm)
-                        }
-
-                        if let error = vm.errorMessage {
-                            Text(error).font(.caption).foregroundStyle(.red)
-                                .padding(10).background(Color.red.opacity(0.1)).cornerRadius(6)
-                        }
-
-                        // Results
-                        if let route = vm.twoLegRoute {
-                            TruckLegCard(title: "LEG 1: TRUCK TO MILL", leg: route.leg1, color: .orange)
-                            TruckLegCard(title: "LEG 2: MILL TO YARD", leg: route.leg2, color: Color.carterBlue)
-
-                            VStack(spacing: 6) {
-                                Text("TRIP TOTAL").font(.caption2).fontWeight(.bold).foregroundStyle(.secondary)
-                                Text(route.formattedTotalDistance)
-                                    .font(.system(size: 28, weight: .heavy)).foregroundStyle(Color.carterBlue)
-                                Text(route.formattedTotalDuration)
-                                    .font(.subheadline).fontWeight(.semibold)
-                            }
-                            .frame(maxWidth: .infinity).padding()
-                            .background(Color(.systemGray6)).cornerRadius(10)
-
-                            if let fuel = vm.fuelEstimate { FuelEstimateCard(estimate: fuel) }
-                            if !vm.weatherPoints.isEmpty { WeatherAlongRouteCard(points: vm.weatherPoints) }
-
-                            Button {
-                                withAnimation(.spring(duration: 0.3)) {
-                                    vm.clearRoute(); mapViewModel.clearRoute()
-                                    pickersExpanded = true
-                                }
-                            } label: {
-                                Label("New Route", systemImage: "arrow.counterclockwise")
-                                    .font(.subheadline).fontWeight(.semibold)
-                                    .frame(maxWidth: .infinity).padding(12)
-                                    .background(Color(.systemGray5)).cornerRadius(8)
-                            }
-                            .buttonStyle(.plain).padding(.top, 4)
-                        }
-                    }
-                    .padding()
-                }
+        ZStack {
+            if vm.twoLegRoute != nil {
+                fullScreenMapView(vm: vm)
+            } else {
+                pickerModeView(vm: vm)
             }
         }
         .sheet(isPresented: $showingTruckPicker) {
-            TruckPickerView(vehicles: vm.vehicles, isLoading: vm.isLoadingTrucks) { truck in
-                vm.selectedVehicle = truck
-            }
+            TruckPickerView(viewModel: vm) { truck in vm.selectedVehicle = truck }
         }
         .sheet(isPresented: $showingMillPicker) {
-            MillPickerView(mills: locationStore.mills) { mill in
-                Task { await vm.selectMill(mill) }
-            }
+            MillPickerView(mills: locationStore.mills) { mill in Task { await vm.selectMill(mill) } }
         }
         .sheet(isPresented: $showingYardPicker) {
-            YardPickerView(yards: locationStore.yards) { yard in
-                vm.selectedYard = yard
+            YardPickerView(yards: locationStore.yards) { yard in vm.selectedYard = yard }
+        }
+        .fullScreenCover(isPresented: $showingKPICard) {
+            if let vm = viewModel {
+                TruckKPICardView(vm: vm, mapViewModel: mapViewModel) { showingKPICard = false }
             }
+        }
+        .sheet(isPresented: $showingScheduleSheet) {
+            if let vm = viewModel {
+                ScheduleRouteSheet(
+                    routeType: "truck",
+                    mill: vm.selectedMill,
+                    yard: vm.selectedYard,
+                    truck: vm.selectedVehicle,
+                    distance: vm.twoLegRoute?.formattedTotalDistance,
+                    duration: vm.twoLegRoute?.totalDuration,
+                    fuelCost: vm.fuelEstimate?.totalCost,
+                    vm: scheduleVM ?? ScheduleViewModel(config: config),
+                    onDone: { }
+                )
+            }
+        }
+        .onAppear {
+            if scheduleVM == nil { scheduleVM = ScheduleViewModel(config: config) }
         }
     }
 
     @ViewBuilder
-    private func collapsedPickerStrip(vm: TruckRouteViewModel) -> some View {
-        Button {
-            withAnimation(.spring(duration: 0.3)) { pickersExpanded.toggle() }
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "truck.box.fill").foregroundStyle(.blue).font(.caption)
-                Image(systemName: "arrow.right").font(.system(size: 8)).foregroundStyle(.secondary)
-                Image(systemName: "building.2.fill").foregroundStyle(.red).font(.caption)
-                Text(vm.selectedMill?.name ?? "").font(.caption).lineLimit(1)
-                Image(systemName: "arrow.right").font(.system(size: 8)).foregroundStyle(.secondary)
-                Image(systemName: "house.fill").foregroundStyle(Color.carterBlue).font(.caption)
-                Text(vm.selectedYard?.displayName ?? "").font(.caption).lineLimit(1)
+    private func fullScreenMapView(vm: TruckRouteViewModel) -> some View {
+        MapContainerView(
+            routeCoordinates: mapViewModel.routeCoordinates,
+            annotations: mapViewModel.allAnnotations,
+            isFallbackRoute: mapViewModel.isFallbackRoute,
+            showTrafficLayer: mapViewModel.showTrafficLayer
+        )
+        .ignoresSafeArea()
+
+        VStack {
+            HStack {
+                FloatingMenuButton(showMenu: $showMenu)
                 Spacer()
-                Image(systemName: pickersExpanded ? "chevron.up" : "chevron.down")
-                    .font(.caption).foregroundStyle(.secondary)
             }
-            .padding(10).background(Color(.systemGray6)).cornerRadius(8)
+            .padding(.leading, 16)
+            .padding(.top, 4)
+
+            Spacer()
+
+            HStack(alignment: .bottom) {
+                // Bottom-left: distance label
+                if let route = vm.twoLegRoute {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(route.formattedTotalDistance)
+                            .font(.system(size: 28, weight: .heavy))
+                        Text(route.formattedTotalDuration)
+                            .font(.system(size: 15, weight: .semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 18).padding(.vertical, 12)
+                    .background(.ultraThinMaterial)
+                    .background(Color.black.opacity(0.45))
+                    .cornerRadius(14)
+                    .shadow(color: .black.opacity(0.35), radius: 10, y: 5)
+                }
+
+                Spacer()
+
+                // Bottom-right: action buttons
+                VStack(spacing: 12) {
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) {
+                            vm.clearRoute(); mapViewModel.clearRoute()
+                        }
+                    } label: {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
+                            .frame(width: 46, height: 46)
+                            .background(.ultraThinMaterial).background(Color.black.opacity(0.4))
+                            .clipShape(Circle())
+                            .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
+                    }
+
+                    Button { showingScheduleSheet = true } label: {
+                        Image(systemName: "calendar.badge.plus")
+                            .font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
+                            .frame(width: 46, height: 46)
+                            .background(Color.orange)
+                            .clipShape(Circle())
+                            .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
+                    }
+
+                    Button { showingKPICard = true } label: {
+                        Image(systemName: "info.circle.fill")
+                            .font(.system(size: 18, weight: .bold)).foregroundStyle(.white)
+                            .frame(width: 46, height: 46)
+                            .background(Color.carterBlue).clipShape(Circle())
+                            .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 36)
         }
-        .buttonStyle(.plain)
     }
 
     @ViewBuilder
-    private func pickerSection(vm: TruckRouteViewModel) -> some View {
-        VStack(spacing: 12) {
-            // Truck
-            VStack(alignment: .leading, spacing: 4) {
-                Text("1. SELECT TRUCK").font(.caption2).fontWeight(.bold).foregroundStyle(.secondary)
-                Button {
-                    if vm.vehicles.isEmpty { Task { await vm.loadTrucks() } }
-                    showingTruckPicker = true
-                } label: {
-                    HStack {
-                        if let truck = vm.selectedVehicle {
-                            Circle().fill(truck.status.color).frame(width: 10, height: 10)
-                            Text(truck.name)
-                        } else { Text("Select a truck").foregroundStyle(.secondary) }
-                        Spacer()
-                        if vm.isLoadingTrucks { ProgressView().controlSize(.small) }
-                        else { Image(systemName: "chevron.right").foregroundStyle(.secondary) }
-                    }
-                    .padding(12).background(Color(.systemGray6)).cornerRadius(8)
-                }
-                .buttonStyle(.plain)
-                if let truck = vm.selectedVehicle {
-                    Text("\(truck.locationDescription) — \(truck.status.label)")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-            }
+    private func pickerModeView(vm: TruckRouteViewModel) -> some View {
+        NavigationStack {
+            GeometryReader { geo in
+                VStack(spacing: 0) {
+                    MapContainerView(
+                        routeCoordinates: mapViewModel.routeCoordinates,
+                        annotations: mapViewModel.allAnnotations,
+                        isFallbackRoute: mapViewModel.isFallbackRoute,
+                        showTrafficLayer: mapViewModel.showTrafficLayer
+                    )
+                    .frame(height: geo.size.height * 0.5)
 
-            // Mill
-            VStack(alignment: .leading, spacing: 4) {
-                Text("2. SELECT MILL / SUPPLIER").font(.caption2).fontWeight(.bold).foregroundStyle(.secondary)
-                Button { showingMillPicker = true } label: {
-                    HStack {
-                        Text(vm.selectedMill?.shortName ?? "Select a mill")
-                            .foregroundStyle(vm.selectedMill != nil ? .primary : .secondary)
-                        Spacer()
-                        if vm.isGeocodingMill { ProgressView().controlSize(.small) }
-                        else { Image(systemName: "chevron.right").foregroundStyle(.secondary) }
-                    }
-                    .padding(12).background(Color(.systemGray6)).cornerRadius(8)
-                }
-                .buttonStyle(.plain)
-            }
+                    Divider()
 
-            // Yard
-            VStack(alignment: .leading, spacing: 4) {
-                Text("3. SELECT YARD").font(.caption2).fontWeight(.bold).foregroundStyle(.secondary)
-                Button { showingYardPicker = true } label: {
-                    HStack {
-                        Text(vm.selectedYard?.displayName ?? "Select a yard")
-                            .foregroundStyle(vm.selectedYard != nil ? .primary : .secondary)
-                        Spacer()
-                        Image(systemName: "chevron.right").foregroundStyle(.secondary)
-                    }
-                    .padding(12).background(Color(.systemGray6)).cornerRadius(8)
-                }
-                .buttonStyle(.plain)
-            }
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            if let error = vm.errorMessage {
+                                Text(error).font(.caption).foregroundStyle(.red)
+                                    .padding(10).background(Color.red.opacity(0.1)).cornerRadius(6)
+                            }
 
-            // Calculate
-            Button {
-                Task {
-                    await vm.calculateTruckRoute()
-                    if let route = vm.twoLegRoute,
-                       let truck = vm.selectedVehicle,
-                       let mill = vm.selectedMill,
-                       let millCoord = vm.millCoordinate,
-                       let yard = vm.selectedYard {
-                        mapViewModel.setTruckRoute(
-                            geometry: route.combinedGeometry,
-                            vehicle: truck, mill: mill, millCoord: millCoord, yard: yard
-                        )
-                        withAnimation(.spring(duration: 0.3)) { pickersExpanded = false }
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("1. SELECT TRUCK").font(.caption2).fontWeight(.bold).foregroundStyle(.secondary)
+                                Button { showingTruckPicker = true } label: {
+                                    HStack {
+                                        if let truck = vm.selectedVehicle {
+                                            Circle().fill(truck.status.color).frame(width: 10, height: 10)
+                                            Text(truck.name)
+                                        } else { Text("Select a truck").foregroundStyle(.secondary) }
+                                        Spacer()
+                                        if vm.isLoadingTrucks { ProgressView().controlSize(.small) }
+                                        else { Image(systemName: "chevron.right").foregroundStyle(.secondary) }
+                                    }
+                                    .padding(12).background(Color(.systemGray6)).cornerRadius(8)
+                                }.buttonStyle(.plain)
+                                if let truck = vm.selectedVehicle {
+                                    Text("\(truck.locationDescription) — \(truck.status.label)")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("2. SELECT MILL / SUPPLIER").font(.caption2).fontWeight(.bold).foregroundStyle(.secondary)
+                                Button { showingMillPicker = true } label: {
+                                    HStack {
+                                        Text(vm.selectedMill?.shortName ?? "Select a mill")
+                                            .foregroundStyle(vm.selectedMill != nil ? .primary : .secondary)
+                                        Spacer()
+                                        if vm.isGeocodingMill { ProgressView().controlSize(.small) }
+                                        else { Image(systemName: "chevron.right").foregroundStyle(.secondary) }
+                                    }
+                                    .padding(12).background(Color(.systemGray6)).cornerRadius(8)
+                                }.buttonStyle(.plain)
+                            }
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("3. SELECT YARD").font(.caption2).fontWeight(.bold).foregroundStyle(.secondary)
+                                Button { showingYardPicker = true } label: {
+                                    HStack {
+                                        Text(vm.selectedYard?.displayName ?? "Select a yard")
+                                            .foregroundStyle(vm.selectedYard != nil ? .primary : .secondary)
+                                        Spacer()
+                                        Image(systemName: "chevron.right").foregroundStyle(.secondary)
+                                    }
+                                    .padding(12).background(Color(.systemGray6)).cornerRadius(8)
+                                }.buttonStyle(.plain)
+                            }
+
+                            Button {
+                                Task {
+                                    await vm.calculateTruckRoute()
+                                    if let route = vm.twoLegRoute,
+                                       let truck = vm.selectedVehicle,
+                                       let mill = vm.selectedMill,
+                                       let millCoord = vm.millCoordinate,
+                                       let yard = vm.selectedYard {
+                                        mapViewModel.setTruckRoute(
+                                            geometry: route.combinedGeometry,
+                                            vehicle: truck, mill: mill, millCoord: millCoord, yard: yard
+                                        )
+                                    }
+                                }
+                            } label: {
+                                HStack {
+                                    if vm.isCalculating { ProgressView().controlSize(.small).tint(.white) }
+                                    Text(vm.isCalculating ? "Calculating..." : "Calculate Truck Route").fontWeight(.semibold)
+                                }
+                                .frame(maxWidth: .infinity).padding(14)
+                                .background(vm.canCalculate ? Color.carterBlue : .gray)
+                                .foregroundStyle(.white).cornerRadius(8)
+                            }.disabled(!vm.canCalculate)
+                        }
+                        .padding()
                     }
                 }
-            } label: {
-                HStack {
-                    if vm.isCalculating { ProgressView().controlSize(.small).tint(.white) }
-                    Text(vm.isCalculating ? "Calculating..." : "Calculate Truck Route")
-                        .fontWeight(.semibold)
-                }
-                .frame(maxWidth: .infinity).padding(14)
-                .background(vm.canCalculate ? Color.carterBlue : .gray)
-                .foregroundStyle(.white).cornerRadius(8)
             }
-            .disabled(!vm.canCalculate)
+            .navigationTitle("Truck Route")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { withAnimation(.easeOut(duration: 0.25)) { showMenu = true } } label: {
+                        Image(systemName: "line.3.horizontal").font(.title3).foregroundStyle(Color.carterBlue)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Truck KPI Full Screen Card
+
+struct TruckKPICardView: View {
+    let vm: TruckRouteViewModel
+    let mapViewModel: MapViewModel
+    let onDismiss: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 16) {
+                    if let truck = vm.selectedVehicle, let mill = vm.selectedMill, let yard = vm.selectedYard {
+                        HStack(spacing: 8) {
+                            Image(systemName: "truck.box.fill").foregroundStyle(truck.status.color)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(truck.name).font(.subheadline).fontWeight(.semibold)
+                                Text(truck.locationDescription).font(.caption).foregroundStyle(.secondary)
+                            }
+                        }.frame(maxWidth: .infinity, alignment: .leading)
+
+                        Image(systemName: "arrow.down").foregroundStyle(.secondary)
+
+                        HStack(spacing: 8) {
+                            Image(systemName: "building.2.fill").foregroundStyle(.red)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(mill.name).font(.subheadline).fontWeight(.semibold)
+                                Text("\(mill.city), \(mill.state)").font(.caption).foregroundStyle(.secondary)
+                            }
+                        }.frame(maxWidth: .infinity, alignment: .leading)
+
+                        Image(systemName: "arrow.down").foregroundStyle(.secondary)
+
+                        HStack(spacing: 8) {
+                            Image(systemName: "house.fill").foregroundStyle(Color.carterBlue)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(yard.displayName).font(.subheadline).fontWeight(.semibold)
+                                Text(yard.fullAddress).font(.caption).foregroundStyle(.secondary)
+                            }
+                        }.frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
+                    Divider()
+
+                    if let route = vm.twoLegRoute {
+                        TruckLegCard(title: "LEG 1: TRUCK TO MILL", leg: route.leg1, color: .orange)
+                        TruckLegCard(title: "LEG 2: MILL TO YARD", leg: route.leg2, color: Color.carterBlue)
+
+                        VStack(spacing: 6) {
+                            Text("TRIP TOTAL").font(.caption2).fontWeight(.bold).foregroundStyle(.secondary)
+                            Text(route.formattedTotalDistance)
+                                .font(.system(size: 28, weight: .heavy)).foregroundStyle(Color.carterBlue)
+                            Text(route.formattedTotalDuration).font(.subheadline).fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity).padding()
+                        .background(Color(.systemGray6)).cornerRadius(10)
+                    }
+
+                    if let fuel = vm.fuelEstimate { FuelEstimateCard(estimate: fuel) }
+                    if !vm.weatherPoints.isEmpty { WeatherAlongRouteCard(points: vm.weatherPoints) }
+
+                    Button {
+                        vm.clearRoute(); mapViewModel.clearRoute(); onDismiss()
+                    } label: {
+                        Label("New Route", systemImage: "arrow.counterclockwise")
+                            .font(.subheadline).fontWeight(.semibold)
+                            .frame(maxWidth: .infinity).padding(14)
+                            .background(Color(.systemGray5)).cornerRadius(8)
+                    }.buttonStyle(.plain).padding(.top, 8)
+                }
+                .padding()
+            }
+            .navigationTitle("Trip Details")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { onDismiss() }.fontWeight(.semibold)
+                }
+            }
         }
     }
 }
@@ -563,7 +794,6 @@ struct SettingsContentView: View {
 
     var body: some View {
         @Bindable var config = config
-
         Form {
             Section("Diesel Fuel Settings") {
                 HStack {
@@ -584,7 +814,6 @@ struct SettingsContentView: View {
                 }
                 Text("Get a free API key at eia.gov").font(.caption2).foregroundStyle(.secondary)
             }
-
             Section("IntelliShift") {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Server URL")
@@ -595,7 +824,6 @@ struct SettingsContentView: View {
                 Text("Connects to your Node.js server for truck data.")
                     .font(.caption2).foregroundStyle(.secondary)
             }
-
             Section("Mapbox") {
                 HStack {
                     Text("Token"); Spacer()
@@ -607,7 +835,6 @@ struct SettingsContentView: View {
                     }
                 }
             }
-
             Section("About") {
                 HStack { Text("App"); Spacer(); Text("Carter Lumber Route Planner").foregroundStyle(.secondary) }
                 HStack { Text("Version"); Spacer(); Text("1.0.0").foregroundStyle(.secondary) }
@@ -615,9 +842,7 @@ struct SettingsContentView: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("Save") { config.save() }
-            }
+            ToolbarItem(placement: .topBarTrailing) { Button("Save") { config.save() } }
         }
     }
 }

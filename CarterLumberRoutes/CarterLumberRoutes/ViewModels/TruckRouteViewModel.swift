@@ -45,13 +45,16 @@ final class TruckRouteViewModel {
     }
 
     func loadTrucks() async {
+        print("[TruckVM] loadTrucks() called, current count: \(vehicles.count)")
         isLoadingTrucks = true
         errorMessage = nil
         defer { isLoadingTrucks = false }
 
         do {
             vehicles = try await intelliShiftService.fetchVehicles()
+            print("[TruckVM] Loaded \(vehicles.count) vehicles")
         } catch {
+            print("[TruckVM] ERROR: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
         }
     }

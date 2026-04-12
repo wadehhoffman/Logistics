@@ -4,8 +4,34 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 
+const crypto = require('crypto');
+
 const PORT = 3003;
 const DIR = __dirname;
+
+// --- Schedule storage (JSON file, will migrate to SQL later) ---
+const SCHEDULE_FILE = path.join(DIR, 'schedule.json');
+let scheduleData = [];
+try {
+  scheduleData = JSON.parse(fs.readFileSync(SCHEDULE_FILE, 'utf8'));
+  console.log(`  [Schedule] Loaded ${scheduleData.length} scheduled routes`);
+} catch(e) { scheduleData = []; }
+
+function saveSchedule() {
+  fs.writeFileSync(SCHEDULE_FILE, JSON.stringify(scheduleData, null, 2));
+}
+
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on('data', c => chunks.push(c));
+    req.on('end', () => {
+      try { resolve(JSON.parse(Buffer.concat(chunks).toString())); }
+      catch(e) { reject(e); }
+    });
+    req.on('error', reject);
+  });
+}
 
 // Load secrets from secrets.js (gitignored) — never commit API keys
 let secrets = {};
@@ -472,6 +498,103 @@ const server = http.createServer((req, res) => {
     const { lat, lon } = parsed.query;
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code,apparent_temperature&wind_speed_unit=mph&temperature_unit=fahrenheit&forecast_days=1`;
     return simpleProxy(url, res);
+  }
+
+  // --- Schedule CRUD ---
+  // Handle CORS preflight for schedule endpoints
+  if (req.method === 'OPTIONS' && pathname.startsWith('/api/schedule')) {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    });
+    return res.end();
+  }
+
+  // GET /api/schedule — list all (optional ?month=2026-04 filter)
+  if (pathname === '/api/schedule' && req.method === 'GET') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+    const month = parsed.query.month; // e.g. "2026-04"
+    let results = scheduleData;
+    if (month) {
+      results = scheduleData.filter(r => r.scheduledAt && r.scheduledAt.startsWith(month));
+    }
+    results.sort((a, b) => (a.scheduledAt || '').localeCompare(b.scheduledAt || ''));
+    res.writeHead(200);
+    return res.end(JSON.stringify({ schedules: results, total: results.length }));
+  }
+
+  // POST /api/schedule — create new scheduled route
+  if (pathname === '/api/schedule' && req.method === 'POST') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+    (async () => { try {
+      const body = await readBody(req);
+      const entry = {
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+        scheduledAt: body.scheduledAt,
+        type: body.type || 'single',
+        mill: body.mill || null,
+        yard: body.yard || null,
+        truck: body.truck || null,
+        distance: body.distance || 0,
+        duration: body.duration || 0,
+        fuelCost: body.fuelCost || null,
+        notes: body.notes || '',
+        status: 'scheduled',
+      };
+      scheduleData.push(entry);
+      saveSchedule();
+      console.log(`  [Schedule] Created: ${entry.id} for ${entry.scheduledAt}`);
+      res.writeHead(201);
+      res.end(JSON.stringify(entry));
+    } catch(e) {
+      res.writeHead(400);
+      res.end(JSON.stringify({ error: e.message }));
+    }})();
+    return;
+  }
+
+  // PUT /api/schedule/:id — update status or notes
+  const putMatch = pathname.match(/^\/api\/schedule\/([a-f0-9-]+)$/);
+  if (putMatch && req.method === 'PUT') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+    (async () => { try {
+      const id = putMatch[1];
+      const body = await readBody(req);
+      const idx = scheduleData.findIndex(r => r.id === id);
+      if (idx === -1) { res.writeHead(404); return res.end(JSON.stringify({ error: 'Not found' })); }
+      if (body.status) scheduleData[idx].status = body.status;
+      if (body.notes !== undefined) scheduleData[idx].notes = body.notes;
+      if (body.scheduledAt) scheduleData[idx].scheduledAt = body.scheduledAt;
+      if (body.truck) scheduleData[idx].truck = body.truck;
+      saveSchedule();
+      console.log(`  [Schedule] Updated: ${id} -> ${scheduleData[idx].status}`);
+      res.writeHead(200);
+      res.end(JSON.stringify(scheduleData[idx]));
+    } catch(e) {
+      res.writeHead(400);
+      res.end(JSON.stringify({ error: e.message }));
+    }})();
+    return;
+  }
+
+  // DELETE /api/schedule/:id
+  const delMatch = pathname.match(/^\/api\/schedule\/([a-f0-9-]+)$/);
+  if (delMatch && req.method === 'DELETE') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+    const id = delMatch[1];
+    const idx = scheduleData.findIndex(r => r.id === id);
+    if (idx === -1) { res.writeHead(404); return res.end(JSON.stringify({ error: 'Not found' })); }
+    scheduleData.splice(idx, 1);
+    saveSchedule();
+    console.log(`  [Schedule] Deleted: ${id}`);
+    res.writeHead(200);
+    return res.end(JSON.stringify({ ok: true }));
   }
 
   // Static files

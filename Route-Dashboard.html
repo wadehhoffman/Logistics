@@ -94,6 +94,43 @@ select:focus { outline: none; border-color: #2c5f8a; box-shadow: 0 0 0 2px rgba(
 .tab-btn:hover { color: #1a3a5c; }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
+.btn-schedule { background: #e65100; color: white; margin-top: 4px; }
+.btn-schedule:hover { background: #bf360c; }
+.schedule-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+.schedule-modal .modal-card { background: white; border-radius: 10px; padding: 24px; width: 420px; max-width: 90vw; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+.schedule-modal .modal-card h3 { margin-bottom: 16px; color: #1a3a5c; }
+.schedule-modal label { font-size: 12px; font-weight: 600; color: #555; display: block; margin-bottom: 4px; margin-top: 12px; }
+.schedule-modal input, .schedule-modal textarea { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; }
+.schedule-modal textarea { height: 60px; resize: vertical; }
+.schedule-modal .modal-actions { display: flex; gap: 8px; margin-top: 18px; }
+.schedule-modal .modal-actions .btn { flex: 1; }
+.schedule-tab-content { display: flex; flex-direction: column; gap: 10px; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; font-size: 12px; }
+.calendar-grid .cal-header { font-weight: 700; color: #888; padding: 4px 0; font-size: 11px; }
+.calendar-day { padding: 6px 2px; border-radius: 4px; cursor: pointer; position: relative; min-height: 32px; display: flex; align-items: center; justify-content: center; }
+.calendar-day:hover { background: #e8ecf0; }
+.calendar-day.has-routes::after { content: ''; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); width: 6px; height: 6px; border-radius: 50%; background: #2c5f8a; }
+.calendar-day.today { font-weight: 700; color: #2c5f8a; border: 1px solid #2c5f8a; }
+.calendar-day.selected { background: #2c5f8a; color: white; }
+.calendar-day.selected::after { background: white; }
+.calendar-day.empty { cursor: default; }
+.calendar-day.empty:hover { background: transparent; }
+.schedule-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+.schedule-badge.scheduled { background: #e3f2fd; color: #1565c0; }
+.schedule-badge.completed { background: #e8f5e9; color: #2e7d32; }
+.schedule-badge.cancelled { background: #f5f5f5; color: #888; }
+.view-toggle { display: flex; gap: 0; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; }
+.view-toggle button { padding: 6px 14px; border: none; background: #f0f2f5; cursor: pointer; font-size: 12px; font-weight: 600; color: #888; }
+.view-toggle button.active { background: #2c5f8a; color: white; }
+.schedule-list-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.schedule-list-table th { background: #1a3a5c; color: white; padding: 8px 6px; text-align: left; font-size: 11px; }
+.schedule-list-table td { padding: 6px; border-bottom: 1px solid #eee; }
+.schedule-list-table tr:hover { background: #f0f4f8; }
+.schedule-actions-btn { background: none; border: 1px solid #ccc; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 11px; margin-right: 4px; }
+.schedule-actions-btn:hover { background: #e8ecf0; }
+.schedule-actions-btn.complete { color: #2e7d32; border-color: #a5d6a7; }
+.schedule-actions-btn.cancel { color: #c62828; border-color: #ef9a9a; }
+.schedule-actions-btn.delete { color: #888; border-color: #ccc; }
 </style>
 </head>
 <body>
@@ -108,6 +145,7 @@ select:focus { outline: none; border-color: #2c5f8a; box-shadow: 0 0 0 2px rgba(
     <div class="tab-bar">
       <button class="tab-btn active" data-tab="single">Single Route</button>
       <button class="tab-btn" data-tab="truck">Route Truck</button>
+      <button class="tab-btn" data-tab="schedule">Schedule</button>
     </div>
 
     <!-- DIESEL CONFIG (shared) -->
@@ -141,6 +179,7 @@ select:focus { outline: none; border-color: #2c5f8a; box-shadow: 0 0 0 2px rgba(
       </div>
       <button class="btn btn-primary" id="routeBtn" disabled>Get Route & Distance</button>
       <button class="btn btn-secondary" id="clearBtn" style="display:none">Clear Route</button>
+      <button class="btn btn-schedule" id="scheduleBtn" style="display:none" onclick="openScheduleModal('single')">📅 Schedule Route</button>
       <div id="statusMsg" class="status-msg" style="display:none"></div>
       <div id="resultBox" class="result-box" style="display:none">
         <div class="result-title">Route Summary</div>
@@ -199,6 +238,7 @@ select:focus { outline: none; border-color: #2c5f8a; box-shadow: 0 0 0 2px rgba(
       </div>
       <button class="btn btn-primary" id="truckRouteBtn" disabled>Calculate Truck Route</button>
       <button class="btn btn-secondary" id="truckRouteClearBtn" style="display:none">Clear Route</button>
+      <button class="btn btn-schedule" id="truckScheduleBtn" style="display:none" onclick="openScheduleModal('truck')">📅 Schedule Route</button>
       <div id="truckRouteStatus" class="status-msg" style="display:none"></div>
 
       <!-- Leg 1: Truck → Mill -->
@@ -244,6 +284,40 @@ select:focus { outline: none; border-color: #2c5f8a; box-shadow: 0 0 0 2px rgba(
           <div class="progress-bar"><div class="progress-fill" id="truckWeatherProgressFill" style="width:0%"></div></div>
         </div>
         <div id="truckWeatherPoints"></div>
+      </div>
+    </div>
+
+    <!-- SCHEDULE TAB -->
+    <div id="tab-schedule" class="tab-content">
+      <div class="schedule-tab-content">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div class="section-label">Scheduled Routes</div>
+          <div class="view-toggle">
+            <button class="active" onclick="switchScheduleView('list')">List</button>
+            <button onclick="switchScheduleView('calendar')">Calendar</button>
+          </div>
+        </div>
+
+        <!-- List View -->
+        <div id="scheduleListView">
+          <div style="max-height:500px; overflow-y:auto; border:1px solid #dde3ea; border-radius:6px;">
+            <table class="schedule-list-table">
+              <thead><tr><th>Date</th><th>Time</th><th>Mill</th><th>Yard</th><th>Truck</th><th>Dist.</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="scheduleListTbody"><tr><td colspan="8" style="text-align:center;color:#888;padding:20px;">No scheduled routes</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Calendar View -->
+        <div id="scheduleCalendarView" style="display:none;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <button onclick="prevMonth()" style="background:none;border:1px solid #ccc;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:14px;">&lt;</button>
+            <div id="calendarMonthLabel" style="font-weight:700;color:#1a3a5c;font-size:15px;"></div>
+            <button onclick="nextMonth()" style="background:none;border:1px solid #ccc;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:14px;">&gt;</button>
+          </div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+          <div id="calendarDayRoutes" style="margin-top:10px;"></div>
+        </div>
       </div>
     </div>
 
@@ -940,6 +1014,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
     if (btn.dataset.tab === 'truck') initTruckRouteTab();
+    if (btn.dataset.tab === 'schedule') loadSchedules();
   });
 });
 
@@ -1158,6 +1233,8 @@ document.getElementById('truckRouteBtn').addEventListener('click', async () => {
     document.getElementById('truckTotalTime').textContent = formatDuration(totalSec);
     document.getElementById('truckRouteTotalBox').style.display = 'block';
     document.getElementById('truckRouteClearBtn').style.display = 'block';
+    document.getElementById('truckScheduleBtn').style.display = 'block';
+    lastTruckRouteDurationSec = totalSec;
 
     // Fuel estimate
     const apiKey = document.getElementById('eiaApiKey').value.trim();
@@ -1223,6 +1300,7 @@ document.getElementById('truckRouteClearBtn').addEventListener('click', () => {
     document.getElementById(id).style.display = 'none';
   });
   document.getElementById('truckRouteClearBtn').style.display = 'none';
+  document.getElementById('truckScheduleBtn').style.display = 'none';
   showStatus('truckRouteStatus', '', false);
 });
 
@@ -1333,6 +1411,8 @@ document.getElementById('routeBtn').addEventListener('click', async () => {
       document.getElementById('toName').textContent = `${y.storeNumber} — ${y.city}, ${y.state}`;
       document.getElementById('resultBox').style.display = 'block';
       document.getElementById('clearBtn').style.display = 'block';
+      document.getElementById('scheduleBtn').style.display = 'block';
+      lastSingleRouteDurationSec = durSec;
       showStatus('statusMsg', '', false);
 
       // --- DIESEL PRICING (fast — no extra API calls for state detection) ---
@@ -1396,6 +1476,7 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   dieselMarkers.forEach(m => map.removeLayer(m));
   dieselMarkers = [];
   document.getElementById('clearBtn').style.display = 'none';
+  document.getElementById('scheduleBtn').style.display = 'none';
   document.getElementById('statusMsg').style.display = 'none';
   document.getElementById('routeBtn').disabled = true;
   map.setView([35.5, -82.5], 6);
@@ -1434,6 +1515,456 @@ function showStatus(elId, msg, isError) {
   el.className = isError ? 'status-msg error' : 'status-msg';
   el.style.display = 'block';
 }
+
+// ============================================================
+// SCHEDULE FEATURE
+// ============================================================
+let scheduleCalendarYear = new Date().getFullYear();
+let scheduleCalendarMonth = new Date().getMonth(); // 0-indexed
+let allSchedules = [];
+let lastSingleRouteDurationSec = 0;
+let lastTruckRouteDurationSec = 0;
+
+function openScheduleModal(type) {
+  const modal = document.getElementById('scheduleModal');
+  document.getElementById('scheduleType').value = type;
+
+  // Default date = tomorrow
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  document.getElementById('scheduleDate').value = tomorrow.toISOString().split('T')[0];
+  document.getElementById('scheduleTime').value = '06:00';
+  document.getElementById('scheduleNotes').value = '';
+
+  let summary = '';
+  if (type === 'single') {
+    const millOpt = document.getElementById('millSelect').selectedOptions[0];
+    const yardOpt = document.getElementById('yardSelect').selectedOptions[0];
+    const dist = document.getElementById('distMiles').textContent;
+    summary = `<strong>Mill:</strong> ${millOpt ? millOpt.textContent : '—'}<br>` +
+              `<strong>Yard:</strong> ${yardOpt ? yardOpt.textContent : '—'}<br>` +
+              `<strong>Distance:</strong> ${dist}`;
+    document.getElementById('scheduleTruckDisplay').textContent = 'None';
+  } else {
+    const truckOpt = document.getElementById('truckRouteSelect').selectedOptions[0];
+    const millOpt = document.getElementById('truckRouteMillSelect').selectedOptions[0];
+    const yardOpt = document.getElementById('truckRouteYardSelect').selectedOptions[0];
+    const dist = document.getElementById('truckTotalMiles').textContent;
+    summary = `<strong>Truck:</strong> ${truckOpt ? truckOpt.textContent : '—'}<br>` +
+              `<strong>Mill:</strong> ${millOpt ? millOpt.textContent : '—'}<br>` +
+              `<strong>Yard:</strong> ${yardOpt ? yardOpt.textContent : '—'}<br>` +
+              `<strong>Total Distance:</strong> ${dist}`;
+    document.getElementById('scheduleTruckDisplay').textContent = truckOpt ? truckOpt.textContent : 'None';
+  }
+  document.getElementById('scheduleModalSummary').innerHTML = summary;
+  modal.style.display = 'flex';
+}
+
+function closeScheduleModal() {
+  document.getElementById('scheduleModal').style.display = 'none';
+}
+
+async function submitSchedule() {
+  const type = document.getElementById('scheduleType').value;
+  const date = document.getElementById('scheduleDate').value;
+  const time = document.getElementById('scheduleTime').value;
+  const notes = document.getElementById('scheduleNotes').value;
+
+  if (!date) { alert('Please select a date.'); return; }
+
+  let payload = { date, time, notes, type };
+
+  if (type === 'single') {
+    const millOpt = document.getElementById('millSelect').selectedOptions[0];
+    const yardOpt = document.getElementById('yardSelect').selectedOptions[0];
+    if (millOpt && millOpt.value) {
+      const mIdx = parseInt(millOpt.value);
+      const m = MILLS[mIdx];
+      payload.mill = { name: m.name, vendor: m.vendor, city: m.city, state: m.stateZip.trim().split(' ')[0] };
+    }
+    if (yardOpt && yardOpt.value) {
+      const yIdx = parseInt(yardOpt.value);
+      const y = YARDS[yIdx];
+      payload.yard = { posNumber: y.storeNumber, city: y.city, state: y.state };
+    }
+    payload.distance = document.getElementById('distMiles').textContent;
+    payload.duration = lastSingleRouteDurationSec;
+    payload.fuelCost = document.getElementById('fuelCostTotal').textContent;
+  } else {
+    const truckOpt = document.getElementById('truckRouteSelect').selectedOptions[0];
+    const millOpt = document.getElementById('truckRouteMillSelect').selectedOptions[0];
+    const yardOpt = document.getElementById('truckRouteYardSelect').selectedOptions[0];
+    if (truckOpt && truckOpt.value) {
+      payload.truck = { id: truckOpt.value, name: truckOpt.textContent };
+    }
+    if (millOpt && millOpt.value) {
+      const mIdx = parseInt(millOpt.value);
+      const m = MILLS[mIdx];
+      payload.mill = { name: m.name, vendor: m.vendor, city: m.city, state: m.stateZip.trim().split(' ')[0] };
+    }
+    if (yardOpt && yardOpt.value) {
+      const yIdx = parseInt(yardOpt.value);
+      const y = YARDS[yIdx];
+      payload.yard = { posNumber: y.storeNumber, city: y.city, state: y.state };
+    }
+    payload.distance = document.getElementById('truckTotalMiles').textContent;
+    payload.duration = lastTruckRouteDurationSec;
+    payload.fuelCost = document.getElementById('truckFuelCostTotal').textContent;
+  }
+
+  try {
+    const resp = await fetch('/api/schedule', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!resp.ok) throw new Error('Failed to schedule');
+    closeScheduleModal();
+    alert('Route scheduled successfully!');
+    // If on schedule tab, refresh
+    if (document.getElementById('tab-schedule').classList.contains('active')) {
+      loadSchedules();
+    }
+  } catch (e) {
+    alert('Error scheduling route: ' + e.message);
+  }
+}
+
+async function loadSchedules(monthStr) {
+  if (!monthStr) {
+    const y = scheduleCalendarYear;
+    const m = String(scheduleCalendarMonth + 1).padStart(2, '0');
+    monthStr = `${y}-${m}`;
+  }
+  try {
+    const resp = await fetch(`/api/schedule?month=${monthStr}`);
+    if (!resp.ok) throw new Error('Failed to load schedules');
+    const data = await resp.json();
+    allSchedules = (data.schedules || []).map(s => {
+      // Parse scheduledAt into date and time for display
+      if (s.scheduledAt) {
+        const dt = new Date(s.scheduledAt);
+        s._date = s.scheduledAt.split('T')[0]; // "2026-04-15"
+        s._time = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+      } else {
+        s._date = '—';
+        s._time = '—';
+      }
+      return s;
+    });
+  } catch (e) {
+    console.error('Error loading schedules:', e);
+    allSchedules = [];
+  }
+  renderScheduleList(allSchedules);
+  renderCalendar(scheduleCalendarYear, scheduleCalendarMonth, allSchedules);
+}
+
+function renderScheduleList(schedules) {
+  const tbody = document.getElementById('scheduleListTbody');
+  if (!schedules || schedules.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#888;padding:20px;">No scheduled routes for this month</td></tr>';
+    return;
+  }
+  tbody.innerHTML = schedules.map(s => {
+    const mill = s.mill ? s.mill.name : '—';
+    const yard = s.yard ? `${s.yard.posNumber || ''} — ${s.yard.city || ''}` : '—';
+    const truckName = s.truck ? s.truck.name : null;
+    const dist = s.distance || '—';
+    const status = s.status || 'scheduled';
+    const badgeClass = status === 'completed' ? 'completed' : status === 'cancelled' ? 'cancelled' : 'scheduled';
+    const truckCell = truckName
+      ? `<span title="${truckName}">${truckName.length > 12 ? truckName.substring(0, 12) + '...' : truckName}</span>`
+      : `<button class="schedule-actions-btn" style="background:#e65100;color:white;font-size:10px;padding:2px 6px;" onclick="openAssignTruckPanel('${s.id}')">Assign</button>`;
+    return `<tr>
+      <td>${s._date || '—'}</td>
+      <td>${s._time || '—'}</td>
+      <td title="${mill}">${mill.length > 18 ? mill.substring(0, 18) + '...' : mill}</td>
+      <td>${yard}</td>
+      <td>${truckCell}</td>
+      <td>${dist}</td>
+      <td><span class="schedule-badge ${badgeClass}">${status}</span></td>
+      <td>
+        ${status === 'scheduled' ? `<button class="schedule-actions-btn complete" onclick="updateScheduleStatus('${s.id}','completed')">✓</button><button class="schedule-actions-btn cancel" onclick="updateScheduleStatus('${s.id}','cancelled')">✕</button>` : ''}
+        <button class="schedule-actions-btn delete" onclick="deleteSchedule('${s.id}')">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderCalendar(year, month, schedules) {
+  const grid = document.getElementById('calendarGrid');
+  const label = document.getElementById('calendarMonthLabel');
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  label.textContent = `${monthNames[month]} ${year}`;
+
+  // Build date-to-schedule map
+  const dateMap = {};
+  (schedules || []).forEach(s => {
+    if (s._date && s._date !== '—') {
+      if (!dateMap[s._date]) dateMap[s._date] = [];
+      dateMap[s._date].push(s);
+    }
+  });
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+
+  let html = ['S','M','T','W','T','F','S'].map(d => `<div class="cal-header">${d}</div>`).join('');
+
+  // Empty cells before first day
+  for (let i = 0; i < firstDay; i++) {
+    html += '<div class="calendar-day empty"></div>';
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const hasRoutes = dateMap[dateStr] && dateMap[dateStr].length > 0;
+    const isToday = dateStr === todayStr;
+    let cls = 'calendar-day';
+    if (hasRoutes) cls += ' has-routes';
+    if (isToday) cls += ' today';
+    html += `<div class="${cls}" onclick="selectCalendarDay('${dateStr}')">${d}</div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+function selectCalendarDay(dateStr) {
+  // Highlight selected day
+  document.querySelectorAll('.calendar-day').forEach(el => el.classList.remove('selected'));
+  const days = document.querySelectorAll('.calendar-day');
+  days.forEach(el => {
+    if (el.onclick && el.onclick.toString().includes(dateStr)) {
+      el.classList.add('selected');
+    }
+  });
+  // Find by matching the click handler date
+  document.querySelectorAll('.calendar-day').forEach(el => {
+    const attr = el.getAttribute('onclick');
+    if (attr && attr.includes(dateStr)) el.classList.add('selected');
+  });
+
+  const container = document.getElementById('calendarDayRoutes');
+  const daySchedules = allSchedules.filter(s => s._date === dateStr);
+  if (daySchedules.length === 0) {
+    container.innerHTML = `<div style="text-align:center;color:#888;font-size:12px;padding:12px;">No routes on ${dateStr}</div>`;
+    return;
+  }
+  container.innerHTML = daySchedules.map(s => {
+    const mill = s.mill ? s.mill.name : '—';
+    const yard = s.yard ? `${s.yard.posNumber || ''} — ${s.yard.city || ''}` : '—';
+    const status = s.status || 'scheduled';
+    const truckInfo = s.truck ? `<div style="color:#555;margin-top:2px;">🚛 ${s.truck.name}${s.truck.driver ? ' — ' + s.truck.driver : ''}</div>` :
+      `<div style="margin-top:4px;"><button class="schedule-actions-btn" style="background:#e65100;color:white;font-size:10px;padding:3px 8px;" onclick="openAssignTruckPanel('${s.id}')">🚛 Assign Truck</button></div>`;
+    return `<div style="background:#f7f9fb;border:1px solid #dde3ea;border-radius:6px;padding:10px;margin-bottom:6px;font-size:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <strong>${s._time || ''}</strong>
+        <span class="schedule-badge ${status}">${status}</span>
+      </div>
+      <div style="margin-top:4px;">${mill} → ${yard}</div>
+      ${truckInfo}
+      ${s.distance ? `<div style="color:#888;margin-top:2px;">Distance: ${s.distance}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function prevMonth() {
+  scheduleCalendarMonth--;
+  if (scheduleCalendarMonth < 0) { scheduleCalendarMonth = 11; scheduleCalendarYear--; }
+  loadSchedules();
+}
+
+function nextMonth() {
+  scheduleCalendarMonth++;
+  if (scheduleCalendarMonth > 11) { scheduleCalendarMonth = 0; scheduleCalendarYear++; }
+  loadSchedules();
+}
+
+async function updateScheduleStatus(id, status) {
+  try {
+    const resp = await fetch(`/api/schedule/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    if (!resp.ok) throw new Error('Failed to update');
+    loadSchedules();
+  } catch (e) {
+    alert('Error updating schedule: ' + e.message);
+  }
+}
+
+async function deleteSchedule(id) {
+  if (!confirm('Delete this scheduled route?')) return;
+  try {
+    const resp = await fetch(`/api/schedule/${id}`, { method: 'DELETE' });
+    if (!resp.ok) throw new Error('Failed to delete');
+    loadSchedules();
+  } catch (e) {
+    alert('Error deleting schedule: ' + e.message);
+  }
+}
+
+// --- Truck Assignment Panel ---
+let assignTruckScheduleId = null;
+
+async function openAssignTruckPanel(scheduleId) {
+  assignTruckScheduleId = scheduleId;
+  const schedule = allSchedules.find(s => s.id === scheduleId);
+  if (!schedule) return;
+
+  // Get the mill/yard coordinates for distance calculation
+  let targetLat = null, targetLon = null;
+  // Use mill location as the reference point (truck needs to get there first)
+  if (schedule.mill) {
+    // Try to find mill coords from MILLS array
+    const mill = MILLS.find(m => m.name === schedule.mill.name && m.vendor === schedule.mill.vendor);
+    if (mill && mill._geocoded) {
+      targetLat = mill._geocoded.lat;
+      targetLon = mill._geocoded.lon;
+    }
+  }
+  // Fallback: use yard coordinates (yards always have coords)
+  if (!targetLat && schedule.yard) {
+    const yard = YARDS.find(y => (y.storeNumber === schedule.yard.posNumber || y.posNumber === schedule.yard.posNumber));
+    if (yard) { targetLat = yard.lat; targetLon = yard.lon; }
+  }
+
+  // Show panel
+  const modal = document.getElementById('assignTruckModal');
+  const listEl = document.getElementById('assignTruckList');
+  const infoEl = document.getElementById('assignTruckInfo');
+  infoEl.textContent = `${schedule.mill ? schedule.mill.name : '?'} → ${schedule.yard ? (schedule.yard.posNumber + ' ' + schedule.yard.city) : '?'} on ${schedule._date} at ${schedule._time}`;
+  listEl.innerHTML = '<div style="text-align:center;padding:20px;color:#888;">Loading trucks...</div>';
+  modal.style.display = 'flex';
+
+  // Fetch truck locations
+  try {
+    const resp = await fetch('/api/intellishift/vehicles');
+    if (!resp.ok) throw new Error('Could not load trucks');
+    const data = await resp.json();
+    const vehicles = data.vehicles || [];
+
+    if (vehicles.length === 0) {
+      listEl.innerHTML = '<div style="text-align:center;padding:20px;color:#888;">No trucks available</div>';
+      return;
+    }
+
+    // Calculate distance from each truck to the target (mill or yard)
+    const trucksWithDist = vehicles.map(v => {
+      let distMi = null;
+      if (targetLat && targetLon && v.lat && v.lon) {
+        const km = haversine(v.lat, v.lon, targetLat, targetLon);
+        distMi = km * 0.621371;
+      }
+      return { ...v, distMi };
+    });
+
+    // Sort by distance (closest first), nulls last
+    trucksWithDist.sort((a, b) => {
+      if (a.distMi === null && b.distMi === null) return 0;
+      if (a.distMi === null) return 1;
+      if (b.distMi === null) return -1;
+      return a.distMi - b.distMi;
+    });
+
+    listEl.innerHTML = trucksWithDist.map(v => {
+      const statusColor = v.speed > 0 ? '#1565c0' : (!v.engineOn ? '#b71c1c' : '#e65100');
+      const statusLabel = v.speed > 0 ? 'Moving' : (!v.engineOn ? 'Stopped' : 'Idle');
+      const distLabel = v.distMi !== null ? `${v.distMi.toFixed(1)} mi away` : '— mi';
+      const loc = [v.city, v.state].filter(Boolean).join(', ');
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid #eee;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#f0f4f8'" onmouseout="this.style.background=''" onclick="assignTruck('${v.id}','${(v.name||'').replace(/'/g,"\\'")}','${(v.driver||'').replace(/'/g,"\\'")}')">
+        <div style="width:10px;height:10px;border-radius:50%;background:${statusColor};flex-shrink:0;"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;">${v.name}</div>
+          <div style="font-size:11px;color:#888;">${loc}${v.driver ? ' — ' + v.driver : ''}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:13px;font-weight:700;color:#1a3a5c;">${distLabel}</div>
+          <div style="font-size:10px;color:${statusColor};font-weight:600;">${statusLabel}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    listEl.innerHTML = `<div style="text-align:center;padding:20px;color:#c62828;">Error: ${e.message}</div>`;
+  }
+}
+
+function closeAssignTruckModal() {
+  document.getElementById('assignTruckModal').style.display = 'none';
+  assignTruckScheduleId = null;
+}
+
+async function assignTruck(truckId, truckName, driverName) {
+  if (!assignTruckScheduleId) return;
+  try {
+    // Update the schedule on the server — add truck field via a modified PUT
+    const resp = await fetch(`/api/schedule/${assignTruckScheduleId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ truck: { id: truckId, name: truckName, driver: driverName } })
+    });
+    if (!resp.ok) throw new Error('Failed to assign truck');
+    closeAssignTruckModal();
+    loadSchedules();
+  } catch (e) {
+    alert('Error assigning truck: ' + e.message);
+  }
+}
+
+function switchScheduleView(view) {
+  const listView = document.getElementById('scheduleListView');
+  const calView = document.getElementById('scheduleCalendarView');
+  const btns = document.querySelectorAll('.view-toggle button');
+  btns.forEach(b => b.classList.remove('active'));
+  if (view === 'list') {
+    listView.style.display = 'block';
+    calView.style.display = 'none';
+    btns[0].classList.add('active');
+  } else {
+    listView.style.display = 'none';
+    calView.style.display = 'block';
+    btns[1].classList.add('active');
+  }
+}
 </script>
+
+<!-- Schedule Modal -->
+<div class="schedule-modal" id="scheduleModal" style="display:none;" onclick="if(event.target===this)closeScheduleModal()">
+  <div class="modal-card">
+    <h3>📅 Schedule This Route</h3>
+    <div id="scheduleModalSummary" style="font-size:13px;color:#555;background:#f7f9fb;border-radius:6px;padding:10px;margin-bottom:8px;"></div>
+    <label>Date</label>
+    <input type="date" id="scheduleDate" />
+    <label>Time</label>
+    <input type="time" id="scheduleTime" value="06:00" />
+    <label>Truck Assignment</label>
+    <div id="scheduleTruckDisplay" style="font-size:13px;color:#555;padding:8px 10px;background:#f0f2f5;border-radius:4px;">None</div>
+    <label>Notes</label>
+    <textarea id="scheduleNotes" placeholder="Optional notes for this scheduled route..."></textarea>
+    <input type="hidden" id="scheduleType" value="single" />
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeScheduleModal()">Cancel</button>
+      <button class="btn btn-schedule" onclick="submitSchedule()">Schedule</button>
+    </div>
+  </div>
+</div>
+
+<!-- Assign Truck Modal -->
+<div class="schedule-modal" id="assignTruckModal" style="display:none;" onclick="if(event.target===this)closeAssignTruckModal()">
+  <div class="modal-card" style="max-width:460px;max-height:80vh;">
+    <h3>🚛 Assign Truck</h3>
+    <div id="assignTruckInfo" style="font-size:12px;color:#555;background:#f7f9fb;border-radius:6px;padding:8px 10px;margin-bottom:8px;"></div>
+    <div style="font-size:11px;color:#888;margin-bottom:6px;">Trucks sorted by distance to mill (closest first):</div>
+    <div id="assignTruckList" style="max-height:400px;overflow-y:auto;border:1px solid #dde3ea;border-radius:6px;"></div>
+    <div class="modal-actions" style="margin-top:10px;">
+      <button class="btn btn-secondary" onclick="closeAssignTruckModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

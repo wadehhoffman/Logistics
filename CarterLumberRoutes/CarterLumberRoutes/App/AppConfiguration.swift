@@ -22,7 +22,7 @@ final class AppConfiguration {
         let defaults = UserDefaults.standard
         self.truckMPG = defaults.double(forKey: Self.mpgKey) > 0 ? defaults.double(forKey: Self.mpgKey) : 6.5
         self.tankSizeGallons = defaults.double(forKey: Self.tankKey) > 0 ? defaults.double(forKey: Self.tankKey) : 150
-        self.eiaApiKey = defaults.string(forKey: Self.eiaKey) ?? ""
+        self.eiaApiKey = defaults.string(forKey: Self.eiaKey) ?? "kxKiEkyFtNPI0Fwkh4fG61rBtA3n1F7z6mOMUX06"
         self.intelliShiftBaseURL = defaults.string(forKey: Self.isBaseURLKey) ?? "http://localhost:3003"
     }
 

@@ -1,16 +1,15 @@
 import SwiftUI
 
 struct TruckPickerView: View {
-    let vehicles: [Vehicle]
-    let isLoading: Bool
+    let viewModel: TruckRouteViewModel
     let onSelect: (Vehicle) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
 
     private var filteredVehicles: [Vehicle] {
-        guard !searchText.isEmpty else { return vehicles }
+        guard !searchText.isEmpty else { return viewModel.vehicles }
         let q = searchText.lowercased()
-        return vehicles.filter {
+        return viewModel.vehicles.filter {
             $0.name.lowercased().contains(q) ||
             $0.driver.lowercased().contains(q) ||
             $0.city.lowercased().contains(q)
@@ -20,7 +19,7 @@ struct TruckPickerView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if isLoading {
+                if viewModel.isLoadingTrucks {
                     VStack(spacing: 12) {
                         ProgressView()
                         Text("Loading truck locations...")
@@ -28,11 +27,11 @@ struct TruckPickerView: View {
                             .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if vehicles.isEmpty {
+                } else if viewModel.vehicles.isEmpty {
                     ContentUnavailableView(
                         "No Trucks Available",
                         systemImage: "truck.box",
-                        description: Text("Could not load truck locations. Check IntelliShift configuration in Settings.")
+                        description: Text(viewModel.errorMessage ?? "Could not load truck locations. Check IntelliShift configuration in Settings.")
                     )
                 } else {
                     List {
@@ -87,11 +86,25 @@ struct TruckPickerView: View {
                     .searchable(text: $searchText, prompt: "Search trucks...")
                 }
             }
-            .navigationTitle("Select Truck")
+            .navigationTitle("Select Truck (\(viewModel.vehicles.count))")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    if !viewModel.isLoadingTrucks {
+                        Button {
+                            Task { await viewModel.loadTrucks() }
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                    }
+                }
+            }
+            .task {
+                if viewModel.vehicles.isEmpty {
+                    await viewModel.loadTrucks()
                 }
             }
         }

@@ -94,13 +94,18 @@ final class SingleRouteViewModel {
 
     private func fetchDieselPrices() async {
         let stateCodes = stateBreakdown.map(\.state)
-        guard !stateCodes.isEmpty, !config.eiaApiKey.isEmpty else { return }
+        print("[Diesel] State codes from route: \(stateCodes), EIA key present: \(!config.eiaApiKey.isEmpty)")
+        guard !stateCodes.isEmpty, !config.eiaApiKey.isEmpty else {
+            print("[Diesel] Skipping — stateCodes empty: \(stateCodes.isEmpty), key empty: \(config.eiaApiKey.isEmpty)")
+            return
+        }
 
         do {
             let prices = try await dieselService.fetchPrices(
                 stateCodes: stateCodes,
                 apiKey: config.eiaApiKey
             )
+            print("[Diesel] Got prices for \(prices.count) states: \(prices.keys.sorted())")
             guard let route = routeResult else { return }
             fuelEstimate = FuelCalculator.calculate(
                 distanceMiles: route.distanceMiles,
@@ -109,8 +114,9 @@ final class SingleRouteViewModel {
                 mpg: config.truckMPG,
                 tankSizeGallons: config.tankSizeGallons
             )
+            print("[Diesel] Fuel estimate: \(fuelEstimate?.formattedTotalCost ?? "nil")")
         } catch {
-            print("Diesel price error: \(error)")
+            print("[Diesel] ERROR: \(error)")
         }
     }
 
