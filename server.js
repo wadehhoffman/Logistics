@@ -21,6 +21,41 @@ function saveSchedule() {
   fs.writeFileSync(SCHEDULE_FILE, JSON.stringify(scheduleData, null, 2));
 }
 
+// Check if a truck is busy at a given time (considering route duration)
+function isTruckBusy(truckId, truckName, startTime, durationSec, excludeScheduleId) {
+  const newStart = new Date(startTime).getTime();
+  const newEnd = newStart + (durationSec || 8 * 3600) * 1000; // default 8 hours if no duration
+
+  for (const s of scheduleData) {
+    if (s.status !== 'scheduled') continue;
+    if (excludeScheduleId && s.id === excludeScheduleId) continue;
+    if (!s.truck) continue;
+
+    const matchesId = s.truck.id && (String(s.truck.id) === String(truckId));
+    const matchesName = s.truck.name && (s.truck.name === truckName);
+    if (!matchesId && !matchesName) continue;
+
+    const existStart = new Date(s.scheduledAt).getTime();
+    const existDuration = (s.duration || 8 * 3600) * 1000;
+    const existEnd = existStart + existDuration;
+
+    // Overlap check: new route overlaps if it starts before existing ends AND ends after existing starts
+    if (newStart < existEnd && newEnd > existStart) {
+      return {
+        busy: true,
+        conflict: {
+          scheduleId: s.id,
+          scheduledAt: s.scheduledAt,
+          duration: s.duration,
+          mill: s.mill ? s.mill.name : '?',
+          yard: s.yard ? (s.yard.posNumber + ' ' + (s.yard.city || '')) : '?',
+        }
+      };
+    }
+  }
+  return { busy: false };
+}
+
 function readBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -509,6 +544,47 @@ const server = http.createServer((req, res) => {
       'Access-Control-Allow-Headers': 'Content-Type',
     });
     return res.end();
+  }
+
+  // GET /api/schedule/truck-availability — check which trucks are busy on a date/time
+  if (pathname === '/api/schedule/truck-availability' && req.method === 'GET') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+    const dateTime = parsed.query.dateTime; // ISO string "2026-04-15T06:00:00"
+    const duration = parseInt(parsed.query.duration) || 8 * 3600; // seconds, default 8h
+
+    if (!dateTime) {
+      res.writeHead(400);
+      return res.end(JSON.stringify({ error: 'dateTime parameter required' }));
+    }
+
+    // Find all trucks that are busy during this window
+    const busyTrucks = {};
+    const checkStart = new Date(dateTime).getTime();
+    const checkEnd = checkStart + duration * 1000;
+
+    for (const s of scheduleData) {
+      if (s.status !== 'scheduled' || !s.truck) continue;
+      const existStart = new Date(s.scheduledAt).getTime();
+      const existDuration = (s.duration || 8 * 3600) * 1000;
+      const existEnd = existStart + existDuration;
+
+      if (checkStart < existEnd && checkEnd > existStart) {
+        const key = s.truck.id || s.truck.name;
+        busyTrucks[key] = {
+          truckId: s.truck.id,
+          truckName: s.truck.name,
+          scheduleId: s.id,
+          scheduledAt: s.scheduledAt,
+          duration: s.duration,
+          mill: s.mill ? s.mill.name : null,
+          yard: s.yard ? (s.yard.posNumber + ' ' + (s.yard.city || '')) : null,
+        };
+      }
+    }
+
+    res.writeHead(200);
+    return res.end(JSON.stringify({ busyTrucks, dateTime, duration }));
   }
 
   // GET /api/schedule — list all (optional ?month=2026-04 filter)
