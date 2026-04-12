@@ -3,49 +3,77 @@ import SwiftUI
 
 @MainActor @Observable
 final class ScheduleViewModel {
-    var schedules: [ScheduledRoute] = []
-    var selectedDay: String?  // "2026-04-15"
-    var currentYear: Int
-    var currentMonth: Int     // 0-indexed
+    var allSchedules: [ScheduledRoute] = []
+    var selectedDate: Date = Date()
     var isLoading = false
     var errorMessage: String?
-    var showListView = true   // true = list, false = calendar
 
     private let service: ScheduleService
 
-    var monthString: String {
-        String(format: "%d-%02d", currentYear, currentMonth + 1)
+    /// Schedules filtered to the selected date
+    var filteredSchedules: [ScheduledRoute] {
+        let dayKey = dayKeyFor(selectedDate)
+        return allSchedules.filter { $0.dayKey == dayKey }
     }
 
-    var monthLabel: String {
-        let names = ["January","February","March","April","May","June","July","August","September","October","November","December"]
-        return "\(names[currentMonth]) \(currentYear)"
+    var selectedDateLabel: String {
+        let f = DateFormatter()
+        f.dateFormat = "EEEE, MMMM d, yyyy"
+        return f.string(from: selectedDate)
     }
 
-    var selectedDaySchedules: [ScheduledRoute] {
-        guard let day = selectedDay else { return [] }
-        return schedules.filter { $0.dayKey == day }
+    /// All truck IDs that are already assigned on the selected date (status = "scheduled")
+    func trucksScheduledOn(date: String) -> Set<String> {
+        let daySchedules = allSchedules.filter { $0.dayKey == date && $0.status == "scheduled" }
+        var ids = Set<String>()
+        for s in daySchedules {
+            if let truckId = s.truck?.id, !truckId.isEmpty {
+                ids.insert(truckId)
+            }
+            // Also match by name in case ID format differs
+            if let truckName = s.truck?.name, !truckName.isEmpty {
+                ids.insert(truckName)
+            }
+        }
+        return ids
     }
 
-    /// Group schedules by day for calendar dots
-    var scheduleDays: Set<String> {
-        Set(schedules.map(\.dayKey))
+    /// Trucks already booked on the date of the schedule being assigned
+    func trucksScheduledForSchedule(id: String) -> Set<String> {
+        guard let schedule = allSchedules.first(where: { $0.id == id }) else { return [] }
+        return trucksScheduledOn(date: schedule.dayKey)
     }
 
     init(config: AppConfiguration) {
-        let now = Calendar.current.dateComponents([.year, .month], from: Date())
-        self.currentYear = now.year ?? 2026
-        self.currentMonth = (now.month ?? 4) - 1
         self.service = ScheduleService(baseURL: config.intelliShiftBaseURL)
     }
 
-    func loadSchedules() async {
+    func selectDate(_ date: Date) {
+        selectedDate = date
+        // Load the month if we don't have data for it
+        let newMonth = monthStringFor(date)
+        Task { await loadSchedules(month: newMonth) }
+    }
+
+    func loadAllSchedules() async {
+        // Load current month + next month for good coverage
+        let currentMonth = monthStringFor(selectedDate)
+        await loadSchedules(month: currentMonth)
+    }
+
+    func loadSchedules(month: String? = nil) async {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
 
+        let m = month ?? monthStringFor(selectedDate)
         do {
-            schedules = try await service.fetchSchedules(month: monthString)
+            let fetched = try await service.fetchSchedules(month: m)
+            // Merge: replace schedules for this month, keep others
+            let prefix = m // "2026-04"
+            allSchedules.removeAll { $0.dayKey.hasPrefix(prefix) }
+            allSchedules.append(contentsOf: fetched)
+            allSchedules.sort { $0.scheduledAt < $1.scheduledAt }
         } catch {
             errorMessage = error.localizedDescription
             print("[Schedule] Load error: \(error)")
@@ -116,15 +144,15 @@ final class ScheduleViewModel {
         }
     }
 
-    func prevMonth() {
-        currentMonth -= 1
-        if currentMonth < 0 { currentMonth = 11; currentYear -= 1 }
-        Task { await loadSchedules() }
+    // MARK: - Helpers
+
+    private func monthStringFor(_ date: Date) -> String {
+        let c = Calendar.current.dateComponents([.year, .month], from: date)
+        return String(format: "%d-%02d", c.year!, c.month!)
     }
 
-    func nextMonth() {
-        currentMonth += 1
-        if currentMonth > 11 { currentMonth = 0; currentYear += 1 }
-        Task { await loadSchedules() }
+    private func dayKeyFor(_ date: Date) -> String {
+        let c = Calendar.current.dateComponents([.year, .month, .day], from: date)
+        return String(format: "%d-%02d-%02d", c.year!, c.month!, c.day!)
     }
 }

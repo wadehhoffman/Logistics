@@ -395,6 +395,11 @@ struct RouteKPICardView: View {
     let mapViewModel: MapViewModel
     let onDismiss: () -> Void
 
+    @Environment(AppConfiguration.self) private var config
+    @State private var showingScheduleSheet = false
+    @State private var showingTruckRoute = false
+    @State private var scheduleVM: ScheduleViewModel?
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -421,6 +426,23 @@ struct RouteKPICardView: View {
 
                     Divider()
 
+                    // Action buttons: Schedule + Route Truck
+                    HStack(spacing: 10) {
+                        Button { showingScheduleSheet = true } label: {
+                            Label("Schedule", systemImage: "calendar.badge.plus")
+                                .font(.subheadline).fontWeight(.semibold)
+                                .frame(maxWidth: .infinity).padding(12)
+                                .background(Color.orange).foregroundStyle(.white).cornerRadius(8)
+                        }.buttonStyle(.plain)
+
+                        Button { showingTruckRoute = true } label: {
+                            Label("Route Truck", systemImage: "truck.box.fill")
+                                .font(.subheadline).fontWeight(.semibold)
+                                .frame(maxWidth: .infinity).padding(12)
+                                .background(Color.carterBlue).foregroundStyle(.white).cornerRadius(8)
+                        }.buttonStyle(.plain)
+                    }
+
                     if let route = vm.routeResult { RouteSummaryCard(route: route) }
                     if let fuel = vm.fuelEstimate { FuelEstimateCard(estimate: fuel) }
                     if !vm.weatherPoints.isEmpty {
@@ -446,6 +468,82 @@ struct RouteKPICardView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { onDismiss() }.fontWeight(.semibold)
                 }
+            }
+            .sheet(isPresented: $showingScheduleSheet) {
+                ScheduleRouteSheet(
+                    routeType: "single",
+                    mill: vm.selectedMill,
+                    yard: vm.selectedYard,
+                    truck: nil,
+                    distance: vm.routeResult?.formattedDistance,
+                    duration: vm.routeResult?.duration,
+                    fuelCost: vm.fuelEstimate?.totalCost,
+                    vm: scheduleVM ?? ScheduleViewModel(config: config),
+                    onDone: { }
+                )
+            }
+            .sheet(isPresented: $showingTruckRoute) {
+                TruckAssignFromRouteSheet(mill: vm.selectedMill, yard: vm.selectedYard, config: config)
+            }
+            .onAppear {
+                if scheduleVM == nil { scheduleVM = ScheduleViewModel(config: config) }
+            }
+        }
+    }
+}
+
+/// Sheet to pick a truck for routing from the Route Details card
+struct TruckAssignFromRouteSheet: View {
+    let mill: Mill?
+    let yard: Yard?
+    let config: AppConfiguration
+    @Environment(\.dismiss) private var dismiss
+    @State private var vehicles: [Vehicle] = []
+    @State private var isLoading = true
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if isLoading {
+                    VStack(spacing: 12) {
+                        ProgressView()
+                        Text("Loading trucks...").font(.caption).foregroundStyle(.secondary)
+                    }.frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if vehicles.isEmpty {
+                    ContentUnavailableView("No Trucks", systemImage: "truck.box",
+                        description: Text("Could not load truck locations"))
+                } else {
+                    List {
+                        Section {
+                            Text("Select a truck to route to \(mill?.name ?? "mill") then to \(yard?.displayName ?? "yard")")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                        ForEach(vehicles) { v in
+                            HStack(spacing: 12) {
+                                Circle().fill(v.status.color).frame(width: 10, height: 10)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(v.name).font(.subheadline).fontWeight(.semibold)
+                                    Text(v.locationDescription).font(.caption).foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Text(v.status.label).font(.caption2).fontWeight(.semibold)
+                                    .foregroundStyle(v.status.color)
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Route Truck")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+            .task {
+                let service = IntelliShiftService(baseURL: config.intelliShiftBaseURL)
+                do { vehicles = try await service.fetchVehicles() } catch {}
+                isLoading = false
             }
         }
     }
@@ -712,6 +810,10 @@ struct TruckKPICardView: View {
     let mapViewModel: MapViewModel
     let onDismiss: () -> Void
 
+    @Environment(AppConfiguration.self) private var config
+    @State private var showingScheduleSheet = false
+    @State private var scheduleVM: ScheduleViewModel?
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -748,6 +850,14 @@ struct TruckKPICardView: View {
 
                     Divider()
 
+                    // Schedule button
+                    Button { showingScheduleSheet = true } label: {
+                        Label("Schedule This Route", systemImage: "calendar.badge.plus")
+                            .font(.subheadline).fontWeight(.semibold)
+                            .frame(maxWidth: .infinity).padding(12)
+                            .background(Color.orange).foregroundStyle(.white).cornerRadius(8)
+                    }.buttonStyle(.plain)
+
                     if let route = vm.twoLegRoute {
                         TruckLegCard(title: "LEG 1: TRUCK TO MILL", leg: route.leg1, color: .orange)
                         TruckLegCard(title: "LEG 2: MILL TO YARD", leg: route.leg2, color: Color.carterBlue)
@@ -782,6 +892,22 @@ struct TruckKPICardView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { onDismiss() }.fontWeight(.semibold)
                 }
+            }
+            .sheet(isPresented: $showingScheduleSheet) {
+                ScheduleRouteSheet(
+                    routeType: "truck",
+                    mill: vm.selectedMill,
+                    yard: vm.selectedYard,
+                    truck: vm.selectedVehicle,
+                    distance: vm.twoLegRoute?.formattedTotalDistance,
+                    duration: vm.twoLegRoute?.totalDuration,
+                    fuelCost: vm.fuelEstimate?.totalCost,
+                    vm: scheduleVM ?? ScheduleViewModel(config: config),
+                    onDone: { }
+                )
+            }
+            .onAppear {
+                if scheduleVM == nil { scheduleVM = ScheduleViewModel(config: config) }
             }
         }
     }

@@ -2,7 +2,9 @@ import SwiftUI
 
 struct ScheduleContentView: View {
     @Environment(AppConfiguration.self) private var config
+    @Environment(LocationDataStore.self) private var locationStore
     @State private var viewModel: ScheduleViewModel?
+    @State private var showingCreateRoute = false
 
     var body: some View {
         if let viewModel {
@@ -16,63 +18,101 @@ struct ScheduleContentView: View {
     @ViewBuilder
     private func mainContent(vm: ScheduleViewModel) -> some View {
         VStack(spacing: 0) {
-            // View toggle
-            HStack {
-                Text("SCHEDULED ROUTES").font(.caption2).fontWeight(.bold).foregroundStyle(.secondary)
-                Spacer()
-                Picker("View", selection: Binding(
-                    get: { vm.showListView },
-                    set: { vm.showListView = $0 }
-                )) {
-                    Text("List").tag(true)
-                    Text("Calendar").tag(false)
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 160)
-            }
-            .padding(.horizontal).padding(.top, 12).padding(.bottom, 8)
+            // Date picker centered at top
+            DatePicker(
+                "Date",
+                selection: Binding(
+                    get: { vm.selectedDate },
+                    set: { vm.selectDate($0) }
+                ),
+                displayedComponents: .date
+            )
+            .datePickerStyle(.compact)
+            .labelsHidden()
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity)
+
+            // Day label
+            Text(vm.selectedDateLabel)
+                .font(.subheadline).fontWeight(.semibold)
+                .foregroundStyle(Color.carterBlue)
+                .padding(.bottom, 8)
+
+            Divider()
 
             if vm.isLoading {
                 Spacer()
                 ProgressView("Loading schedules...")
                 Spacer()
-            } else if vm.showListView {
-                ScheduleListView(vm: vm)
+            } else if vm.filteredSchedules.isEmpty {
+                Spacer()
+                VStack(spacing: 12) {
+                    Image(systemName: "calendar.badge.exclamationmark")
+                        .font(.system(size: 44))
+                        .foregroundStyle(.secondary)
+                    Text("No Routes Scheduled")
+                        .font(.title3).fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+                    Text("for \(vm.selectedDateLabel)")
+                        .font(.subheadline).foregroundStyle(.tertiary)
+
+                    Button {
+                        showingCreateRoute = true
+                    } label: {
+                        Label("Create a Route", systemImage: "plus.circle.fill")
+                            .font(.subheadline).fontWeight(.semibold)
+                            .padding(.horizontal, 20).padding(.vertical, 12)
+                            .background(Color.carterBlue)
+                            .foregroundStyle(.white)
+                            .cornerRadius(10)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 4)
+                }
+                Spacer()
             } else {
-                ScheduleCalendarView(vm: vm)
+                // Route count
+                Text("\(vm.filteredSchedules.count) route\(vm.filteredSchedules.count == 1 ? "" : "s")")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal).padding(.top, 8)
+
+                List {
+                    ForEach(vm.filteredSchedules) { schedule in
+                        ScheduleRowView(schedule: schedule, vm: vm)
+                    }
+                }
+                .listStyle(.plain)
             }
         }
-        .task { await vm.loadSchedules() }
-    }
-}
-
-// MARK: - List View
-
-struct ScheduleListView: View {
-    let vm: ScheduleViewModel
-
-    var body: some View {
-        if vm.schedules.isEmpty {
-            Spacer()
-            VStack(spacing: 8) {
-                Image(systemName: "calendar.badge.plus")
-                    .font(.system(size: 40)).foregroundStyle(.secondary)
-                Text("No scheduled routes")
-                    .font(.subheadline).foregroundStyle(.secondary)
-                Text("Calculate a route and tap Schedule")
-                    .font(.caption).foregroundStyle(.tertiary)
-            }
-            Spacer()
-        } else {
-            List {
-                ForEach(vm.schedules) { schedule in
-                    ScheduleRowView(schedule: schedule, vm: vm)
+        .task { await vm.loadAllSchedules() }
+        .sheet(isPresented: $showingCreateRoute) {
+            // Navigate user to Route Planner — just a hint for now
+            NavigationStack {
+                VStack(spacing: 16) {
+                    Image(systemName: "arrow.triangle.turn.up.right.diamond")
+                        .font(.system(size: 48)).foregroundStyle(Color.carterBlue)
+                    Text("Create a Route")
+                        .font(.title3).fontWeight(.bold)
+                    Text("Use the Route Planner or Truck Route from the main menu to calculate a route, then tap the Schedule button to add it here.")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                }
+                .padding()
+                .navigationTitle("New Route")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Done") { showingCreateRoute = false }
+                    }
                 }
             }
-            .listStyle(.plain)
         }
     }
 }
+
+// MARK: - Schedule Row
 
 struct ScheduleRowView: View {
     let schedule: ScheduledRoute
@@ -81,10 +121,10 @@ struct ScheduleRowView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            // Date + status
+            // Time + status
             HStack {
-                Text(schedule.dateString).font(.caption).fontWeight(.semibold)
-                Text(schedule.timeString).font(.caption).foregroundStyle(.secondary)
+                Image(systemName: "clock").font(.caption2).foregroundStyle(.secondary)
+                Text(schedule.timeString).font(.subheadline).fontWeight(.semibold)
                 Spacer()
                 statusBadge(schedule.status)
             }
@@ -102,8 +142,14 @@ struct ScheduleRowView: View {
             // Truck + distance
             HStack {
                 if let truck = schedule.truck {
-                    Label(truck.name, systemImage: "truck.box.fill")
-                        .font(.caption2).foregroundStyle(.blue)
+                    HStack(spacing: 4) {
+                        Image(systemName: "truck.box.fill").font(.caption2)
+                        Text(truck.name).font(.caption2)
+                        if let driver = truck.driver, !driver.isEmpty {
+                            Text("(\(driver))").font(.caption2).foregroundStyle(.tertiary)
+                        }
+                    }
+                    .foregroundStyle(.blue)
                 } else if schedule.status == "scheduled" {
                     Button {
                         showingAssignTruck = true
@@ -122,9 +168,17 @@ struct ScheduleRowView: View {
                 }
             }
 
+            // Notes
+            if !schedule.notes.isEmpty {
+                Text(schedule.notes)
+                    .font(.caption2).foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .padding(.top, 1)
+            }
+
             // Actions
             if schedule.status == "scheduled" {
-                HStack(spacing: 8) {
+                HStack(spacing: 12) {
                     Button {
                         Task { await vm.updateStatus(id: schedule.id, status: "completed") }
                     } label: {
@@ -137,7 +191,7 @@ struct ScheduleRowView: View {
                         Task { await vm.updateStatus(id: schedule.id, status: "cancelled") }
                     } label: {
                         Label("Cancel", systemImage: "xmark.circle.fill")
-                            .font(.caption2).foregroundStyle(.red)
+                            .font(.caption2).foregroundStyle(.orange)
                     }
                     .buttonStyle(.plain)
 
@@ -155,7 +209,7 @@ struct ScheduleRowView: View {
         }
         .padding(.vertical, 4)
         .sheet(isPresented: $showingAssignTruck) {
-            AssignTruckSheet(scheduleId: schedule.id, vm: vm, yardLat: nil, yardLon: nil)
+            AssignTruckSheet(scheduleId: schedule.id, vm: vm, millName: schedule.mill?.name, yardPOS: schedule.yard?.posNumber)
         }
     }
 
@@ -175,112 +229,5 @@ struct ScheduleRowView: View {
                 .blue
             )
             .cornerRadius(4)
-    }
-}
-
-// MARK: - Calendar View
-
-struct ScheduleCalendarView: View {
-    let vm: ScheduleViewModel
-    private let weekdays = ["S", "M", "T", "W", "T", "F", "S"]
-
-    var body: some View {
-        VStack(spacing: 8) {
-            // Month nav
-            HStack {
-                Button { vm.prevMonth() } label: {
-                    Image(systemName: "chevron.left").fontWeight(.semibold)
-                }
-                Spacer()
-                Text(vm.monthLabel).font(.headline).fontWeight(.bold).foregroundStyle(Color.carterBlue)
-                Spacer()
-                Button { vm.nextMonth() } label: {
-                    Image(systemName: "chevron.right").fontWeight(.semibold)
-                }
-            }
-            .padding(.horizontal)
-
-            // Weekday headers
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 4) {
-                ForEach(weekdays, id: \.self) { day in
-                    Text(day).font(.caption2).fontWeight(.bold).foregroundStyle(.secondary)
-                }
-            }
-            .padding(.horizontal)
-
-            // Days grid
-            let days = calendarDays()
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 4) {
-                ForEach(days, id: \.self) { day in
-                    if day.isEmpty {
-                        Text("").frame(height: 40)
-                    } else {
-                        let dateStr = String(format: "%d-%02d-%02d", vm.currentYear, vm.currentMonth + 1, Int(day)!)
-                        let hasRoutes = vm.scheduleDays.contains(dateStr)
-                        let isSelected = vm.selectedDay == dateStr
-                        let isToday = dateStr == todayString()
-
-                        Button {
-                            vm.selectedDay = dateStr
-                        } label: {
-                            VStack(spacing: 2) {
-                                Text(day)
-                                    .font(.subheadline)
-                                    .fontWeight(isToday ? .bold : .regular)
-                                    .foregroundStyle(isSelected ? .white : isToday ? Color.carterBlue : .primary)
-                                Circle()
-                                    .fill(hasRoutes ? Color.orange : Color.clear)
-                                    .frame(width: 6, height: 6)
-                            }
-                            .frame(height: 40)
-                            .frame(maxWidth: .infinity)
-                            .background(isSelected ? Color.carterBlue : Color.clear)
-                            .cornerRadius(8)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-            .padding(.horizontal)
-
-            // Selected day routes
-            if let _ = vm.selectedDay {
-                Divider().padding(.horizontal)
-                if vm.selectedDaySchedules.isEmpty {
-                    Text("No routes on this day")
-                        .font(.caption).foregroundStyle(.secondary)
-                        .padding()
-                } else {
-                    ScrollView {
-                        VStack(spacing: 8) {
-                            ForEach(vm.selectedDaySchedules) { schedule in
-                                ScheduleRowView(schedule: schedule, vm: vm)
-                                    .padding(.horizontal)
-                            }
-                        }
-                    }
-                }
-            }
-
-            Spacer()
-        }
-    }
-
-    private func calendarDays() -> [String] {
-        let firstDay = Calendar.current.component(.weekday, from:
-            Calendar.current.date(from: DateComponents(year: vm.currentYear, month: vm.currentMonth + 1, day: 1))!
-        ) - 1  // 0=Sunday
-        let daysInMonth = Calendar.current.range(of: .day, in: .month,
-            for: Calendar.current.date(from: DateComponents(year: vm.currentYear, month: vm.currentMonth + 1))!
-        )!.count
-
-        var days: [String] = Array(repeating: "", count: firstDay)
-        for d in 1...daysInMonth { days.append(String(d)) }
-        return days
-    }
-
-    private func todayString() -> String {
-        let c = Calendar.current.dateComponents([.year, .month, .day], from: Date())
-        return String(format: "%d-%02d-%02d", c.year!, c.month!, c.day!)
     }
 }
