@@ -19,6 +19,7 @@ struct TodayView: View {
 
     @State private var focusRouteId: String? = nil
     @State private var focusVehicleId: Int? = nil
+    @State private var clusterVehicles: [Vehicle] = []
 
     var body: some View {
         Group {
@@ -39,7 +40,8 @@ struct TodayView: View {
                 routes: vm.sortedRoutes,
                 vehicles: vm.vehicles,
                 focusRouteId: $focusRouteId,
-                focusVehicleId: $focusVehicleId
+                focusVehicleId: $focusVehicleId,
+                selectedClusterVehicles: $clusterVehicles
             )
             .frame(height: 280)
             .clipped()
@@ -60,6 +62,14 @@ struct TodayView: View {
         }
         .onDisappear { vm.stopAutoRefresh() }
         .refreshable { await vm.loadAll() }
+        .sheet(isPresented: Binding(
+            get: { !clusterVehicles.isEmpty },
+            set: { if !$0 { clusterVehicles = [] } }
+        )) {
+            ClusterDetailSheet(vehicles: clusterVehicles) { selected in
+                focusVehicleId = selected.id
+            }
+        }
     }
 
     // MARK: - Sections
