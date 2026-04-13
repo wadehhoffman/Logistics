@@ -1,61 +1,89 @@
 import Foundation
 import CoreLocation
 
+/// Routing client that talks to our server-side proxy.
+///
+/// The server handles the fallback chain (Mapbox driving-traffic → Mapbox
+/// driving → OSRM → Haversine) so this actor just makes one request and
+/// parses the Mapbox-shaped response. When `useTruckProfile` is true we hit
+/// `/api/truck-route` which uses OpenRouteService HGV (when ORS_API_KEY is
+/// configured on the server) or falls back to Mapbox driving if not.
+///
+/// Kept the original class name `MapboxRoutingService` so existing call sites
+/// don't need updates; the meaning has shifted from "direct Mapbox" to
+/// "our routing proxy (which uses Mapbox under the hood)".
 actor MapboxRoutingService {
-    private let mapboxToken: String
+    private let baseURL: String
     private let session: URLSession
 
-    init(mapboxToken: String) {
-        self.mapboxToken = mapboxToken
+    /// Back-compat initializer (kept so older code paths that passed a
+    /// Mapbox token continue to compile). Token is ignored — routing runs
+    /// server-side now.
+    init(mapboxToken: String = "", baseURL: String = "http://logistics-ai.carterlumber.com") {
+        self.baseURL = baseURL.hasSuffix("/") ? String(baseURL.dropLast()) : baseURL
         let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 10
+        config.timeoutIntervalForRequest = 15
         self.session = URLSession(configuration: config)
     }
 
-    /// Calculate a route between waypoints with automatic fallback chain.
-    /// Mapbox driving-traffic → Mapbox driving → OSRM → Haversine estimate
-    func calculateRoute(waypoints: [CLLocationCoordinate2D]) async throws -> RouteResult {
+    /// Calculate a route between waypoints. Server handles the fallback chain.
+    /// - Parameter useTruckProfile: when true, uses /api/truck-route (HGV-aware)
+    ///   which respects truck road restrictions via OpenRouteService.
+    func calculateRoute(
+        waypoints: [CLLocationCoordinate2D],
+        useTruckProfile: Bool = false
+    ) async throws -> RouteResult {
         guard waypoints.count >= 2 else {
             throw RoutingError.insufficientWaypoints
         }
 
-        let coordString = waypoints.map { "\($0.longitude),\($0.latitude)" }.joined(separator: ";")
+        let coordString = waypoints
+            .map { "\($0.longitude),\($0.latitude)" }
+            .joined(separator: ";")
+            .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let path = useTruckProfile ? "/api/truck-route" : "/api/route"
+        let urlStr = "\(baseURL)\(path)?coords=\(coordString)&overview=full"
 
-        // Try 1: Mapbox driving-traffic (real-time congestion)
-        if let result = try? await fetchMapboxRoute(coords: coordString, profile: "driving-traffic") {
-            return result
+        guard let url = URL(string: urlStr) else { throw RoutingError.invalidURL }
+
+        var request = URLRequest(url: url)
+        request.setValue("CarterLumberRouteApp/1.0", forHTTPHeaderField: "User-Agent")
+
+        do {
+            let (data, response) = try await session.data(for: request)
+            guard let http = response as? HTTPURLResponse else {
+                throw RoutingError.networkError("Invalid response")
+            }
+            guard http.statusCode == 200 else {
+                // Server already reports 504/502 for its own fallback failures;
+                // drop back to Haversine so the UI still has something to show.
+                return Haversine.fallbackRoute(from: waypoints.first!, to: waypoints.last!)
+            }
+            return try parseRouteResponse(data)
+        } catch let error as RoutingError {
+            throw error
+        } catch {
+            // Network failure → same graceful fallback
+            return Haversine.fallbackRoute(from: waypoints.first!, to: waypoints.last!)
         }
-
-        // Try 2: Mapbox driving (no traffic)
-        if let result = try? await fetchMapboxRoute(coords: coordString, profile: "driving") {
-            return result
-        }
-
-        // Try 3: OSRM (free, open-source)
-        if let result = try? await fetchOSRMRoute(coords: coordString) {
-            return result
-        }
-
-        // Try 4: Haversine fallback
-        return Haversine.fallbackRoute(from: waypoints.first!, to: waypoints.last!)
     }
 
-    /// Calculate a route and return separate legs (for truck routing).
+    /// Calculate a multi-waypoint route and split into legs (used by Today
+    /// dashboard for truck → mill → yard routing).
     func calculateRouteWithLegs(
         waypoints: [CLLocationCoordinate2D],
-        legNames: [(from: String, to: String)]
+        legNames: [(from: String, to: String)],
+        useTruckProfile: Bool = false
     ) async throws -> (legs: [RouteLeg], combinedGeometry: RouteGeometry?) {
         guard waypoints.count >= 2, legNames.count == waypoints.count - 1 else {
             throw RoutingError.insufficientWaypoints
         }
 
-        // Calculate full route through all waypoints
-        let result = try await calculateRoute(waypoints: waypoints)
+        let result = try await calculateRoute(waypoints: waypoints, useTruckProfile: useTruckProfile)
 
-        // If we got geometry, split it into legs
+        // For 3-waypoint (truck → mill → yard) routes, approximate leg split
+        // by finding the coordinate closest to the middle waypoint.
         if waypoints.count == 3, let geometry = result.geometry {
-            // For 3-waypoint routes (truck → mill → yard), approximate leg split
-            // by finding the coordinate closest to the middle waypoint
             let midWaypoint = waypoints[1]
             var bestIdx = 0
             var bestDist = Double.infinity
@@ -72,12 +100,9 @@ actor MapboxRoutingService {
 
             let leg1Coords = Array(geometry.coordinates[0...bestIdx])
             let leg2Coords = Array(geometry.coordinates[bestIdx...])
-
-            // Calculate distances for each leg
             let leg1Dist = calculateGeometryDistance(leg1Coords)
             let leg2Dist = calculateGeometryDistance(leg2Coords)
             let totalDist = leg1Dist + leg2Dist
-
             let leg1Duration = totalDist > 0 ? result.duration * (leg1Dist / totalDist) : result.duration / 2
             let leg2Duration = totalDist > 0 ? result.duration * (leg2Dist / totalDist) : result.duration / 2
 
@@ -96,7 +121,6 @@ actor MapboxRoutingService {
             return (legs, geometry)
         }
 
-        // Fallback: single leg
         let leg = RouteLeg(
             from: legNames[0].from, to: legNames.last!.to,
             distance: result.distance, duration: result.duration,
@@ -105,33 +129,12 @@ actor MapboxRoutingService {
         return ([leg], result.geometry)
     }
 
-    // MARK: - Mapbox API
+    // MARK: - Response parsing
 
-    private func fetchMapboxRoute(coords: String, profile: String) async throws -> RouteResult {
-        let urlStr = "https://api.mapbox.com/directions/v5/mapbox/\(profile)/\(coords)" +
-            "?geometries=geojson&overview=full&annotations=duration,distance&access_token=\(mapboxToken)"
-        guard let url = URL(string: urlStr) else { throw RoutingError.invalidURL }
-
-        var request = URLRequest(url: url)
-        request.setValue("CarterLumberRouteApp/1.0", forHTTPHeaderField: "User-Agent")
-
-        let (data, response) = try await session.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw RoutingError.networkError("Invalid response")
-        }
-
-        if httpResponse.statusCode == 429 || httpResponse.statusCode == 403 {
-            throw RoutingError.rateLimited
-        }
-
-        guard httpResponse.statusCode == 200 else {
-            throw RoutingError.networkError("Status \(httpResponse.statusCode)")
-        }
-
-        return try parseMapboxResponse(data)
-    }
-
-    private func parseMapboxResponse(_ data: Data) throws -> RouteResult {
+    /// Server returns a Mapbox-compatible shape whether the underlying engine
+    /// was Mapbox, OSRM, ORS HGV, or the haversine fallback.
+    /// `_fallback: true` (optional) flags the haversine estimate.
+    private func parseRouteResponse(_ data: Data) throws -> RouteResult {
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               let code = json["code"] as? String, code == "Ok",
               let routes = json["routes"] as? [[String: Any]],
@@ -141,6 +144,8 @@ actor MapboxRoutingService {
 
         let distance = route["distance"] as? Double ?? 0
         let duration = route["duration"] as? Double ?? 0
+        let isFallback = (json["_fallback"] as? Bool) ?? false
+        let note = json["_note"] as? String
 
         var geometry: RouteGeometry?
         if let geoJson = route["geometry"] as? [String: Any],
@@ -152,26 +157,9 @@ actor MapboxRoutingService {
             distance: distance,
             duration: duration,
             geometry: geometry,
-            isFallback: false,
-            fallbackNote: nil
+            isFallback: isFallback,
+            fallbackNote: note
         )
-    }
-
-    // MARK: - OSRM API
-
-    private func fetchOSRMRoute(coords: String) async throws -> RouteResult {
-        let urlStr = "https://router.project-osrm.org/route/v1/driving/\(coords)?overview=full&geometries=geojson"
-        guard let url = URL(string: urlStr) else { throw RoutingError.invalidURL }
-
-        var request = URLRequest(url: url)
-        request.setValue("CarterLumberRouteApp/1.0", forHTTPHeaderField: "User-Agent")
-
-        let (data, response) = try await session.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            throw RoutingError.networkError("OSRM unavailable")
-        }
-
-        return try parseMapboxResponse(data) // OSRM uses same response format
     }
 
     // MARK: - Helpers
@@ -197,10 +185,10 @@ actor MapboxRoutingService {
         var errorDescription: String? {
             switch self {
             case .insufficientWaypoints: return "At least 2 waypoints required"
-            case .invalidURL: return "Invalid routing URL"
-            case .rateLimited: return "API rate limited"
-            case .networkError(let msg): return "Network error: \(msg)"
-            case .parseError: return "Failed to parse route response"
+            case .invalidURL:            return "Invalid routing URL"
+            case .rateLimited:           return "API rate limited"
+            case .networkError(let m):   return "Network error: \(m)"
+            case .parseError:            return "Failed to parse route response"
             }
         }
     }

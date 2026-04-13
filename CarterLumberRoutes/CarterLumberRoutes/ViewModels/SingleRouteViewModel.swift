@@ -35,10 +35,10 @@ final class SingleRouteViewModel {
 
     init(config: AppConfiguration) {
         self.config = config
-        self.routingService = MapboxRoutingService(mapboxToken: config.mapboxToken)
-        self.geocodingService = GeocodingService()
-        self.dieselService = DieselPriceService()
-        self.weatherService = WeatherService()
+        self.routingService = MapboxRoutingService(baseURL: config.intelliShiftBaseURL)
+        self.geocodingService = GeocodingService(baseURL: config.intelliShiftBaseURL)
+        self.dieselService = DieselPriceService(baseURL: config.intelliShiftBaseURL)
+        self.weatherService = WeatherService(baseURL: config.intelliShiftBaseURL)
     }
 
     func selectMill(_ mill: Mill) async {

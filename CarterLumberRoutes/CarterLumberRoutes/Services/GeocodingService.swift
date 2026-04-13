@@ -1,34 +1,34 @@
 import Foundation
 import CoreLocation
 
+/// Geocoding client that routes through our server's /api/geocode proxy
+/// (which itself calls Nominatim, so no changes to caching/fallback semantics).
+/// Keeps the original public API unchanged so call sites don't need updates.
 actor GeocodingService {
+    private let baseURL: String
     private var cache: [String: CLLocationCoordinate2D] = [:]
     private let session: URLSession
 
-    init() {
+    init(baseURL: String = "http://logistics-ai.carterlumber.com") {
+        self.baseURL = baseURL.hasSuffix("/") ? String(baseURL.dropLast()) : baseURL
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 10
         self.session = URLSession(configuration: config)
     }
 
-    /// Geocode an address to coordinates using Nominatim.
-    /// Falls back to a shorter address (everything after first comma) if full address fails.
+    /// Geocode an address to coordinates via /api/geocode.
+    /// Falls back to the address after the first comma if the full query fails.
     func geocode(address: String) async throws -> CLLocationCoordinate2D {
-        // Check cache first
-        if let cached = cache[address] {
-            return cached
-        }
+        if let cached = cache[address] { return cached }
 
-        // Try full address
-        if let coord = try? await nominatimSearch(query: address) {
+        if let coord = try? await proxySearch(query: address) {
             cache[address] = coord
             return coord
         }
 
-        // Fallback: try without street (everything after first comma)
         if let commaIdx = address.firstIndex(of: ",") {
             let shorter = String(address[address.index(after: commaIdx)...]).trimmingCharacters(in: .whitespaces)
-            if let coord = try? await nominatimSearch(query: shorter) {
+            if let coord = try? await proxySearch(query: shorter) {
                 cache[address] = coord
                 return coord
             }
@@ -37,9 +37,9 @@ actor GeocodingService {
         throw GeocodingError.notFound(address)
     }
 
-    private func nominatimSearch(query: String) async throws -> CLLocationCoordinate2D? {
+    private func proxySearch(query: String) async throws -> CLLocationCoordinate2D? {
         guard let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-              let url = URL(string: "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=\(encoded)") else {
+              let url = URL(string: "\(baseURL)/api/geocode?q=\(encoded)") else {
             throw GeocodingError.invalidAddress
         }
 
@@ -51,6 +51,8 @@ actor GeocodingService {
             throw GeocodingError.networkError
         }
 
+        // Server proxies the raw Nominatim response: an array of result objects
+        // with string lat/lon fields. Same shape as before.
         guard let results = try JSONSerialization.jsonObject(with: data) as? [[String: Any]],
               let first = results.first,
               let latStr = first["lat"] as? String,
@@ -70,9 +72,9 @@ actor GeocodingService {
 
         var errorDescription: String? {
             switch self {
-            case .invalidAddress: return "Invalid address"
-            case .networkError: return "Geocoding service unavailable"
-            case .notFound(let addr): return "Could not geocode: \(addr)"
+            case .invalidAddress:        return "Invalid address"
+            case .networkError:          return "Geocoding service unavailable"
+            case .notFound(let addr):    return "Could not geocode: \(addr)"
             }
         }
     }

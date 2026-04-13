@@ -1,11 +1,16 @@
 import Foundation
 import CoreLocation
 
+/// Weather-along-route client. Now routes through our server's /api/weather
+/// proxy which builds the full Open-Meteo query server-side; iOS only sends
+/// lat/lon. Response shape and caching behavior are unchanged.
 actor WeatherService {
+    private let baseURL: String
     private var cache: [String: WeatherPoint] = [:]
     private let session: URLSession
 
-    init() {
+    init(baseURL: String = "http://logistics-ai.carterlumber.com") {
+        self.baseURL = baseURL.hasSuffix("/") ? String(baseURL.dropLast()) : baseURL
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 10
         self.session = URLSession(configuration: config)
@@ -54,11 +59,10 @@ actor WeatherService {
     }
 
     private func fetchWeather(lat: Double, lon: Double, label: String) async throws -> WeatherPoint {
-        let urlStr = "https://api.open-meteo.com/v1/forecast" +
-            "?latitude=\(String(format: "%.4f", lat))" +
-            "&longitude=\(String(format: "%.4f", lon))" +
-            "&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code,apparent_temperature" +
-            "&wind_speed_unit=mph&temperature_unit=fahrenheit&forecast_days=1"
+        // Server fills in the rest of the Open-Meteo query (units, fields, forecast_days).
+        let urlStr = "\(baseURL)/api/weather" +
+            "?lat=\(String(format: "%.4f", lat))" +
+            "&lon=\(String(format: "%.4f", lon))"
 
         guard let url = URL(string: urlStr) else { throw WeatherError.invalidURL }
 

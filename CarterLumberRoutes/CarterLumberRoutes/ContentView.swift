@@ -956,27 +956,15 @@ struct SettingsContentView: View {
                 Text("Get a free API key at eia.gov").font(.caption2).foregroundStyle(.secondary)
             }
 
-            Section("IntelliShift") {
+            Section("Server") {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Server URL")
-                    TextField("http://localhost:3003", text: $config.intelliShiftBaseURL)
+                    TextField("http://logistics-ai.carterlumber.com", text: $config.intelliShiftBaseURL)
                         .font(.system(.caption, design: .monospaced))
                         .textInputAutocapitalization(.never).autocorrectionDisabled()
                 }
-                Text("Connects to your Node.js server for truck data.")
+                Text("One server handles everything: routing, geocoding, weather, diesel prices, IntelliShift vehicles, mills/yards, and schedule.")
                     .font(.caption2).foregroundStyle(.secondary)
-            }
-
-            Section("Mapbox") {
-                HStack {
-                    Text("Token"); Spacer()
-                    if config.mapboxToken.isEmpty {
-                        Text("Not configured").font(.caption).foregroundStyle(.red)
-                    } else {
-                        Text("\(config.mapboxToken.prefix(12))...")
-                            .font(.system(.caption, design: .monospaced)).foregroundStyle(.secondary)
-                    }
-                }
             }
 
             Section("Reference Data") {
