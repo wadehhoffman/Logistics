@@ -978,6 +978,23 @@ struct SettingsContentView: View {
                     .font(.caption2).foregroundStyle(.secondary)
             }
 
+            Section("Manage") {
+                NavigationLink { MillsSettingsView() } label: {
+                    Label("Mills", systemImage: "building.2.fill")
+                        .badge(dataStore.mills.count)
+                }
+                NavigationLink { YardsSettingsView() } label: {
+                    Label("Yards", systemImage: "house.fill")
+                        .badge(dataStore.yards.count)
+                }
+                NavigationLink { VehiclesSettingsView() } label: {
+                    Label("Vehicles", systemImage: "truck.box.fill")
+                }
+                NavigationLink { ActivityLogView() } label: {
+                    Label("Activity Log", systemImage: "list.bullet.clipboard")
+                }
+            }
+
             Section("Reference Data") {
                 HStack {
                     Text("Mills"); Spacer()
