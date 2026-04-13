@@ -88,7 +88,7 @@ struct AssignTruckSheet: View {
                                 Task {
                                     await vm.assignTruck(
                                         id: scheduleId,
-                                        truck: ScheduleTruck(id: String(item.vehicle.id), name: item.vehicle.name, driver: item.vehicle.driver)
+                                        truck: ScheduleTruck(id: String(item.vehicle.id), name: item.vehicle.name, driver: item.vehicle.driver, operator: item.vehicle.`operator`)
                                     )
                                     dismiss()
                                 }

@@ -11,7 +11,18 @@ struct ScheduledRoute: Identifiable {
     let distance: String?
     let duration: Double?
     var notes: String
-    var status: String           // "scheduled", "completed", "cancelled"
+    var status: String           // raw string; use `statusEnum` for typed access
+    let hosProjection: HOSProjection?
+
+    enum Status: String, Codable {
+        case scheduled
+        case inProgress  = "in-progress"
+        case delivered
+        case cancelled
+        case completed              // legacy — server may still emit this for older entries
+    }
+
+    var statusEnum: Status { Status(rawValue: status) ?? .scheduled }
 
     var scheduledDate: Date? {
         let f = ISO8601DateFormatter()
@@ -43,11 +54,22 @@ struct ScheduledRoute: Identifiable {
     }
 
     var statusColor: String {
-        switch status {
-        case "completed": return "green"
-        case "cancelled": return "gray"
-        default: return "blue"
+        switch statusEnum {
+        case .delivered, .completed: return "green"
+        case .inProgress:            return "orange"
+        case .cancelled:             return "gray"
+        case .scheduled:             return "blue"
         }
+    }
+
+    /// True if this route's HOS projection requires an overnight 10-hour rest mid-trip
+    var requiresOvernightRest: Bool {
+        hosProjection?.segments.contains(where: { $0.type == .rest }) ?? false
+    }
+
+    /// True if HOS rules can't be satisfied (weekly cap hit, etc.)
+    var hasHosViolations: Bool {
+        !(hosProjection?.violations.isEmpty ?? true)
     }
 }
 
@@ -56,24 +78,92 @@ struct ScheduleMill: Codable {
     let vendor: String?
     let city: String?
     let state: String?
+    let uuid: String?
+
+    init(name: String, vendor: String? = nil, city: String? = nil, state: String? = nil, uuid: String? = nil) {
+        self.name = name; self.vendor = vendor; self.city = city; self.state = state; self.uuid = uuid
+    }
 }
 
 struct ScheduleYard: Codable {
     let posNumber: String?
     let city: String?
     let state: String?
+    let uuid: String?
+
+    init(posNumber: String? = nil, city: String? = nil, state: String? = nil, uuid: String? = nil) {
+        self.posNumber = posNumber; self.city = city; self.state = state; self.uuid = uuid
+    }
 }
 
 struct ScheduleTruck: Codable {
     let id: String?
     let name: String
     let driver: String?
+    let `operator`: String?
+
+    init(id: String?, name: String, driver: String?, operator: String? = nil) {
+        self.id = id
+        self.name = name
+        self.driver = driver
+        self.`operator` = `operator`
+    }
+
+    /// Best display for the assigned person — operator first, fall back to driver
+    var operatorOrDriver: String {
+        let op = (self.`operator` ?? "").trimmingCharacters(in: .whitespaces)
+        if !op.isEmpty { return op }
+        return driver ?? ""
+    }
+}
+
+// MARK: - DOT Hours-of-Service projection (server-attached on /api/schedule POST)
+
+struct HOSProjection: Codable {
+    let segments: [HOSSegment]
+    let deliveryEta: String
+    let totalElapsedSec: Double
+    let drivingSec: Double
+    let breakSec: Double
+    let restSec: Double
+    let weekHoursAtEnd: Double
+    let violations: [HOSViolation]
+}
+
+struct HOSSegment: Codable, Identifiable {
+    let id = UUID()
+    let type: SegmentType
+    let start: String
+    let end: String
+    let durationSec: Double
+    let reason: String?
+    let cumulativeDriveHours: Double?
+
+    enum SegmentType: String, Codable {
+        case drive, `break`, rest
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case type, start, end, durationSec, reason, cumulativeDriveHours
+    }
+}
+
+struct HOSViolation: Codable, Identifiable {
+    let id = UUID()
+    let type: String
+    let message: String
+    let atSegment: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case type, message, atSegment
+    }
 }
 
 // Custom Codable for ScheduledRoute to handle flexible server JSON
 extension ScheduledRoute: Codable {
     enum CodingKeys: String, CodingKey {
         case id, createdAt, scheduledAt, type, mill, yard, truck, distance, duration, notes, status
+        case hosProjection
     }
 
     init(from decoder: Decoder) throws {
@@ -87,6 +177,7 @@ extension ScheduledRoute: Codable {
         truck = try c.decodeIfPresent(ScheduleTruck.self, forKey: .truck)
         notes = try c.decodeIfPresent(String.self, forKey: .notes) ?? ""
         status = try c.decodeIfPresent(String.self, forKey: .status) ?? "scheduled"
+        hosProjection = try c.decodeIfPresent(HOSProjection.self, forKey: .hosProjection)
 
         // distance can be String or Number
         if let s = try? c.decode(String.self, forKey: .distance) { distance = s }

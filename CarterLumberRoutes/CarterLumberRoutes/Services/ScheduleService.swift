@@ -53,7 +53,14 @@ actor ScheduleService {
         var body: [String: Any] = [:]
         if let status { body["status"] = status }
         if let notes { body["notes"] = notes }
-        if let truck { body["truck"] = ["id": truck.id ?? "", "name": truck.name, "driver": truck.driver ?? ""] }
+        if let truck {
+            body["truck"] = [
+                "id": truck.id ?? "",
+                "name": truck.name,
+                "driver": truck.driver ?? "",
+                "operator": truck.`operator` ?? truck.driver ?? "",
+            ]
+        }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (_, response) = try await session.data(for: request)

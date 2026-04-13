@@ -98,9 +98,9 @@ final class ScheduleViewModel {
         let payload = CreateSchedulePayload(
             scheduledAt: dateStr,
             type: type,
-            mill: mill.map { ScheduleMill(name: $0.name, vendor: $0.vendor, city: $0.city, state: $0.state) },
-            yard: yard.map { ScheduleYard(posNumber: $0.posNumber, city: $0.city, state: $0.state) },
-            truck: truck.map { ScheduleTruck(id: String($0.id), name: $0.name, driver: $0.driver) },
+            mill: mill.map { ScheduleMill(name: $0.name, vendor: $0.vendor, city: $0.city, state: $0.state, uuid: $0.uuid) },
+            yard: yard.map { ScheduleYard(posNumber: $0.posNumber, city: $0.city, state: $0.state, uuid: $0.uuid) },
+            truck: truck.map { ScheduleTruck(id: String($0.id), name: $0.name, driver: $0.driver, operator: $0.`operator`) },
             distance: distance,
             duration: duration,
             fuelCost: fuelCost,

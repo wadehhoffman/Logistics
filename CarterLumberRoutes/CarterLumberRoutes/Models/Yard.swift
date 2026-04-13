@@ -2,7 +2,10 @@ import Foundation
 import CoreLocation
 
 struct Yard: Codable, Identifiable, Hashable {
-    var id: String { "\(storeNumber)-\(posNumber)" }
+    /// Stable client id when uuid is present (server-assigned), otherwise storeNumber+posNumber composite.
+    var id: String { uuid ?? "\(storeNumber)-\(posNumber)" }
+
+    let uuid: String?           // server-assigned (Phase iA — present after Yards are sourced from /api/yards)
     let storeNumber: String
     let posNumber: String
     let storeType: String
