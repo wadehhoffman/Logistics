@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Carter Lumber - Route Dashboard</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: Arial, sans-serif; background: #f0f2f5; color: #333; }
@@ -16,7 +19,10 @@ body { font-family: Arial, sans-serif; background: #f0f2f5; color: #333; }
 .header-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: white; width: 40px; height: 40px; border-radius: 8px; font-size: 20px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
 .header-btn:hover { background: rgba(255,255,255,0.28); transform: rotate(20deg); }
 /* Settings modal — reuses .schedule-modal base with larger card */
-.settings-modal .modal-card { width: 1100px; max-width: 95vw; max-height: 85vh; display: flex; flex-direction: column; padding: 20px; }
+/* Higher specificity than .schedule-modal .modal-card (defined later in the file) */
+.schedule-modal.settings-modal .modal-card { width: 1400px; max-width: 96vw; max-height: 90vh; display: flex; flex-direction: column; padding: 20px; }
+.settings-table th, .settings-table td { white-space: nowrap; }
+.settings-table td:nth-child(4) { white-space: normal; }  /* Description column can wrap */
 .settings-modal .tab-bar { margin: 12px 0 0 0; }
 .settings-tab-content { display: none; padding: 16px 0; overflow-y: auto; flex: 1; min-height: 300px; }
 .settings-tab-content.active { display: block; }
@@ -113,6 +119,9 @@ select:focus { outline: none; border-color: #2c5f8a; box-shadow: 0 0 0 2px rgba(
 .truck-label.stopped { background: #b71c1c; }
 /* Trailer variant — dashed border, slightly muted */
 .truck-label.trailer { border-style: dashed; border-color: #ffd54f; opacity: 0.92; }
+/* Vehicle cluster bubble */
+.veh-cluster-wrap { background: none !important; border: none !important; }
+.veh-cluster { color: white; border-radius: 50%; text-align: center; font-weight: 700; font-size: 13px; box-shadow: 0 2px 8px rgba(0,0,0,0.35); border: 3px solid white; }
 /* Today tab styles */
 .today-datebar { display: flex; gap: 4px; align-items: center; padding: 8px 10px; background: #f0f2f5; border-radius: 8px; margin-bottom: 8px; }
 .today-datebar input[type="date"] { flex: 1; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; }
@@ -340,7 +349,7 @@ select:focus { outline: none; border-color: #2c5f8a; box-shadow: 0 0 0 2px rgba(
           Vehicles
           <span id="todayVehicleCount" style="font-weight:400;text-transform:none;font-size:10px;color:#888;">—</span>
         </div>
-        <input type="search" id="todayVehicleFilter" placeholder="Filter by #, driver, city…" oninput="onTodayVehicleFilterChange(this.value)"
+        <input type="search" id="todayVehicleFilter" placeholder="Filter by #, operator, city…" oninput="onTodayVehicleFilterChange(this.value)"
           style="width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:6px;font-size:13px;margin-bottom:6px;" />
         <div id="todayVehicleList" class="today-list" style="max-height:220px;overflow-y:auto;">
           <div style="padding:12px;text-align:center;color:#888;font-size:12px;">Loading…</div>
@@ -939,7 +948,69 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r
 routeLayer = L.layerGroup().addTo(map);
 
 // --- IntelliShift Live Truck Layer ---
-const truckLayer = L.layerGroup().addTo(map);
+// Cluster nearby vehicle markers. spiderfyOnMaxZoom keeps them splay-able
+// when multiple are parked at the same yard. showCoverageOnHover=false avoids
+// the colored polygon when hovering the cluster count bubble.
+const truckLayer = L.markerClusterGroup({
+  showCoverageOnHover: false,
+  maxClusterRadius: 40,
+  spiderfyOnMaxZoom: true,
+  zoomToBoundsOnClick: false,   // we add our own popup listing vehicles instead of zoom
+  disableClusteringAtZoom: 14,  // at close zoom, show individual markers
+  iconCreateFunction: cluster => {
+    const count = cluster.getChildCount();
+    // Color by largest status group — moving>idling>off
+    let moving = 0, idle = 0, stopped = 0;
+    cluster.getAllChildMarkers().forEach(m => {
+      const v = m._vehicleData;
+      if (!v) return;
+      if (parseFloat(v.speed) > 0) moving++;
+      else if (v.engineOn) idle++;
+      else stopped++;
+    });
+    const dominantColor = moving ? '#1565c0' : idle ? '#e65100' : '#b71c1c';
+    const size = count < 10 ? 32 : count < 50 ? 40 : 48;
+    return L.divIcon({
+      html: `<div class="veh-cluster" style="background:${dominantColor};width:${size}px;height:${size}px;line-height:${size}px;">${count}</div>`,
+      className: 'veh-cluster-wrap',
+      iconSize: [size, size]
+    });
+  }
+}).addTo(map);
+
+// When a cluster bubble is clicked, show a popup with the list of vehicles instead of zooming
+truckLayer.on('clusterclick', (ev) => {
+  const children = ev.layer.getAllChildMarkers();
+  const rows = children.map(m => {
+    const v = m._vehicleData || {};
+    const typeEmoji = v.type === 'trailer' ? '🚚' : '🚛';
+    const statusIcon = v.engineOn ? (parseFloat(v.speed) > 0 ? '🟢' : '🟡') : '🔴';
+    const op = v.operator || v.driver || '';
+    const label = op ? `${v.name} – ${op}` : v.name;
+    return `<div style="padding:4px 2px;border-bottom:1px solid #eee;cursor:pointer;" onclick="_clusterOpenVehicle(${v.id})">
+      ${typeEmoji} <strong>${label}</strong> ${statusIcon}
+    </div>`;
+  }).join('');
+  const popup = L.popup({ maxWidth: 300, maxHeight: 320, autoPan: true })
+    .setLatLng(ev.layer.getLatLng())
+    .setContent(`<div style="font-weight:700;margin-bottom:6px;">${children.length} vehicles here</div>
+      <div style="max-height:260px;overflow-y:auto;font-size:12px;">${rows}</div>
+      <div style="margin-top:6px;text-align:right;">
+        <button style="padding:3px 10px;font-size:11px;background:#2c5f8a;color:white;border:none;border-radius:4px;cursor:pointer;"
+          onclick="map.closePopup();map.fitBounds(_clusterBounds)">Zoom to fit</button>
+      </div>`)
+    .openOn(map);
+  window._clusterBounds = ev.layer.getBounds();
+});
+
+function _clusterOpenVehicle(id) {
+  let found = null;
+  truckLayer.eachLayer(m => { if (m._vehicleData && m._vehicleData.id === id) found = m; });
+  if (!found) return;
+  map.closePopup();
+  map.setView(found.getLatLng(), 14, { animate: true });
+  setTimeout(() => found.openPopup(), 250);
+}
 let trucksVisible = false;
 let truckRefreshTimer = null;
 let preloadedAssets = null; // { id, name } — loaded once at startup
@@ -989,18 +1060,20 @@ async function loadTrucks() {
       });
       const lastSeen = v.updated ? new Date(v.updated).toLocaleString() : 'Unknown';
       const location = [v.street, v.city, v.state].filter(Boolean).join(', ') || 'Location unknown';
-      const headerLine = v.driver ? `${v.name} – ${v.driver}` : v.name;
+      const op = v.operator || v.driver || '';
+      const headerLine = op ? `${v.name} – ${op}` : v.name;
       const descLine = v.description ? `<br><span style="color:#555;font-size:11px;">${v.description}</span>` : '';
       const typeLine = `<br><small style="color:#888;">${v.type === 'trailer' ? 'Trailer' : v.type === 'truck' ? 'Truck (CMV)' : 'Vehicle'}</small>`;
       const stopLine = !isMoving && v.stopDuration ? `<br>Stopped for: ${v.stopDuration}` : '';
-      L.marker([v.lat, v.lon], { icon })
+      const marker = L.marker([v.lat, v.lon], { icon })
         .bindPopup(`
           <strong>${headerLine}</strong>${descLine}${typeLine}<br>
           ${statusIcon} ${statusText}${isMoving ? ' — ' + Math.round(v.speed) + ' mph' : ''}<br>
           📍 ${location}${stopLine}<br>
           <small>Updated: ${lastSeen}</small>
-        `)
-        .addTo(truckLayer);
+        `);
+      marker._vehicleData = v;  // cluster bubble reads these for the expansion popup
+      marker.addTo(truckLayer);
     });
 
     const moving  = vehicles.filter(v => parseFloat(v.speed) > 0).length;
@@ -1152,7 +1225,7 @@ async function refreshTruckDropdown() {
   }
 }
 
-document.getElementById('truckRouteSelect').addEventListener('change', () => {
+document.getElementById('truckRouteSelect')?.addEventListener('change', () => {
   const sel = document.getElementById('truckRouteSelect');
   const det = document.getElementById('truckRouteDetails');
   if (sel.value === '') {
@@ -1181,7 +1254,7 @@ document.getElementById('truckRouteSelect').addEventListener('change', () => {
   checkTruckRouteReady();
 });
 
-truckRouteMillSel.addEventListener('change', async () => {
+truckRouteMillSel?.addEventListener('change', async () => {
   const det = document.getElementById('truckRouteMillDetails');
   truckRouteMillCoords = null;
   checkTruckRouteReady();
@@ -1204,7 +1277,7 @@ truckRouteMillSel.addEventListener('change', async () => {
   checkTruckRouteReady();
 });
 
-truckRouteYardSel.addEventListener('change', () => {
+truckRouteYardSel?.addEventListener('change', () => {
   const det = document.getElementById('truckRouteYardDetails');
   if (truckRouteYardSel.value === '') { det.style.display = 'none'; checkTruckRouteReady(); return; }
   const y = YARDS[parseInt(truckRouteYardSel.value)];
@@ -1235,7 +1308,7 @@ function truckTrafficLabel(durSec, typicalSec) {
   return ` <span style="color:#2e7d32;font-size:11px;">✅ Clear</span>`;
 }
 
-document.getElementById('truckRouteBtn').addEventListener('click', async () => {
+document.getElementById('truckRouteBtn')?.addEventListener('click', async () => {
   if (!truckRouteSelectedVehicle || !truckRouteMillCoords || truckRouteYardSel.value === '') return;
   const truck = truckRouteSelectedVehicle;
   const mill  = MILLS[parseInt(truckRouteMillSel.value)];
@@ -1369,7 +1442,7 @@ document.getElementById('truckRouteBtn').addEventListener('click', async () => {
   btn.disabled = false; btn.textContent = 'Calculate Truck Route';
 });
 
-document.getElementById('truckRouteClearBtn').addEventListener('click', () => {
+document.getElementById('truckRouteClearBtn')?.addEventListener('click', () => {
   truckRouteLayer.clearLayers();
   ['truckLeg1Box','truckLeg2Box','truckRouteTotalBox','truckFuelBox','truckRouteWeatherBox'].forEach(id => {
     document.getElementById(id).style.display = 'none';
@@ -3197,19 +3270,19 @@ document.addEventListener('DOMContentLoaded', () => {
     <!-- VEHICLES TAB (read-only, source: IntelliShift) -->
     <div id="settings-vehicles" class="settings-tab-content">
       <div class="settings-toolbar">
-        <input type="search" placeholder="Search vehicles by #, driver, description, city..." oninput="filterVehiclesSettings(this.value)" />
+        <input type="search" placeholder="Search vehicles by #, operator, description, city..." oninput="filterVehiclesSettings(this.value)" />
         <span style="font-size:11px;color:#888;" id="settingsVehiclesCount"></span>
         <button class="btn-add" onclick="loadSettingsVehicles()" style="background:#555;">🔄 Refresh</button>
       </div>
       <div style="font-size:11px;color:#888;margin-bottom:6px;">
-        Source: IntelliShift (read-only). Driver and vehicle assignment must be edited there.
+        Source: IntelliShift (read-only). Operator and vehicle assignment must be edited there.
       </div>
       <div style="overflow:auto;max-height:440px;">
         <table class="settings-table">
           <thead><tr>
             <th>Type</th>
             <th>Vehicle #</th>
-            <th>Driver</th>
+            <th>Operator</th>
             <th>Description</th>
             <th>Status</th>
             <th>Location</th>

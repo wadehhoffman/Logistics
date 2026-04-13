@@ -253,7 +253,12 @@ async function loadBranch570Assets() {
   cachedAssets = allBranchAssets
     .filter(a => { if (seen.has(a.id)) return false; seen.add(a.id); return true; })
     .filter(a => branchIdSet.has(a.branchId))
-    .map(a => ({ id: a.id, name: a.name || String(a.id), branchId: a.branchId }));
+    .map(a => ({
+      id: a.id,
+      name: a.name || String(a.id),
+      branchId: a.branchId,
+      operator: a.assignedOperatorText || null,  // "Operator" in IntelliShift — assigned per vehicle
+    }));
   assetsLoadedAt = Date.now();
   console.log(`  [IS] Asset cache loaded: ${cachedAssets.length} branch 570 assets (filtered from ${seen.size} total)`);
   return cachedAssets;
@@ -342,7 +347,11 @@ async function getVehiclesWithLocations() {
       speed:      loc.speed       || 0,
       heading:    loc.headingDegrees !== undefined ? loc.headingDegrees : (loc.heading || 0),
       engineOn:   loc.engineOn    || false,
-      driver:     loc.driverName  || '',
+      // "Operator" is IntelliShift's per-vehicle assigned driver (assignedOperatorText).
+      // Fall back to the driverName sent with the location ping if the asset lacks one.
+      // We keep the outgoing field named `operator` and alias `driver` for backward compat.
+      operator:   a.operator || loc.driverName || '',
+      driver:     a.operator || loc.driverName || '',
       street:     loc.street      || '',
       city:       loc.city        || '',
       state:      loc.state       || '',
@@ -736,6 +745,11 @@ const server = http.createServer((req, res) => {
   }
 
   // Client config — vends public tokens safe for browser use
+  if (pathname === '/favicon.ico') {
+    res.writeHead(204); // no favicon; 204 avoids the 404 noise
+    return res.end();
+  }
+
   if (pathname === '/api/config') {
     res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
     return res.end(JSON.stringify({ mapboxToken: MAPBOX_TOKEN }));
