@@ -5,6 +5,7 @@ import SwiftUI
 final class ScheduleViewModel {
     var allSchedules: [ScheduledRoute] = []
     var selectedDate: Date = Date()
+    var currentMonth: Date = Date()   // Anchor for the calendar grid. First day implied.
     var isLoading = false
     var errorMessage: String?
 
@@ -142,6 +143,46 @@ final class ScheduleViewModel {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    // MARK: - Calendar navigation
+
+    /// Human-readable month label, e.g. "April 2026"
+    var currentMonthLabel: String {
+        let f = DateFormatter()
+        f.dateFormat = "MMMM yyyy"
+        return f.string(from: currentMonth)
+    }
+
+    /// Routes grouped by YYYY-MM-DD, used by the month grid
+    var routesByDay: [String: [ScheduledRoute]] {
+        Dictionary(grouping: allSchedules) { $0.dayKey }
+    }
+
+    /// Routes scheduled on the given calendar day, sorted by time
+    func routes(on date: Date) -> [ScheduledRoute] {
+        let key = dayKeyFor(date)
+        return (routesByDay[key] ?? []).sorted { $0.scheduledAt < $1.scheduledAt }
+    }
+
+    func prevMonth() {
+        if let d = Calendar.current.date(byAdding: .month, value: -1, to: currentMonth) {
+            currentMonth = d
+            Task { await loadSchedules(month: monthStringFor(d)) }
+        }
+    }
+
+    func nextMonth() {
+        if let d = Calendar.current.date(byAdding: .month, value: 1, to: currentMonth) {
+            currentMonth = d
+            Task { await loadSchedules(month: monthStringFor(d)) }
+        }
+    }
+
+    func jumpToToday() {
+        currentMonth = Date()
+        selectedDate = Date()
+        Task { await loadSchedules(month: monthStringFor(Date())) }
     }
 
     // MARK: - Helpers
