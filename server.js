@@ -5,6 +5,7 @@ const path = require('path');
 const url = require('url');
 
 const crypto = require('crypto');
+const hos = require('./hos');
 
 const PORT = 3003;
 const DIR = __dirname;
@@ -19,6 +20,87 @@ try {
 
 function saveSchedule() {
   fs.writeFileSync(SCHEDULE_FILE, JSON.stringify(scheduleData, null, 2));
+}
+
+// --- Mills / Yards / Activity storage ---
+const MILLS_FILE    = path.join(DIR, 'mills.json');
+const YARDS_FILE    = path.join(DIR, 'yards.json');
+const ACTIVITY_FILE = path.join(DIR, 'activity.json');
+const MILLS_SEED    = path.join(DIR, 'mills.seed.json');
+const YARDS_SEED    = path.join(DIR, 'yards.seed.json');
+
+function loadJsonFile(file, seedFile, label) {
+  try {
+    const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+    console.log(`  [${label}] Loaded ${data.length} entries`);
+    return data;
+  } catch(e) {
+    // Missing or invalid — try to seed from ship-with-repo seed file
+    if (seedFile) {
+      try {
+        const seed = JSON.parse(fs.readFileSync(seedFile, 'utf8'));
+        fs.writeFileSync(file, JSON.stringify(seed, null, 2));
+        console.log(`  [${label}] Seeded ${seed.length} entries from ${path.basename(seedFile)}`);
+        return seed;
+      } catch(e2) { /* fall through */ }
+    }
+    console.log(`  [${label}] Starting empty`);
+    return [];
+  }
+}
+
+let millsData    = loadJsonFile(MILLS_FILE,    MILLS_SEED,    'Mills');
+let yardsData    = loadJsonFile(YARDS_FILE,    YARDS_SEED,    'Yards');
+let activityData = loadJsonFile(ACTIVITY_FILE, null,          'Activity');
+
+// Ensure every mill/yard has a uuid (backfill for legacy seeds)
+let needsMillSave = false, needsYardSave = false;
+millsData.forEach(m => { if (!m.uuid) { m.uuid = crypto.randomUUID(); needsMillSave = true; } });
+yardsData.forEach(y => { if (!y.uuid) { y.uuid = crypto.randomUUID(); needsYardSave = true; } });
+
+function saveMills()    { fs.writeFileSync(MILLS_FILE,    JSON.stringify(millsData,    null, 2)); }
+function saveYards()    { fs.writeFileSync(YARDS_FILE,    JSON.stringify(yardsData,    null, 2)); }
+function saveActivity() { fs.writeFileSync(ACTIVITY_FILE, JSON.stringify(activityData, null, 2)); }
+
+if (needsMillSave) saveMills();
+if (needsYardSave) saveYards();
+
+// Activity log helper — call from any endpoint that mutates state
+function logActivity(req, action, entity, details) {
+  const xff = req.headers['x-forwarded-for'];
+  const ipRaw = (xff && xff.split(',')[0].trim()) || req.socket.remoteAddress || '';
+  const ip = ipRaw.replace(/^::ffff:/, '');
+  activityData.unshift({
+    id: crypto.randomUUID(),
+    timestamp: new Date().toISOString(),
+    ip,
+    user: null,   // populated once SSO is wired in
+    action,       // 'create' | 'update' | 'delete' | 'login' | 'logout'
+    entity,       // 'mill' | 'yard' | 'schedule' | 'auth'
+    details: details || {},
+  });
+  if (activityData.length > 1000) activityData.length = 1000;
+  try { saveActivity(); } catch(e) { console.error('  [Activity] save failed:', e.message); }
+}
+
+// Internal Nominatim geocoder for server-side mill saves
+function geocodeAddress(address) {
+  return new Promise((resolve) => {
+    const u = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`;
+    const req = https.get(u, { headers: { 'User-Agent': 'CarterLumberRouteApp/1.0' }, timeout: 8000 }, (r) => {
+      const chunks = [];
+      r.on('data', c => chunks.push(c));
+      r.on('end', () => {
+        try {
+          const arr = JSON.parse(Buffer.concat(chunks).toString());
+          if (arr && arr[0]) resolve({ lat: parseFloat(arr[0].lat), lon: parseFloat(arr[0].lon) });
+          else resolve(null);
+        } catch(e) { resolve(null); }
+      });
+    });
+    req.on('error', () => resolve(null));
+    req.on('timeout', () => { req.destroy(); resolve(null); });
+  });
 }
 
 // Check if a truck is busy at a given time (considering route duration)
@@ -74,6 +156,7 @@ try { secrets = require('./secrets'); } catch(e) {}
 const MAPBOX_TOKEN = secrets.MAPBOX_TOKEN || process.env.MAPBOX_TOKEN || '';
 const IS_EMAIL    = secrets.INTELLISHIFT_EMAIL    || process.env.IS_EMAIL    || '';
 const IS_PASSWORD = secrets.INTELLISHIFT_PASSWORD || process.env.IS_PASSWORD || '';
+const ORS_API_KEY = secrets.ORS_API_KEY || process.env.ORS_API_KEY || '';
 
 // Known branch IDs for "570: Traffic" (discovered, hardcoded to skip branch lookup)
 // 34911 = 570: Traffic-CMV  |  34914 = 570: Traffic-Trailers  |  30215 = 570: Traffic (parent)
@@ -246,9 +329,14 @@ async function getVehiclesWithLocations() {
 
   const vehicles = assets.map(a => {
     const loc = locMap[a.id] || {};
+    // Classify as truck/trailer from IntelliShift sub-branch
+    // 34911 = 570: Traffic-CMV (trucks) | 34914 = 570: Traffic-Trailers | 30215 = parent
+    const type = a.branchId === 34911 ? 'truck' : a.branchId === 34914 ? 'trailer' : 'unknown';
     return {
       id:         a.id,
       name:       loc.vehicleName || a.name,
+      type,
+      description: loc.vehicleMakeModel || '',
       lat:        parseFloat(loc.latitude  || loc.lat  || 0),
       lon:        parseFloat(loc.longitude || loc.lon  || 0),
       speed:      loc.speed       || 0,
@@ -458,6 +546,119 @@ const server = http.createServer((req, res) => {
     return proxyRequest(mapbox, res, [mapboxFallback, osrmFallback], () => generateFallbackRoute(coords, overview));
   }
 
+  // Truck-safe (HGV) routing via OpenRouteService.
+  // coords query is "lon1,lat1;lon2,lat2" to match /api/route.
+  // Returns Mapbox-compatible shape so existing client code works.
+  // Falls back to Mapbox driving if ORS is unconfigured or fails.
+  if (pathname === '/api/truck-route') {
+    const coordsStr = parsed.query.coords || '';
+    const overview  = parsed.query.overview || 'full';
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+
+    const fallbackToDrivingMapbox = () => {
+      const qs = `?geometries=geojson&overview=${overview}&annotations=duration,distance,congestion&access_token=${MAPBOX_TOKEN}`;
+      const mapbox       = `https://api.mapbox.com/directions/v5/mapbox/driving-traffic/${coordsStr}${qs}`;
+      const mapboxDrive  = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordsStr}${qs}`;
+      const osrmFallback = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=${overview}&geometries=geojson`;
+      console.log('  [truck-route] Falling back to Mapbox driving chain');
+      proxyRequest(mapbox, res, [mapboxDrive, osrmFallback], () => generateFallbackRoute(coordsStr, overview));
+    };
+
+    if (!ORS_API_KEY) {
+      console.log('  [truck-route] ORS_API_KEY not set — falling back to Mapbox driving');
+      return fallbackToDrivingMapbox();
+    }
+
+    // Build ORS coordinates (array of [lon, lat] pairs)
+    const pts = coordsStr.split(';').map(p => p.split(',').map(Number));
+    if (pts.length < 2 || pts.some(p => p.length !== 2 || isNaN(p[0]) || isNaN(p[1]))) {
+      res.writeHead(400);
+      return res.end(JSON.stringify({ error: 'Invalid coords param — expected lon1,lat1;lon2,lat2' }));
+    }
+
+    const orsBody = JSON.stringify({
+      coordinates: pts,
+      instructions: false,
+      geometry: true,
+      preference: 'recommended',
+    });
+    const orsReq = https.request({
+      hostname: 'api.openrouteservice.org',
+      path: '/v2/directions/driving-hgv/geojson',
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': ORS_API_KEY,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(orsBody),
+      },
+      timeout: 10000,
+    }, (orsRes) => {
+      const chunks = [];
+      orsRes.on('data', c => chunks.push(c));
+      orsRes.on('end', () => {
+        const raw = Buffer.concat(chunks).toString();
+        if (orsRes.statusCode !== 200) {
+          console.log(`  [truck-route] ORS returned ${orsRes.statusCode}: ${raw.substring(0, 200)}`);
+          return fallbackToDrivingMapbox();
+        }
+        try {
+          const data = JSON.parse(raw);
+          const feat = data.features && data.features[0];
+          if (!feat) { console.log('  [truck-route] ORS returned no features'); return fallbackToDrivingMapbox(); }
+          const props = feat.properties || {};
+          const summary = props.summary || {};
+          // Normalize to Mapbox-like response shape so existing client code works unchanged
+          const converted = {
+            code: 'Ok',
+            routes: [{
+              geometry: feat.geometry,
+              distance: summary.distance,   // meters
+              duration: summary.duration,   // seconds
+              weight: summary.duration,
+              weight_name: 'duration',
+              _source: 'openrouteservice-hgv',
+            }],
+            waypoints: pts.map((p, i) => ({ location: p, name: '', distance: 0, hint: '' })),
+            _truckSafe: true,
+          };
+          console.log(`  [truck-route] ORS HGV: ${Math.round(summary.distance/1000)}km, ${Math.round(summary.duration/60)}min`);
+          res.writeHead(200);
+          res.end(JSON.stringify(converted));
+        } catch(e) {
+          console.log('  [truck-route] Parse error:', e.message);
+          fallbackToDrivingMapbox();
+        }
+      });
+    });
+    orsReq.on('error', (err) => { console.log('  [truck-route] Request error:', err.message); fallbackToDrivingMapbox(); });
+    orsReq.on('timeout', () => { orsReq.destroy(); console.log('  [truck-route] Request timeout'); fallbackToDrivingMapbox(); });
+    orsReq.write(orsBody);
+    orsReq.end();
+    return;
+  }
+
+  // HOS projection endpoint — compute without persisting (useful for pre-scheduling checks)
+  if (pathname === '/api/hos' && req.method === 'POST') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+    (async () => { try {
+      const body = await readBody(req);
+      const projection = hos.projectDelivery({
+        startTime: body.startTime,
+        drivingDurationSec: body.drivingDurationSec,
+        cumulativeWeekHoursBeforeStart: body.cumulativeWeekHoursBeforeStart || 0,
+        schedule: body.schedule || '70/8',
+      });
+      res.writeHead(200);
+      res.end(JSON.stringify(projection));
+    } catch(e) {
+      res.writeHead(400); res.end(JSON.stringify({ error: e.message }));
+    }})();
+    return;
+  }
+
   // Nominatim geocoding
   if (pathname === '/api/geocode') {
     const q = parsed.query.q || '';
@@ -599,13 +800,16 @@ const server = http.createServer((req, res) => {
     return res.end(JSON.stringify({ busyTrucks, dateTime, duration }));
   }
 
-  // GET /api/schedule — list all (optional ?month=2026-04 filter)
+  // GET /api/schedule — list all (optional ?month=2026-04 or ?date=2026-04-13 filter)
   if (pathname === '/api/schedule' && req.method === 'GET') {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Content-Type', 'application/json');
-    const month = parsed.query.month; // e.g. "2026-04"
+    const month = parsed.query.month; // "2026-04"
+    const date  = parsed.query.date;  // "2026-04-13"
     let results = scheduleData;
-    if (month) {
+    if (date) {
+      results = scheduleData.filter(r => r.scheduledAt && r.scheduledAt.startsWith(date));
+    } else if (month) {
       results = scheduleData.filter(r => r.scheduledAt && r.scheduledAt.startsWith(month));
     }
     results.sort((a, b) => (a.scheduledAt || '').localeCompare(b.scheduledAt || ''));
@@ -633,8 +837,28 @@ const server = http.createServer((req, res) => {
         notes: body.notes || '',
         status: 'scheduled',
       };
+      // Attach DOT HOS projection if we have a drive duration and start time
+      if (entry.scheduledAt && entry.duration > 0) {
+        try {
+          entry.hosProjection = hos.projectDelivery({
+            startTime: entry.scheduledAt,
+            drivingDurationSec: entry.duration,
+            cumulativeWeekHoursBeforeStart: body.cumulativeWeekHours || 0,
+            schedule: body.hosSchedule || '70/8',
+          });
+        } catch(e) {
+          console.warn('  [Schedule] HOS projection failed:', e.message);
+        }
+      }
       scheduleData.push(entry);
       saveSchedule();
+      logActivity(req, 'create', 'schedule', {
+        id: entry.id,
+        scheduledAt: entry.scheduledAt,
+        mill: entry.mill ? entry.mill.name : null,
+        yard: entry.yard ? entry.yard.posNumber : null,
+        truck: entry.truck ? entry.truck.name : null,
+      });
       console.log(`  [Schedule] Created: ${entry.id} for ${entry.scheduledAt}`);
       res.writeHead(201);
       res.end(JSON.stringify(entry));
@@ -655,11 +879,25 @@ const server = http.createServer((req, res) => {
       const body = await readBody(req);
       const idx = scheduleData.findIndex(r => r.id === id);
       if (idx === -1) { res.writeHead(404); return res.end(JSON.stringify({ error: 'Not found' })); }
-      if (body.status) scheduleData[idx].status = body.status;
-      if (body.notes !== undefined) scheduleData[idx].notes = body.notes;
-      if (body.scheduledAt) scheduleData[idx].scheduledAt = body.scheduledAt;
-      if (body.truck) scheduleData[idx].truck = body.truck;
+      const changes = {};
+      if (body.status && body.status !== scheduleData[idx].status) {
+        changes.status = { from: scheduleData[idx].status, to: body.status };
+        scheduleData[idx].status = body.status;
+      }
+      if (body.notes !== undefined && body.notes !== scheduleData[idx].notes) {
+        changes.notes = { from: scheduleData[idx].notes, to: body.notes };
+        scheduleData[idx].notes = body.notes;
+      }
+      if (body.scheduledAt && body.scheduledAt !== scheduleData[idx].scheduledAt) {
+        changes.scheduledAt = { from: scheduleData[idx].scheduledAt, to: body.scheduledAt };
+        scheduleData[idx].scheduledAt = body.scheduledAt;
+      }
+      if (body.truck) {
+        changes.truck = { to: body.truck.name || body.truck.id };
+        scheduleData[idx].truck = body.truck;
+      }
       saveSchedule();
+      logActivity(req, 'update', 'schedule', { id, changes });
       console.log(`  [Schedule] Updated: ${id} -> ${scheduleData[idx].status}`);
       res.writeHead(200);
       res.end(JSON.stringify(scheduleData[idx]));
@@ -678,11 +916,263 @@ const server = http.createServer((req, res) => {
     const id = delMatch[1];
     const idx = scheduleData.findIndex(r => r.id === id);
     if (idx === -1) { res.writeHead(404); return res.end(JSON.stringify({ error: 'Not found' })); }
+    const removed = scheduleData[idx];
     scheduleData.splice(idx, 1);
     saveSchedule();
+    logActivity(req, 'delete', 'schedule', {
+      id,
+      mill: removed.mill ? removed.mill.name : null,
+      yard: removed.yard ? removed.yard.posNumber : null,
+      scheduledAt: removed.scheduledAt,
+    });
     console.log(`  [Schedule] Deleted: ${id}`);
     res.writeHead(200);
     return res.end(JSON.stringify({ ok: true }));
+  }
+
+  // ============================================================
+  // MILLS / YARDS / ACTIVITY endpoints
+  // ============================================================
+
+  // CORS preflight for settings endpoints
+  if (req.method === 'OPTIONS' && (pathname.startsWith('/api/mills') || pathname.startsWith('/api/yards') || pathname.startsWith('/api/activity'))) {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    });
+    return res.end();
+  }
+
+  // --- MILLS ---
+
+  // GET /api/mills
+  if (pathname === '/api/mills' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    return res.end(JSON.stringify({ mills: millsData, total: millsData.length }));
+  }
+
+  // POST /api/mills/geocode-all — backfill lat/lon for mills missing coords
+  // Rate-limited to ~1 req/sec to respect Nominatim's usage policy.
+  if (pathname === '/api/mills/geocode-all' && req.method === 'POST') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+    (async () => { try {
+      const missing = millsData.filter(m => m.lat == null || m.lon == null);
+      let succeeded = 0, failed = 0;
+      const failures = [];
+      console.log(`  [Mills] Geocode-all: ${missing.length} mills missing coords`);
+      for (const m of missing) {
+        const geo = await geocodeAddress(m.address);
+        if (geo) {
+          m.lat = geo.lat; m.lon = geo.lon;
+          succeeded++;
+          logActivity(req, 'update', 'mill', { uuid: m.uuid, name: m.name, changes: { geocoded: { to: { lat: geo.lat, lon: geo.lon } } } });
+        } else {
+          failed++;
+          failures.push({ name: m.name, address: m.address });
+        }
+        // throttle: Nominatim usage policy = max 1 req/sec
+        await new Promise(r => setTimeout(r, 1100));
+      }
+      saveMills();
+      console.log(`  [Mills] Geocode-all done: ${succeeded} succeeded, ${failed} failed`);
+      res.writeHead(200);
+      res.end(JSON.stringify({ total: missing.length, succeeded, failed, failures }));
+    } catch(e) {
+      console.error('  [Mills] Geocode-all error:', e.message);
+      res.writeHead(500); res.end(JSON.stringify({ error: e.message }));
+    }})();
+    return;
+  }
+
+  // POST /api/mills
+  if (pathname === '/api/mills' && req.method === 'POST') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+    (async () => { try {
+      const body = await readBody(req);
+      if (!body.name || !body.address) {
+        res.writeHead(400); return res.end(JSON.stringify({ error: 'name and address are required' }));
+      }
+      const entry = {
+        uuid: crypto.randomUUID(),
+        name: body.name,
+        product: body.product || '',
+        vendor: body.vendor || '',
+        street: body.street || '',
+        city: body.city || '',
+        stateZip: body.stateZip || '',
+        address: body.address,
+        lat: null, lon: null,
+      };
+      const geo = await geocodeAddress(body.address);
+      if (geo) { entry.lat = geo.lat; entry.lon = geo.lon; }
+      millsData.push(entry);
+      saveMills();
+      logActivity(req, 'create', 'mill', { uuid: entry.uuid, name: entry.name, vendor: entry.vendor });
+      console.log(`  [Mills] Created: ${entry.name} (${entry.vendor}) geocoded=${!!geo}`);
+      res.writeHead(201);
+      res.end(JSON.stringify({ mill: entry, geocoded: !!geo }));
+    } catch(e) {
+      res.writeHead(400); res.end(JSON.stringify({ error: e.message }));
+    }})();
+    return;
+  }
+
+  // PUT /api/mills/:uuid
+  const millPutMatch = pathname.match(/^\/api\/mills\/([a-f0-9-]+)$/);
+  if (millPutMatch && req.method === 'PUT') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+    (async () => { try {
+      const uuid = millPutMatch[1];
+      const idx = millsData.findIndex(m => m.uuid === uuid);
+      if (idx === -1) { res.writeHead(404); return res.end(JSON.stringify({ error: 'Not found' })); }
+      const body = await readBody(req);
+      const existing = millsData[idx];
+      const changes = {};
+      ['name','product','vendor','street','city','stateZip','address'].forEach(k => {
+        if (body[k] !== undefined && body[k] !== existing[k]) {
+          changes[k] = { from: existing[k], to: body[k] };
+          existing[k] = body[k];
+        }
+      });
+      // Re-geocode if address changed
+      let geocoded = false;
+      if (changes.address) {
+        const geo = await geocodeAddress(existing.address);
+        if (geo) { existing.lat = geo.lat; existing.lon = geo.lon; geocoded = true; }
+      }
+      saveMills();
+      logActivity(req, 'update', 'mill', { uuid, name: existing.name, changes });
+      console.log(`  [Mills] Updated: ${existing.name}`);
+      res.writeHead(200); res.end(JSON.stringify({ mill: existing, geocoded }));
+    } catch(e) {
+      res.writeHead(400); res.end(JSON.stringify({ error: e.message }));
+    }})();
+    return;
+  }
+
+  // DELETE /api/mills/:uuid
+  const millDelMatch = pathname.match(/^\/api\/mills\/([a-f0-9-]+)$/);
+  if (millDelMatch && req.method === 'DELETE') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+    const uuid = millDelMatch[1];
+    const idx = millsData.findIndex(m => m.uuid === uuid);
+    if (idx === -1) { res.writeHead(404); return res.end(JSON.stringify({ error: 'Not found' })); }
+    const removed = millsData[idx];
+    millsData.splice(idx, 1);
+    saveMills();
+    logActivity(req, 'delete', 'mill', { uuid, name: removed.name, vendor: removed.vendor });
+    console.log(`  [Mills] Deleted: ${removed.name}`);
+    res.writeHead(200); return res.end(JSON.stringify({ ok: true }));
+  }
+
+  // --- YARDS ---
+
+  // GET /api/yards
+  if (pathname === '/api/yards' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    return res.end(JSON.stringify({ yards: yardsData, total: yardsData.length }));
+  }
+
+  // POST /api/yards
+  if (pathname === '/api/yards' && req.method === 'POST') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+    (async () => { try {
+      const body = await readBody(req);
+      if (!body.storeNumber || !body.city || !body.state) {
+        res.writeHead(400); return res.end(JSON.stringify({ error: 'storeNumber, city, state are required' }));
+      }
+      const entry = {
+        uuid: crypto.randomUUID(),
+        storeNumber: body.storeNumber,
+        posNumber: body.posNumber || body.storeNumber,
+        storeType: body.storeType || '',
+        street: body.street || '',
+        city: body.city,
+        state: body.state,
+        zip: body.zip || '',
+        lat: body.lat != null ? parseFloat(body.lat) : null,
+        lon: body.lon != null ? parseFloat(body.lon) : null,
+        manager: body.manager || '',
+        market: body.market || '',
+      };
+      yardsData.push(entry);
+      saveYards();
+      logActivity(req, 'create', 'yard', { uuid: entry.uuid, storeNumber: entry.storeNumber, city: entry.city });
+      console.log(`  [Yards] Created: ${entry.storeNumber} ${entry.city}`);
+      res.writeHead(201); res.end(JSON.stringify({ yard: entry }));
+    } catch(e) {
+      res.writeHead(400); res.end(JSON.stringify({ error: e.message }));
+    }})();
+    return;
+  }
+
+  // PUT /api/yards/:uuid
+  const yardPutMatch = pathname.match(/^\/api\/yards\/([a-f0-9-]+)$/);
+  if (yardPutMatch && req.method === 'PUT') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+    (async () => { try {
+      const uuid = yardPutMatch[1];
+      const idx = yardsData.findIndex(y => y.uuid === uuid);
+      if (idx === -1) { res.writeHead(404); return res.end(JSON.stringify({ error: 'Not found' })); }
+      const body = await readBody(req);
+      const existing = yardsData[idx];
+      const changes = {};
+      ['storeNumber','posNumber','storeType','street','city','state','zip','manager','market'].forEach(k => {
+        if (body[k] !== undefined && body[k] !== existing[k]) {
+          changes[k] = { from: existing[k], to: body[k] };
+          existing[k] = body[k];
+        }
+      });
+      ['lat','lon'].forEach(k => {
+        if (body[k] !== undefined) {
+          const v = body[k] === '' || body[k] === null ? null : parseFloat(body[k]);
+          if (v !== existing[k]) {
+            changes[k] = { from: existing[k], to: v };
+            existing[k] = v;
+          }
+        }
+      });
+      saveYards();
+      logActivity(req, 'update', 'yard', { uuid, storeNumber: existing.storeNumber, changes });
+      console.log(`  [Yards] Updated: ${existing.storeNumber}`);
+      res.writeHead(200); res.end(JSON.stringify({ yard: existing }));
+    } catch(e) {
+      res.writeHead(400); res.end(JSON.stringify({ error: e.message }));
+    }})();
+    return;
+  }
+
+  // DELETE /api/yards/:uuid
+  const yardDelMatch = pathname.match(/^\/api\/yards\/([a-f0-9-]+)$/);
+  if (yardDelMatch && req.method === 'DELETE') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+    const uuid = yardDelMatch[1];
+    const idx = yardsData.findIndex(y => y.uuid === uuid);
+    if (idx === -1) { res.writeHead(404); return res.end(JSON.stringify({ error: 'Not found' })); }
+    const removed = yardsData[idx];
+    yardsData.splice(idx, 1);
+    saveYards();
+    logActivity(req, 'delete', 'yard', { uuid, storeNumber: removed.storeNumber, city: removed.city });
+    console.log(`  [Yards] Deleted: ${removed.storeNumber}`);
+    res.writeHead(200); return res.end(JSON.stringify({ ok: true }));
+  }
+
+  // --- ACTIVITY LOG (read-only) ---
+
+  if (pathname === '/api/activity' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    const limit = Math.min(parseInt(parsed.query.limit) || 100, 500);
+    const offset = parseInt(parsed.query.offset) || 0;
+    const events = activityData.slice(offset, offset + limit);
+    return res.end(JSON.stringify({ events, total: activityData.length, offset, limit }));
   }
 
   // Static files

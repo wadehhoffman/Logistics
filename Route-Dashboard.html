@@ -12,6 +12,45 @@ body { font-family: Arial, sans-serif; background: #f0f2f5; color: #333; }
 .header { background: linear-gradient(135deg, #1a3a5c 0%, #2c5f8a 100%); color: white; padding: 16px 24px; display: flex; align-items: center; gap: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
 .header h1 { font-size: 22px; font-weight: 700; }
 .header .subtitle { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+.header-actions { margin-left: auto; display: flex; gap: 8px; }
+.header-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: white; width: 40px; height: 40px; border-radius: 8px; font-size: 20px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+.header-btn:hover { background: rgba(255,255,255,0.28); transform: rotate(20deg); }
+/* Settings modal — reuses .schedule-modal base with larger card */
+.settings-modal .modal-card { width: 1100px; max-width: 95vw; max-height: 85vh; display: flex; flex-direction: column; padding: 20px; }
+.settings-modal .tab-bar { margin: 12px 0 0 0; }
+.settings-tab-content { display: none; padding: 16px 0; overflow-y: auto; flex: 1; min-height: 300px; }
+.settings-tab-content.active { display: block; }
+.settings-toolbar { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
+.settings-toolbar input[type="search"] { flex: 1; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; }
+.settings-toolbar .btn-add { background: #2e7d32; color: white; padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; }
+.settings-toolbar .btn-add:hover { background: #1b5e20; }
+.settings-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.settings-table th { background: #f0f2f5; padding: 8px; text-align: left; font-weight: 700; color: #555; border-bottom: 1px solid #ddd; position: sticky; top: 0; }
+.settings-table td { padding: 6px 8px; border-bottom: 1px solid #eee; }
+.settings-table tr:hover { background: #fafbfc; }
+.settings-table .actions { display: flex; gap: 4px; }
+.settings-table .btn-sm { padding: 4px 8px; font-size: 11px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; }
+.btn-edit { background: #1976d2; color: white; }
+.btn-edit:hover { background: #0d47a1; }
+.btn-delete { background: #c62828; color: white; }
+.btn-delete:hover { background: #8e0000; }
+.settings-form { background: #f7f9fb; border: 1px solid #dde3ea; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+.settings-form h4 { margin-bottom: 12px; color: #1a3a5c; }
+.settings-form .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
+.settings-form label { display: block; font-size: 11px; font-weight: 700; color: #666; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+.settings-form input[type="text"], .settings-form input[type="number"] { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; }
+.settings-form .form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+.settings-form .form-actions .btn { width: auto; padding: 8px 18px; font-size: 13px; }
+.activity-row { display: grid; grid-template-columns: 120px 130px 100px 80px 80px 1fr; gap: 10px; padding: 8px 10px; border-bottom: 1px solid #eee; font-size: 12px; align-items: center; }
+.activity-row:hover { background: #fafbfc; }
+.activity-row .activity-header { font-weight: 700; color: #555; background: #f0f2f5; }
+.activity-badge { display: inline-block; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.badge-create { background: #e8f5e9; color: #2e7d32; }
+.badge-update { background: #e3f2fd; color: #1565c0; }
+.badge-delete { background: #ffebee; color: #c62828; }
+.badge-login, .badge-logout { background: #f5f5f5; color: #666; }
+.activity-details { font-family: 'Courier New', monospace; font-size: 11px; color: #555; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.activity-details.expanded { white-space: pre-wrap; word-break: break-all; }
 .container { display: flex; height: calc(100vh - 64px); }
 .sidebar { width: 420px; min-width: 420px; background: white; padding: 20px; overflow-y: auto; border-right: 1px solid #ddd; display: flex; flex-direction: column; gap: 14px; }
 .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #888; margin-bottom: 4px; }
@@ -72,6 +111,26 @@ select:focus { outline: none; border-color: #2c5f8a; box-shadow: 0 0 0 2px rgba(
 .truck-label.moving  { background: #1565c0; }
 .truck-label.idle    { background: #e65100; }
 .truck-label.stopped { background: #b71c1c; }
+/* Trailer variant — dashed border, slightly muted */
+.truck-label.trailer { border-style: dashed; border-color: #ffd54f; opacity: 0.92; }
+/* Today tab styles */
+.today-datebar { display: flex; gap: 4px; align-items: center; padding: 8px 10px; background: #f0f2f5; border-radius: 8px; margin-bottom: 8px; }
+.today-datebar input[type="date"] { flex: 1; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; }
+.today-arrow { width: 28px; height: 28px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: 700; color: #555; }
+.today-arrow:hover { background: #2c5f8a; color: white; }
+.today-list { max-height: 280px; overflow-y: auto; border: 1px solid #dde3ea; border-radius: 6px; background: white; }
+.today-route-item, .today-vehicle-item { padding: 8px 10px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 12px; transition: background 0.15s; }
+.today-route-item:hover, .today-vehicle-item:hover { background: #e3f2fd; }
+.today-route-item.selected, .today-vehicle-item.selected { background: #bbdefb; border-left: 3px solid #1565c0; }
+.today-route-item:last-child, .today-vehicle-item:last-child { border-bottom: none; }
+.today-item-time { font-weight: 700; color: #1a3a5c; font-size: 13px; }
+.today-item-route { color: #555; margin-top: 2px; }
+.today-item-meta { color: #888; font-size: 11px; margin-top: 2px; }
+.today-status-badge { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: 10px; font-weight: 600; margin-left: 4px; }
+.status-scheduled  { background: #e3f2fd; color: #1565c0; }
+.status-in-progress { background: #fff8e1; color: #e65100; }
+.status-delivered  { background: #e8f5e9; color: #2e7d32; }
+.status-cancelled  { background: #ffebee; color: #c62828; }
 .truck-toggle { background: #1a3a5c; color: white; border: none; border-radius: 6px; padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
 .truck-toggle:hover { background: #2c5f8a; }
 .truck-toggle.active { background: #1565c0; }
@@ -119,6 +178,43 @@ select:focus { outline: none; border-color: #2c5f8a; box-shadow: 0 0 0 2px rgba(
 .schedule-badge.scheduled { background: #e3f2fd; color: #1565c0; }
 .schedule-badge.completed { background: #e8f5e9; color: #2e7d32; }
 .schedule-badge.cancelled { background: #f5f5f5; color: #888; }
+/* Large calendar — dominates main pane when Schedule tab is active */
+.schedule-main-pane { flex: 1; background: #f0f2f5; padding: 12px; display: flex; flex-direction: column; overflow: hidden; }
+.schedule-main-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.cal-nav { width: 32px; height: 32px; background: white; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; font-size: 18px; font-weight: 700; color: #1a3a5c; }
+.cal-nav:hover { background: #2c5f8a; color: white; }
+.cal-month-label { font-weight: 700; color: #1a3a5c; font-size: 18px; min-width: 180px; text-align: center; }
+.cal-today-btn { padding: 6px 12px; background: #2c5f8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; }
+.cal-today-btn:hover { background: #1a3a5c; }
+.cal-legend { display: flex; gap: 4px; flex-wrap: wrap; }
+.cal-legend-item { font-size: 10px; }
+.calendar-grid-large { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: minmax(110px, 1fr); gap: 2px; background: #ccc; border: 1px solid #ccc; flex: 1; overflow: auto; }
+.calendar-grid-large .cal-header-large { background: #1a3a5c; color: white; padding: 6px; text-align: center; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.cal-day-large { background: white; padding: 4px 6px; cursor: pointer; display: flex; flex-direction: column; overflow: hidden; min-height: 110px; }
+.cal-day-large.empty { background: #f7f9fb; cursor: default; }
+.cal-day-large:hover:not(.empty) { background: #e8ecf0; }
+.cal-day-large.today { background: #fff8e1; border: 2px solid #f9a825; }
+.cal-day-large.selected { background: #e3f2fd; box-shadow: inset 0 0 0 2px #1565c0; }
+.cal-day-num { font-weight: 700; color: #555; font-size: 13px; margin-bottom: 4px; }
+.cal-day-large.today .cal-day-num { color: #e65100; }
+.cal-day-items { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 2px; }
+.cal-item { font-size: 10px; padding: 2px 5px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; border-left: 3px solid transparent; background: #f0f2f5; color: #333; transition: all 0.1s; }
+.cal-item:hover { background: #cfd8dc; }
+.cal-item.status-scheduled  { background: #e3f2fd; border-left-color: #1565c0; }
+.cal-item.status-in-progress { background: #fff8e1; border-left-color: #e65100; }
+.cal-item.status-delivered  { background: #e8f5e9; border-left-color: #2e7d32; }
+.cal-item.status-cancelled  { background: #ffebee; border-left-color: #c62828; text-decoration: line-through; opacity: 0.7; }
+.cal-more { font-size: 10px; color: #1565c0; font-weight: 600; cursor: pointer; padding: 2px 5px; }
+.cal-more:hover { text-decoration: underline; }
+/* Day-detail drawer — slides in from right when day is clicked */
+.day-drawer { position: fixed; top: 64px; right: -400px; width: 400px; max-width: 90vw; height: calc(100vh - 64px); background: white; box-shadow: -4px 0 16px rgba(0,0,0,0.15); z-index: 9998; transition: right 0.25s; padding: 16px; overflow-y: auto; }
+.day-drawer.open { right: 0; }
+.day-drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+.day-drawer-title { font-weight: 700; color: #1a3a5c; font-size: 16px; }
+.day-drawer-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #888; }
+.day-drawer-close:hover { color: #1a3a5c; }
+.day-drawer-item { padding: 10px; border: 1px solid #dde3ea; border-radius: 6px; margin-bottom: 6px; cursor: pointer; }
+.day-drawer-item:hover { background: #e3f2fd; border-color: #1565c0; }
 .view-toggle { display: flex; gap: 0; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; }
 .view-toggle button { padding: 6px 14px; border: none; background: #f0f2f5; cursor: pointer; font-size: 12px; font-weight: 600; color: #888; }
 .view-toggle button.active { background: #2c5f8a; color: white; }
@@ -139,12 +235,15 @@ select:focus { outline: none; border-color: #2c5f8a; box-shadow: 0 0 0 2px rgba(
     <h1>Carter Lumber Route Planner</h1>
     <div class="subtitle">Mill / Supplier to Yard — Road Distance & Route</div>
   </div>
+  <div class="header-actions">
+    <button class="header-btn" onclick="openSettingsModal()" title="Settings">⚙️</button>
+  </div>
 </div>
 <div class="container">
   <div class="sidebar">
     <div class="tab-bar">
       <button class="tab-btn active" data-tab="single">Single Route</button>
-      <button class="tab-btn" data-tab="truck">Route Truck</button>
+      <button class="tab-btn" data-tab="today">Today</button>
       <button class="tab-btn" data-tab="schedule">Schedule</button>
     </div>
 
@@ -217,106 +316,55 @@ select:focus { outline: none; border-color: #2c5f8a; box-shadow: 0 0 0 2px rgba(
     </div>
 
     <!-- ROUTE TRUCK TAB -->
-    <div id="tab-truck" class="tab-content">
+    <div id="tab-today" class="tab-content">
+      <!-- Date controls -->
+      <div class="today-datebar">
+        <button class="today-arrow" onclick="changeTodayDate(-1)" title="Previous day">‹</button>
+        <input type="date" id="todayDateInput" onchange="onTodayDateChange()" />
+        <button class="today-arrow" onclick="changeTodayDate(1)" title="Next day">›</button>
+        <button class="today-arrow" onclick="jumpToToday()" title="Jump to today" style="font-size:11px;padding:0 10px;">Today</button>
+        <button onclick="refreshTodayData()" title="Refresh" style="margin-left:auto;font-size:12px;background:none;border:1px solid #ccc;border-radius:6px;padding:4px 9px;cursor:pointer;color:#555;">🔄</button>
+      </div>
+
+      <!-- Scheduled Routes list for selected day -->
+      <div>
+        <div class="section-label" id="todayRoutesLabel">Routes</div>
+        <div id="todayRoutesList" class="today-list">
+          <div style="padding:16px;text-align:center;color:#888;font-size:12px;">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Vehicle filter -->
       <div>
         <div class="section-label" style="display:flex;justify-content:space-between;align-items:center;">
-          1. Select Truck
-          <button onclick="refreshTruckDropdown()" style="font-size:11px;background:none;border:1px solid #ccc;border-radius:4px;padding:2px 7px;cursor:pointer;color:#555;">🔄 Refresh</button>
+          Vehicles
+          <span id="todayVehicleCount" style="font-weight:400;text-transform:none;font-size:10px;color:#888;">—</span>
         </div>
-        <select id="truckRouteSelect"><option value="">— Loading trucks… —</option></select>
-        <div id="truckRouteDetails" class="loc-details" style="display:none"></div>
-      </div>
-      <div>
-        <div class="section-label">2. Select Mill / Supplier</div>
-        <select id="truckRouteMillSelect"><option value="">— Choose a mill or supplier —</option></select>
-        <div id="truckRouteMillDetails" class="loc-details" style="display:none"></div>
-      </div>
-      <div>
-        <div class="section-label">3. Select Yard</div>
-        <select id="truckRouteYardSelect"><option value="">— Choose a yard —</option></select>
-        <div id="truckRouteYardDetails" class="loc-details" style="display:none"></div>
-      </div>
-      <button class="btn btn-primary" id="truckRouteBtn" disabled>Calculate Truck Route</button>
-      <button class="btn btn-secondary" id="truckRouteClearBtn" style="display:none">Clear Route</button>
-      <button class="btn btn-schedule" id="truckScheduleBtn" style="display:none" onclick="openScheduleModal('truck')">📅 Schedule Route</button>
-      <div id="truckRouteStatus" class="status-msg" style="display:none"></div>
-
-      <!-- Leg 1: Truck → Mill -->
-      <div id="truckLeg1Box" class="result-box" style="display:none; border-left:4px solid #e65100; margin-top:8px;">
-        <div class="result-title">🚛 Leg 1 — Truck to Mill</div>
-        <div class="distance-highlight" id="truckLeg1Miles" style="font-size:22px;">—</div>
-        <div class="result-row"><span class="result-label">Drive Time</span><span class="result-value" id="truckLeg1Time">—</span></div>
-        <div class="result-row"><span class="result-label">From</span><span class="result-value" id="truckLeg1From">—</span></div>
-        <div class="result-row"><span class="result-label">To</span><span class="result-value" id="truckLeg1To">—</span></div>
-      </div>
-
-      <!-- Leg 2: Mill → Yard -->
-      <div id="truckLeg2Box" class="result-box" style="display:none; border-left:4px solid #1565c0; margin-top:8px;">
-        <div class="result-title">🏭 Leg 2 — Mill to Yard</div>
-        <div class="distance-highlight" id="truckLeg2Miles" style="font-size:22px;">—</div>
-        <div class="result-row"><span class="result-label">Drive Time</span><span class="result-value" id="truckLeg2Time">—</span></div>
-        <div class="result-row"><span class="result-label">From</span><span class="result-value" id="truckLeg2From">—</span></div>
-        <div class="result-row"><span class="result-label">To</span><span class="result-value" id="truckLeg2To">—</span></div>
-      </div>
-
-      <!-- Total -->
-      <div id="truckRouteTotalBox" class="result-box" style="display:none; background:#e8f5e9; border:1px solid #a5d6a7; margin-top:8px;">
-        <div class="result-title">📍 Total Trip</div>
-        <div class="distance-highlight" id="truckTotalMiles">—</div>
-        <div class="distance-sub" id="truckTotalKm"></div>
-        <div class="result-row"><span class="result-label">Total Drive Time</span><span class="result-value" id="truckTotalTime">—</span></div>
-      </div>
-
-      <!-- Fuel estimate for the full trip -->
-      <div id="truckFuelBox" class="fuel-box" style="display:none; margin-top:8px;">
-        <div class="fuel-title">Fuel Cost Estimate</div>
-        <div class="fuel-highlight" id="truckFuelCostTotal">—</div>
-        <div class="fuel-sub">Estimated full-trip fuel cost</div>
-        <hr class="divider" style="margin:10px 0;">
-        <div class="result-row"><span class="result-label">Gallons needed</span><span class="result-value" id="truckFuelGallons">—</span></div>
-        <div class="result-row"><span class="result-label">Avg. diesel price</span><span class="result-value" id="truckFuelAvgPrice">—</span></div>
-      </div>
-
-      <div id="truckRouteWeatherBox" class="weather-box" style="display:none; margin-top:8px;">
-        <div class="weather-title">Weather Along Route</div>
-        <div id="truckWeatherProgress" style="display:none">
-          <div style="font-size:11px;color:#1565c0;margin-bottom:4px;" id="truckWeatherProgressLabel">Fetching weather...</div>
-          <div class="progress-bar"><div class="progress-fill" id="truckWeatherProgressFill" style="width:0%"></div></div>
+        <input type="search" id="todayVehicleFilter" placeholder="Filter by #, driver, city…" oninput="onTodayVehicleFilterChange(this.value)"
+          style="width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:6px;font-size:13px;margin-bottom:6px;" />
+        <div id="todayVehicleList" class="today-list" style="max-height:220px;overflow-y:auto;">
+          <div style="padding:12px;text-align:center;color:#888;font-size:12px;">Loading…</div>
         </div>
-        <div id="truckWeatherPoints"></div>
+        <div style="font-size:10px;color:#999;margin-top:4px;">Auto-refreshes every 60s while this tab is open.</div>
+      </div>
+
+      <div class="result-box" style="background:#f7f9fb;margin-top:6px;">
+        <div style="font-size:11px;color:#666;line-height:1.5;">
+          💡 <strong>Tip:</strong> Click a route or vehicle in the lists to zoom the map to it.
+          To create a new route, use the <strong>Single Route</strong> tab.
+        </div>
       </div>
     </div>
 
     <!-- SCHEDULE TAB -->
     <div id="tab-schedule" class="tab-content">
-      <div class="schedule-tab-content">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div class="section-label">Scheduled Routes</div>
-          <div class="view-toggle">
-            <button class="active" onclick="switchScheduleView('list')">List</button>
-            <button onclick="switchScheduleView('calendar')">Calendar</button>
-          </div>
-        </div>
-
-        <!-- List View -->
-        <div id="scheduleListView">
-          <div style="max-height:500px; overflow-y:auto; border:1px solid #dde3ea; border-radius:6px;">
-            <table class="schedule-list-table">
-              <thead><tr><th>Date</th><th>Time</th><th>Mill</th><th>Yard</th><th>Truck</th><th>Dist.</th><th>Status</th><th>Actions</th></tr></thead>
-              <tbody id="scheduleListTbody"><tr><td colspan="8" style="text-align:center;color:#888;padding:20px;">No scheduled routes</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Calendar View -->
-        <div id="scheduleCalendarView" style="display:none;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            <button onclick="prevMonth()" style="background:none;border:1px solid #ccc;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:14px;">&lt;</button>
-            <div id="calendarMonthLabel" style="font-weight:700;color:#1a3a5c;font-size:15px;"></div>
-            <button onclick="nextMonth()" style="background:none;border:1px solid #ccc;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:14px;">&gt;</button>
-          </div>
-          <div class="calendar-grid" id="calendarGrid"></div>
-          <div id="calendarDayRoutes" style="margin-top:10px;"></div>
+      <div class="section-label">Next 7 Days</div>
+      <div id="next7Days" class="today-list" style="max-height:calc(100vh - 280px);">
+        <div style="padding:16px;text-align:center;color:#888;font-size:12px;">Loading…</div>
+      </div>
+      <div class="result-box" style="background:#f7f9fb;margin-top:6px;">
+        <div style="font-size:11px;color:#666;line-height:1.5;">
+          💡 Click a day in the calendar to see all routes for that day. Click a route to edit.
         </div>
       </div>
     </div>
@@ -331,6 +379,22 @@ select:focus { outline: none; border-color: #2c5f8a; box-shadow: 0 0 0 2px rgba(
     </div>
   </div>
   <div id="map"></div>
+  <div id="scheduleMainPane" class="schedule-main-pane" style="display:none;">
+    <div class="schedule-main-header">
+      <button onclick="prevMonth()" class="cal-nav" title="Previous month">‹</button>
+      <div id="calendarMonthLabel" class="cal-month-label">—</div>
+      <button onclick="nextMonth()" class="cal-nav" title="Next month">›</button>
+      <button onclick="jumpToCalendarToday()" class="cal-today-btn">Today</button>
+      <div style="flex:1;"></div>
+      <div class="cal-legend">
+        <span class="cal-legend-item"><span class="today-status-badge status-scheduled">scheduled</span></span>
+        <span class="cal-legend-item"><span class="today-status-badge status-in-progress">in-progress</span></span>
+        <span class="cal-legend-item"><span class="today-status-badge status-delivered">delivered</span></span>
+        <span class="cal-legend-item"><span class="today-status-badge status-cancelled">cancelled</span></span>
+      </div>
+    </div>
+    <div id="calendarGrid" class="calendar-grid-large"></div>
+  </div>
   <div style="position:absolute; bottom:24px; right:12px; z-index:1000; display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
     <button class="truck-toggle" id="trafficToggleBtn" onclick="toggleTraffic()" title="Show live road congestion">🚦 Show Traffic Layer</button>
     <div style="display:flex; gap:6px; align-items:center;">
@@ -342,8 +406,8 @@ select:focus { outline: none; border-color: #2c5f8a; box-shadow: 0 0 0 2px rgba(
 </div>
 
 <script>
-const MILLS = [{"name": "BEASLEY FOREST PRODUCTS", "product": "YP", "vendor": "70328", "street": "712 Uvalda Hwy", "city": "Hazlehurst", "stateZip": "GA 31539", "address": "712 Uvalda Hwy, Hazlehurst, GA 31539"}, {"name": "BINDERHOLZ", "product": "YP", "vendor": "69974-2", "street": "17152 46th Trace", "city": "Live Oak", "stateZip": "FL 32060", "address": "17152 46th Trace, Live Oak, FL 32060"}, {"name": "BINDERHOLZ", "product": "YP", "vendor": "69974-1", "street": "260 Piper Ln", "city": "Enfield", "stateZip": "NC 27823", "address": "260 Piper Ln, Enfield, NC 27823"}, {"name": "CHARLES INGRAM LUMBER", "product": "YP", "vendor": "69893", "street": "4930 Planer Rd", "city": "Effingham", "stateZip": "SC 29541", "address": "4930 Planer Rd, Effingham, SC 29541"}, {"name": "CULP LUMBER", "product": "YP", "vendor": "70512", "street": "491 Old US 52", "city": "New London", "stateZip": "NC 28127", "address": "491 Old US 52, New London, NC 28127"}, {"name": "GEORGIA PACIFIC -  Clarendon OSB", "product": "OSB", "vendor": "5406-7", "street": "8250 Sumter Highway", "city": "Alcolu", "stateZip": "SC 29001", "address": "8250 Sumter Highway, Alcolu, SC 29001"}, {"name": "GEORGIA PACIFIC - Albany", "product": "YP", "vendor": "5406-81", "street": "3150 Sylvester Rd", "city": "Albany", "stateZip": "GA 31705", "address": "3150 Sylvester Rd, Albany, GA 31705"}, {"name": "GEORGIA PACIFIC - Dudley", "product": "YP", "vendor": "5406-82", "street": "139 Brewington Road", "city": "Dudley", "stateZip": "NC 28333", "address": "139 Brewington Road, Dudley, NC 28333"}, {"name": "GEORGIA PACIFIC - Hosford OSB", "product": "OSB", "vendor": "5406-12", "street": "12995 fl-65", "city": "Hosford", "stateZip": "FL  32334", "address": "12995 fl-65, Hosford, FL  32334"}, {"name": "GEORGIA PACIFIC - Mexia", "product": "YP", "vendor": "5406-83", "street": "372 Mexboro Rd", "city": "Frisco City", "stateZip": "AL 36445", "address": "372 Mexboro Rd, Frisco City, AL 36445"}, {"name": "GEORGIA PACIFIC - Prosperity", "product": "YP", "vendor": "5406-84", "street": "191 Georgia Pacific Blvd", "city": "Prosperity", "stateZip": "SC 29127", "address": "191 Georgia Pacific Blvd, Prosperity, SC 29127"}, {"name": "GEORGIA PACIFIC - Rome", "product": "YP", "vendor": "5406-85", "street": "80 Mays Bridge Road", "city": "Rome", "stateZip": "GA 30165", "address": "80 Mays Bridge Road, Rome, GA 30165"}, {"name": "GEORGIA PACIFIC - Talladega", "product": "YP", "vendor": "5406-86", "street": "400 Ironaton Cutoff Rd", "city": "Talladega", "stateZip": "AL 35160", "address": "400 Ironaton Cutoff Rd, Talladega, AL 35160"}, {"name": "GEORGIA PACIFIC - Taylorsville", "product": "YP", "vendor": "5406-87", "street": "105 Smith Co Rd 25", "city": "Taylorsville", "stateZip": "MS 39169", "address": "105 Smith Co Rd 25, Taylorsville, MS 39169"}, {"name": "GEORGIA PACIFIC - Warrenton", "product": "YP", "vendor": "5406-88", "street": "331 Thomson Hwy", "city": "Warrenton", "stateZip": "GA 30828", "address": "331 Thomson Hwy, Warrenton, GA 30828"}, {"name": "INLAND WHOLESALE - BLUE INLAND", "product": "RELOAD", "vendor": "4350-51", "street": "2101 Burr Oak Avenue", "city": "Blue Island", "stateZip": "IL 60406", "address": "2101 Burr Oak Avenue, Blue Island, IL 60406"}, {"name": "INLAND WHOLESALE - BUFFALO, NY", "product": "RELOAD", "vendor": "", "street": "S3100 Lake Shore Rd", "city": "Buffalo", "stateZip": "NY 14219", "address": "S3100 Lake Shore Rd, Buffalo, NY 14219"}, {"name": "INLAND WHOLESALE - DETROIT, MI", "product": "RELOAD", "vendor": "4350-4", "street": "11010 STATE FAIR EAST", "city": "DETROIT", "stateZip": "MI 48234", "address": "11010 STATE FAIR EAST, DETROIT, MI 48234"}, {"name": "INLAND WHOLESALE - WALBRIDGE, OH", "product": "RELOAD", "vendor": "4350-45", "street": "6373 Ayers Road", "city": "Walbridge", "stateZip": "OH 43465", "address": "6373 Ayers Road, Walbridge, OH 43465"}, {"name": "INTERFOR - BAXLEY, GA", "product": "YP", "vendor": "", "street": "1830 Golden Isles Easr", "city": "BAXLEY", "stateZip": "GA 31513", "address": "1830 Golden Isles Easr, BAXLEY, GA 31513"}, {"name": "INTERFOR - BAYSPRING, MS", "product": "YP", "vendor": "", "street": "71 GEORGIA-PACIFIC ROAD", "city": "Bays Springs", "stateZip": "MS 39422", "address": "71 GEORGIA-PACIFIC ROAD, Bays Springs, MS 39422"}, {"name": "INTERFOR - EATONTON, GA", "product": "YP", "vendor": "", "street": "370 DENNIS STATION ROAD SW", "city": "EATONTON", "stateZip": "GA 31024", "address": "370 DENNIS STATION ROAD SW, EATONTON, GA 31024"}, {"name": "INTERFOR - FAYETTE, AL", "product": "YP", "vendor": "", "street": "545 COUNTY ROAD 6", "city": "BELK", "stateZip": "AL 35545", "address": "545 COUNTY ROAD 6, BELK, AL 35545"}, {"name": "INTERFOR - GEORGETOWN, SC", "product": "YP", "vendor": "", "street": "2701 Indian Hut Rd", "city": "Georgetown", "stateZip": "SC 29440", "address": "2701 Indian Hut Rd, Georgetown, SC 29440"}, {"name": "INTERFOR - MELDRIM, GA", "product": "YP", "vendor": "", "street": "1291 Old River Rd", "city": "Bloomingdale", "stateZip": "GA 31302", "address": "1291 Old River Rd, Bloomingdale, GA 31302"}, {"name": "INTERFOR - PERRY, GA", "product": "YP", "vendor": "", "street": "903 JERNIGAN STREET", "city": "PERRY", "stateZip": "GA 31069", "address": "903 JERNIGAN STREET, PERRY, GA 31069"}, {"name": "INTERFOR - PRESTON, GA", "product": "YP", "vendor": "", "street": "378 TOLLESON ROAD", "city": "PRESTON", "stateZip": "GA 31824", "address": "378 TOLLESON ROAD, PRESTON, GA 31824"}, {"name": "INTERFOR - SUMMERVILLE,SC", "product": "YP", "vendor": "", "street": "200 N Maple St", "city": "SUMMERVILLE", "stateZip": "SC 29483", "address": "200 N Maple St, SUMMERVILLE, SC 29483"}, {"name": "INTERFOR - SWAINSBORO, GA", "product": "YP", "vendor": "", "street": "8796 HWY 297", "city": "SWAINSBORO", "stateZip": "GA 30401", "address": "8796 HWY 297, SWAINSBORO, GA 30401"}, {"name": "INTERFOR - THOMASTON, GA", "product": "YP", "vendor": "", "street": "75 BEN HILL ROAD", "city": "THOMASTON", "stateZip": "GA 30286", "address": "75 BEN HILL ROAD, THOMASTON, GA 30286"}, {"name": "JORDAN LUMBER", "product": "YP", "vendor": "70121", "street": "1939 N Carolina 109", "city": "Mount Gilead", "stateZip": "NC 27306", "address": "1939 N Carolina 109, Mount Gilead, NC 27306"}, {"name": "KRONOSPAN - PORT OF BALTIMORE", "product": "OSB", "vendor": "70517", "street": "2200 Broening Highway", "city": "Baltimore", "stateZip": "MD 21224", "address": "2200 Broening Highway, Baltimore, MD 21224"}, {"name": "Langdale FOREST", "product": "YP", "vendor": "70122", "street": "752 Grove St", "city": "Barnesville", "stateZip": "GA 30204", "address": "752 Grove St, Barnesville, GA 30204"}, {"name": "Louisiana-Pacific - HANCEVILLE OSB", "product": "OSB", "vendor": "66624-2", "street": "902 Main St SE", "city": "Hanceville", "stateZip": "AL 35077", "address": "902 Main St SE, Hanceville, AL 35077"}, {"name": "Louisiana-Pacific - ROXBORO OSB", "product": "OSB", "vendor": "66624-1", "street": "10475 Boston Rd", "city": "Roxboro", "stateZip": "NC 27574", "address": "10475 Boston Rd, Roxboro, NC 27574"}, {"name": "Louisiana-Pacific - THOMASVILLE OSB", "product": "OSB", "vendor": "66624-3", "street": "1500 N Clarke Industrial Rd", "city": "Thomasville", "stateZip": "AL 36784", "address": "1500 N Clarke Industrial Rd, Thomasville, AL 36784"}, {"name": "MARION, OH", "product": "RELOAD", "vendor": "", "street": "3177 HARDING HIGHWAY EAST", "city": "MARION", "stateZip": "OH 43302", "address": "3177 HARDING HIGHWAY EAST, MARION, OH 43302"}, {"name": "NATIONAL DISTRIBUTION", "product": "RELOAD", "vendor": "", "street": "3501 WEST 51 ST STREET", "city": "CHICAGO", "stateZip": "IL 60632", "address": "3501 WEST 51 ST STREET, CHICAGO, IL 60632"}, {"name": "PARTNERS WAREHOUSE", "product": "RELOAD", "vendor": "", "street": "675 Mcclure Rd", "city": "Aurora", "stateZip": "Il 60502", "address": "675 Mcclure Rd, Aurora, Il 60502"}, {"name": "Pollard Lumber Co., Inc", "product": "YP", "vendor": "67786", "street": "5863 Washington Rd", "city": "Appling", "stateZip": "GA 30802", "address": "5863 Washington Rd, Appling, GA 30802"}, {"name": "REX LUMBER - Bristol", "product": "YP", "vendor": "69273-2", "street": "18601 FL-12", "city": "Bristol", "stateZip": "FL 32321", "address": "18601 FL-12, Bristol, FL 32321"}, {"name": "REX LUMBER - Brookhaven", "product": "YP", "vendor": "69273-4", "street": "810 Wl Behan Rd", "city": "Brookhaven", "stateZip": "MS 39601", "address": "810 Wl Behan Rd, Brookhaven, MS 39601"}, {"name": "REX LUMBER - Graceville", "product": "YP", "vendor": "69273-3", "street": "5299 Alabama St", "city": "Graceville", "stateZip": "FL 32440", "address": "5299 Alabama St, Graceville, FL 32440"}, {"name": "REX LUMBER - TROY", "product": "YP", "vendor": "69273-1", "street": "1945 COUNTY ROAD 7714", "city": "TROY", "stateZip": "AL 36081", "address": "1945 COUNTY ROAD 7714, TROY, AL 36081"}, {"name": "TR MILLER", "product": "YP", "vendor": "70100", "street": "215 Deer St", "city": "Brewton", "stateZip": "AL 36426", "address": "215 Deer St, Brewton, AL 36426"}, {"name": "TROY LUMBER", "product": "YP", "vendor": "70030", "street": "110 Leslie St", "city": "Troy", "stateZip": "NC 27371", "address": "110 Leslie St, Troy, NC 27371"}, {"name": "WEST FRASER - Allendale", "product": "OSB", "vendor": "61210-2", "street": "9918 Bufford\u2019s Bridge Hwy", "city": "Fairfax", "stateZip": "SC 29827", "address": "9918 Bufford\u2019s Bridge Hwy, Fairfax, SC 29827"}, {"name": "WEST FRASER - Cordele", "product": "OSB", "vendor": "61210-3", "street": "964 US-280 W", "city": "Cordele", "stateZip": "GA 31015", "address": "964 US-280 W, Cordele, GA 31015"}, {"name": "WEST FRASER - Huguley", "product": "OSB", "vendor": "61210-4", "street": "4400 Barton Industrial Blvd", "city": "Lanett", "stateZip": "AL 36863", "address": "4400 Barton Industrial Blvd, Lanett, AL 36863"}, {"name": "WEST FRASER - Joanna", "product": "OSB", "vendor": "61210-1", "street": "564 Woodyard Road", "city": "Kinards", "stateZip": "sc 29355", "address": "564 Woodyard Road, Kinards, sc 29355"}, {"name": "WEST FRASER - Maplesville Mills", "product": "YP", "vendor": "61210-", "street": "7475 AL-22", "city": "Maplesville", "stateZip": "AL 36750", "address": "7475 AL-22, Maplesville, AL 36750"}, {"name": "WEST FRASER - McDavid", "product": "YP", "vendor": "5556-4", "street": "401 Champion Dr", "city": "McDavid", "stateZip": "FL 32568", "address": "401 Champion Dr, McDavid, FL 32568"}, {"name": "WEST FRASER - Opelika", "product": "YP", "vendor": "5556-3", "street": "2100 Industrial Blvd", "city": "Opelika", "stateZip": "AL 36801", "address": "2100 Industrial Blvd, Opelika, AL 36801"}, {"name": "WEST FRASER - Seaboard Mills", "product": "YP", "vendor": "61210-", "street": "4400 NC-186", "city": "Seaboard", "stateZip": "NC 27876", "address": "4400 NC-186, Seaboard, NC 27876"}, {"name": "WESTERVELT - Moundville", "product": "YP", "vendor": "70102-1", "street": "2500 Gulf States Pkwy", "city": "Moundville", "stateZip": "AL 35474", "address": "2500 Gulf States Pkwy, Moundville, AL 35474"}, {"name": "WESTERVELT - Thomasville", "product": "YP", "vendor": "70102-2", "street": "700 N Clarke Industrial Rd", "city": "Thomasville", "stateZip": "AL 36784", "address": "700 N Clarke Industrial Rd, Thomasville, AL 36784"}, {"name": "Weyerhaeuser - GREENVILLE", "product": "YP", "vendor": "", "street": "371 E Hanrahan Rd", "city": "Ayden", "stateZip": "NC 28513", "address": "371 E Hanrahan Rd, Ayden, NC 28513"}, {"name": "Weyerhaeuser - Plymouth Wood Plant", "product": "YP", "vendor": "", "street": "Pulp Mill Rd", "city": "Jamesville", "stateZip": "NC 27846", "address": "Pulp Mill Rd, Jamesville, NC 27846"}];
-const YARDS = [{"storeNumber": "900-549", "posNumber": "549", "storeType": "CCP", "street": "868 MURRAY RD", "city": "DOTHAN", "state": "AL", "zip": "36303", "lat": 31.257526, "lon": -85.403661, "manager": "Joe Hatton", "market": "Townsend Market"}, {"storeNumber": "900-750", "posNumber": "750", "storeType": "LUMBER", "street": "868 MURRAY RD", "city": "DOTHAN", "state": "AL", "zip": "36303", "lat": 31.257526, "lon": -85.403661, "manager": "Shane Johnson", "market": "Townsend Market"}, {"storeNumber": "900-752", "posNumber": "752", "storeType": "LUMBER", "street": "533 BOLL WEEVIL CIRCLE", "city": "ENTERPRISE", "state": "AL", "zip": "36330", "lat": 31.313058, "lon": -85.830703, "manager": "Russell Lynch", "market": "Townsend Market"}, {"storeNumber": "900-753", "posNumber": "753", "storeType": "LUMBER", "street": "1007 SOUTH BRUNDIDGE ST", "city": "TROY", "state": "AL", "zip": "36081", "lat": 31.795148, "lon": -85.966445, "manager": "Russell Lynch", "market": "Townsend Market"}, {"storeNumber": "0-0", "posNumber": "1897", "storeType": "TIMBER", "street": "618 WEST CENTRAL ST", "city": "WARREN", "state": "AR", "zip": "71671", "lat": 33.610037, "lon": -92.075229, "manager": "Gary Saunders", "market": "Non-Sales"}, {"storeNumber": "900-755", "posNumber": "755", "storeType": "LUMBER", "street": "1520 HIGHWAY 90 WEST", "city": "CHIPLEY", "state": "FL", "zip": "32428", "lat": 30.776226, "lon": -85.558957, "manager": "Michael Hazard", "market": "Townsend Market"}, {"storeNumber": "900-751", "posNumber": "751", "storeType": "LUMBER", "street": "3710 HIGHWAY 231N", "city": "PANAMA CITY", "state": "FL", "zip": "32404", "lat": 30.215292, "lon": -85.603667, "manager": "Daniel Turner", "market": "Townsend Market"}, {"storeNumber": "900-459", "posNumber": "459", "storeType": "LUMBER", "street": "800 15TH ST", "city": "COLUMBUS", "state": "GA", "zip": "31901", "lat": 32.47397, "lon": -84.98141, "manager": "Dylan Fessler", "market": "Mid Georgia Market"}, {"storeNumber": "0-0", "posNumber": "578", "storeType": "RELOAD", "street": "298 TEMPLE AVE.  NS DELV SDG B25", "city": "NEWNAN", "state": "GA", "zip": "30263", "lat": 33.389964, "lon": -84.822245, "manager": "", "market": "Reloads"}, {"storeNumber": "900-451", "posNumber": "539", "storeType": "CCP", "street": "4220 WEST WHITE RD", "city": "OAKWOOD", "state": "GA", "zip": "30566", "lat": 34.212962, "lon": -83.899649, "manager": "", "market": "Atlanta Market"}, {"storeNumber": "900-453", "posNumber": "453", "storeType": "LUMBER", "street": "3365 FLORENCE RD", "city": "POWDER SPRINGS", "state": "GA", "zip": "30127", "lat": 33.872544, "lon": -84.700557, "manager": "Cody Townes", "market": "Atlanta Market"}, {"storeNumber": "900-456", "posNumber": "456", "storeType": "DIRECT SHIP", "street": "24 JOE KENNEDY BLVD", "city": "STATESBORO", "state": "GA", "zip": "30458", "lat": 32.39411, "lon": -81.81425, "manager": "Ben Blaxton", "market": "Atlanta Market"}, {"storeNumber": "0-0", "posNumber": "582", "storeType": "RELOAD", "street": "472 EAGLES LANDING PARKWAY", "city": "STOCKBRIDGE", "state": "GA", "zip": "", "lat": 33.516541, "lon": -84.208471, "manager": "", "market": "Atlanta Market"}, {"storeNumber": "900-452", "posNumber": "452", "storeType": "LUMBER", "street": "472 EAGLES LANDING PARKWAY", "city": "STOCKBRIDGE", "state": "GA", "zip": "30281", "lat": 33.516541, "lon": -84.208471, "manager": "Wade Wood", "market": "Atlanta Market"}, {"storeNumber": "900-455", "posNumber": "455", "storeType": "DOOR SHOP", "street": "472 EAGLES LANDING PARKWAY", "city": "STOCKBRIDGE", "state": "GA", "zip": "30281", "lat": 33.516541, "lon": -84.208471, "manager": "Tyler Massie", "market": "Atlanta Market"}, {"storeNumber": "0-0", "posNumber": "713", "storeType": "RELOAD", "street": "1159 HOG MOUNTAIN RD", "city": "WINDER", "state": "GA", "zip": "30680", "lat": 41.101491, "lon": -81.371148, "manager": "", "market": "District Cost Center"}, {"storeNumber": "900-457", "posNumber": "457", "storeType": "KITCHEN AND BATH", "street": "1159 HOG MOUNTAIN RD", "city": "WINDER", "state": "GA", "zip": "30680", "lat": 33.953577, "lon": -83.655658, "manager": "Adam Schuman", "market": "Atlanta Market"}, {"storeNumber": "900-450", "posNumber": "450", "storeType": "LUMBER", "street": "1159 HOG MOUNTAIN RD", "city": "WINDER", "state": "GA", "zip": "30680", "lat": 33.953577, "lon": -83.655658, "manager": "Chris Burnett", "market": "Atlanta Market"}, {"storeNumber": "900-454", "posNumber": "454", "storeType": "HUB", "street": "1159 HOG MOUNTAIN RD", "city": "WINDER", "state": "GA", "zip": "30680", "lat": 33.953577, "lon": -83.655658, "manager": "Chris Burnett", "market": "Atlanta Market"}, {"storeNumber": "900-597", "posNumber": "597", "storeType": "EWP", "street": "1159 HOG MOUNTAIN RD", "city": "WINDER", "state": "GA", "zip": "30680", "lat": 33.953577, "lon": -83.655658, "manager": "", "market": "Atlanta Market"}, {"storeNumber": "0-0", "posNumber": "585", "storeType": "RELOAD", "street": "5521 OAK GROVE RD", "city": "EVANSVILLE", "state": "IN", "zip": "47715", "lat": 37.991697, "lon": -87.48451, "manager": "", "market": "Kight Home Center"}, {"storeNumber": "0-0", "posNumber": "1604", "storeType": "RELOAD", "street": "5521 OAK GROVE RD", "city": "EVANSVILLE", "state": "IN", "zip": "47715", "lat": 37.991697, "lon": -87.48451, "manager": "", "market": "Kight Home Center"}, {"storeNumber": "305-1", "posNumber": "492", "storeType": "LUMBER", "street": "5521 OAK GROVE RD", "city": "EVANSVILLE", "state": "IN", "zip": "47715", "lat": 37.991697, "lon": -87.48451, "manager": "Justin Nelson", "market": "Kight Home Center"}, {"storeNumber": "305-5", "posNumber": "493", "storeType": "KITCHEN AND BATH", "street": "5800 E VIRGINIA ST", "city": "EVANSVILLE", "state": "IN", "zip": "47715", "lat": 37.981407, "lon": -87.47978, "manager": "David Vannarsdall", "market": "Kight Home Center"}, {"storeNumber": "0-0", "posNumber": "1492", "storeType": "INSTALLED", "street": "5521 OAK GROVE RD", "city": "EVANSVILLE", "state": "IN", "zip": "47715", "lat": 37.991697, "lon": -87.48451, "manager": "Corey Taylor", "market": "Kight Home Center"}, {"storeNumber": "14-26", "posNumber": "281", "storeType": "LUMBER", "street": "6630 LINCOLN HWY EAST", "city": "FORT WAYNE", "state": "IN", "zip": "46803", "lat": 41.069389, "lon": -85.054108, "manager": "Luke Hughes", "market": "Fort Wayne Market"}, {"storeNumber": "310-0", "posNumber": "576", "storeType": "EWP", "street": "2901 N MORTON ST", "city": "FRANKLIN", "state": "IN", "zip": "46131", "lat": 39.515538, "lon": -86.073371, "manager": "Jeff Davidson", "market": "Indianapolis Market"}, {"storeNumber": "0-0", "posNumber": "1680", "storeType": "KITCHEN AND BATH", "street": "2901 N MORTON ST", "city": "FRANKLIN", "state": "IN", "zip": "46131", "lat": 39.515538, "lon": -86.073371, "manager": "Ian Brown", "market": "Indianapolis Market"}, {"storeNumber": "0-0", "posNumber": "1681", "storeType": "DOOR SHOP", "street": "2901 N MORTON ST", "city": "FRANKLIN", "state": "IN", "zip": "46131", "lat": 39.515538, "lon": -86.073371, "manager": "Ian Brown", "market": "Indianapolis Market"}, {"storeNumber": "310-40", "posNumber": "359", "storeType": "LUMBER", "street": "2901 N MORTON ST", "city": "FRANKLIN", "state": "IN", "zip": "46131", "lat": 39.515538, "lon": -86.073371, "manager": "Shane Ashton", "market": "Indianapolis Market"}, {"storeNumber": "310-41", "posNumber": "360", "storeType": "DOOR SHOP", "street": "2901 N MORTON ST", "city": "FRANKLIN", "state": "IN", "zip": "46131", "lat": 39.515538, "lon": -86.073371, "manager": "Jeff Davidson", "market": "Indianapolis Market"}, {"storeNumber": "310-2", "posNumber": "533", "storeType": "CCP", "street": "2901 N MORTON ST", "city": "FRANKLIN", "state": "IN", "zip": "46131", "lat": 39.515538, "lon": -86.073371, "manager": "Jeff Davidson", "market": "Indianapolis Market"}, {"storeNumber": "915-28", "posNumber": "277", "storeType": "LUMBER", "street": "3520 S WESTERN AVE", "city": "MARION", "state": "IN", "zip": "46953", "lat": 40.527137, "lon": -85.675061, "manager": "Tim Petty", "market": "Central Indiana Market"}, {"storeNumber": "28-1", "posNumber": "338", "storeType": "LUMBER", "street": "4900 NORTH OLD STATE ROAD 3", "city": "MUNCIE", "state": "IN", "zip": "47303", "lat": 40.233552, "lon": -85.367965, "manager": "Gregory Barnard", "market": "Indianapolis Market"}, {"storeNumber": "32-12", "posNumber": "352", "storeType": "LUMBER", "street": "2107 WESTFIELD RD", "city": "NOBLESVILLE", "state": "IN", "zip": "46062", "lat": 40.043336, "lon": -86.054041, "manager": "", "market": "Indianapolis Market"}, {"storeNumber": "17-23", "posNumber": "274", "storeType": "LUMBER", "street": "1400 MARKLEY DR", "city": "PLYMOUTH", "state": "IN", "zip": "46563", "lat": 41.359751, "lon": -86.324607, "manager": "Matt Lombard", "market": "Central Indiana Market"}, {"storeNumber": "70-35", "posNumber": "344", "storeType": "LUMBER", "street": "3783 CHESTER BLVD", "city": "RICHMOND", "state": "IN", "zip": "47374", "lat": 39.881424, "lon": -84.883651, "manager": "Tony Jefferson", "market": "Central Indiana Market"}, {"storeNumber": "6-17", "posNumber": "272", "storeType": "LUMBER", "street": "10475 W US HWY 6", "city": "WESTVILLE", "state": "IN", "zip": "46391", "lat": 41.538599, "lon": -86.904645, "manager": "Phil White", "market": "Central Indiana Market"}, {"storeNumber": "0-0", "posNumber": "536", "storeType": "CCP", "street": "106 COSMA DRIVE", "city": "BOWLING GREEN", "state": "KY", "zip": "42101", "lat": 37.03306, "lon": -86.3184, "manager": "Spencer Jenkins", "market": "Nashville Market"}, {"storeNumber": "0-0", "posNumber": "409", "storeType": "DOOR SHOP", "street": "106 COSMA DRIVE", "city": "BOWLING GREEN", "state": "KY", "zip": "42101", "lat": 37.03306, "lon": -86.3184, "manager": "Spencer Jenkins", "market": "Nashville Market"}, {"storeNumber": "0-0", "posNumber": "415", "storeType": "KITCHEN AND BATH", "street": "2475 SCOTTSVILLE RD", "city": "BOWLING GREEN", "state": "KY", "zip": "42104", "lat": 36.95224, "lon": -86.429102, "manager": "Marc Huther", "market": "Bowling Green Market"}, {"storeNumber": "31-1", "posNumber": "410", "storeType": "LUMBER", "street": "3975 LOUISVILLE RD", "city": "BOWLING GREEN", "state": "KY", "zip": "42101", "lat": 37.012453, "lon": -86.379698, "manager": "Salem Lockhart", "market": "Bowling Green Market"}, {"storeNumber": "25-2", "posNumber": "190", "storeType": "LUMBER", "street": "10060 DIXIE HWY", "city": "FLORENCE", "state": "KY", "zip": "41042", "lat": 38.955545, "lon": -84.618917, "manager": "Brayden Trattles", "market": "Cincinnati-Dayton Market"}, {"storeNumber": "0-0", "posNumber": "723", "storeType": "RELOAD", "street": "202 NORTH CHEROKEE TRACE BLVD", "city": "HOPKINSVILLE", "state": "KY", "zip": "42240", "lat": 36.84757, "lon": -87.45972, "manager": "", "market": "Clarksville Market"}, {"storeNumber": "0-0", "posNumber": "704", "storeType": "RELOAD", "street": "1806 E 9TH ST", "city": "HOPKINSVILLE", "state": "KY", "zip": "42240", "lat": 36.849131, "lon": -87.467437, "manager": "", "market": "Clarksville Market"}, {"storeNumber": "6841-7", "posNumber": "414", "storeType": "LUMBER", "street": "1806 E 9TH ST", "city": "HOPKINSVILLE", "state": "KY", "zip": "42240", "lat": 36.849131, "lon": -87.467437, "manager": "Scott Entsminger", "market": "Clarksville Market"}, {"storeNumber": "500-407", "posNumber": "407", "storeType": "KITCHEN AND BATH", "street": "2680 E KY-146", "city": "LA GRANGE", "state": "KY", "zip": "40031", "lat": 38.42003, "lon": -85.346691, "manager": "Brady Pfaadt", "market": "Louisville (KY)"}, {"storeNumber": "0-0", "posNumber": "406", "storeType": "LUMBER", "street": "2680 E KY-146", "city": "LA GRANGE", "state": "KY", "zip": "40031", "lat": 38.42003, "lon": -85.346691, "manager": "Brady Pfaadt", "market": "Louisville (KY)"}, {"storeNumber": "0-0", "posNumber": "405", "storeType": "CCM", "street": "4265 PRODUCE RD", "city": "LOUISVILLE", "state": "KY", "zip": "40218", "lat": 38.186554, "lon": -85.679756, "manager": "Brady Pfaadt", "market": "Louisville (KY)"}, {"storeNumber": "0-0", "posNumber": "416", "storeType": "KITCHEN AND BATH", "street": "2301 WIND HAVEN DRIVE", "city": "OWENSBORO", "state": "KY", "zip": "42303", "lat": 37.7648, "lon": -87.08048, "manager": "Marc Huther", "market": "Owensboro Market"}, {"storeNumber": "305-4", "posNumber": "498", "storeType": "LUMBER", "street": "2301 WIND HAVEN DRIVE", "city": "OWENSBORO", "state": "KY", "zip": "42303", "lat": 37.7648, "lon": -87.08048, "manager": "Brett Williamson", "market": "Owensboro Market"}, {"storeNumber": "0-0", "posNumber": "708", "storeType": "RELOAD", "street": "1103 N 8TH STREET", "city": "PADUCAH", "state": "KY", "zip": "42001", "lat": 37.09301, "lon": -88.61134, "manager": "", "market": "Reloads"}, {"storeNumber": "85-2", "posNumber": "463", "storeType": "LUMBER", "street": "7101 GEOFFREY WAY", "city": "FREDERICK", "state": "MD", "zip": "21704", "lat": 39.3538, "lon": -77.4191, "manager": "Ralph Dennis", "market": "BWE Market"}, {"storeNumber": "8168-0", "posNumber": "542", "storeType": "CCP", "street": "1743 DUAL HIGHWAY", "city": "HAGERSTOWN", "state": "MD", "zip": "21740", "lat": 39.612224, "lon": -77.693443, "manager": "Bobby Doberer", "market": "Mid Atlantic Truss (MD)"}, {"storeNumber": "0-0", "posNumber": "465", "storeType": "LUMBER", "street": "6 PENINSULA DRIVE", "city": "NORTH EAST", "state": "MD", "zip": "21901", "lat": 39.62067, "lon": -75.95425, "manager": "Ken Martin", "market": "New Jersey Market"}, {"storeNumber": "0-0", "posNumber": "700", "storeType": "EWP", "street": "6 PENINSULA DRIVE", "city": "NORTH EAST", "state": "MD", "zip": "21901", "lat": 39.62067, "lon": -75.95425, "manager": "Ken Martin", "market": "New Jersey Market"}, {"storeNumber": "8168-0", "posNumber": "556", "storeType": "EWP", "street": "10120 GOVERNOR LANE BLVD", "city": "WILLIAMSPORT", "state": "MD", "zip": "21795", "lat": 39.5924, "lon": -77.80839, "manager": "Ralph Dennis", "market": "BWE Market"}, {"storeNumber": "223-7", "posNumber": "135", "storeType": "LUMBER", "street": "1990 E US 223", "city": "ADRIAN", "state": "MI", "zip": "49221", "lat": 41.875204, "lon": -84.024243, "manager": "Pat Easter", "market": "Toledo Market"}, {"storeNumber": "89-31", "posNumber": "259", "storeType": "LUMBER", "street": "1151 LINCOLN RD", "city": "ALLEGAN", "state": "MI", "zip": "49010", "lat": 42.531, "lon": -85.869, "manager": "Jeff Kaylor", "market": "West Michigan Market"}, {"storeNumber": "121-12", "posNumber": "236", "storeType": "LUMBER", "street": "3178 E BRISTOL RD", "city": "BURTON", "state": "MI", "zip": "48529", "lat": 42.974717, "lon": -83.646659, "manager": "Michael Gustafson", "market": "Flint Market"}, {"storeNumber": "810-39", "posNumber": "247", "storeType": "LUMBER", "street": "1250 CARTER DRIVE", "city": "CARO", "state": "MI", "zip": "48723", "lat": 43.474524, "lon": -83.41787, "manager": "Jayson Mays", "market": "Flint Market"}, {"storeNumber": "0-0", "posNumber": "1685", "storeType": "KITCHEN AND BATH", "street": "5317 ALPINE AVE", "city": "COMSTOCK PARK", "state": "MI", "zip": "49321", "lat": 43.05996, "lon": -85.69095, "manager": "Curtiss Beach", "market": "West Michigan Market"}, {"storeNumber": "37-3", "posNumber": "255", "storeType": "LUMBER", "street": "7474 ALPINE AVE", "city": "COMSTOCK PARK", "state": "MI", "zip": "49321", "lat": 43.099469, "lon": -85.68717, "manager": "Curtiss Beach", "market": "West Michigan Market"}, {"storeNumber": "0-0", "posNumber": "552", "storeType": "RELOAD", "street": "", "city": "DETROIT", "state": "MI", "zip": "48234", "lat": 42.44052, "lon": -83.01408, "manager": "", "market": "Reloads"}, {"storeNumber": "0-0", "posNumber": "336", "storeType": "KITCHEN AND BATH", "street": "6189 PIERSON RD", "city": "FLUSHING", "state": "MI", "zip": "48433", "lat": 43.05995, "lon": -83.79996, "manager": "Jamie Richmond", "market": "Flint Market"}, {"storeNumber": "0-0", "posNumber": "337", "storeType": "RELOAD", "street": "6189 PIERSON RD", "city": "FLUSHING", "state": "MI", "zip": "48433", "lat": 43.05995, "lon": -83.79996, "manager": "", "market": "Flint Market"}, {"storeNumber": "43-21", "posNumber": "260", "storeType": "LUMBER", "street": "6216 GULL RD (M-43)", "city": "KALAMAZOO", "state": "MI", "zip": "49048", "lat": 42.33, "lon": -85.51, "manager": "Todd Ernst", "market": "West Michigan Market"}, {"storeNumber": "0-0", "posNumber": "266", "storeType": "LUMBER", "street": "3750 US 131 NE", "city": "KALKASKA", "state": "MI", "zip": "49646", "lat": 44.76957, "lon": -85.16038, "manager": "Dean Easter", "market": "West Michigan Market"}, {"storeNumber": "0-0", "posNumber": "228", "storeType": "WINDOW SHOP", "street": "16700 S US 27", "city": "LANSING", "state": "MI", "zip": "48906", "lat": 42.774046, "lon": -84.543614, "manager": "Bailey Jackson", "market": "Lansing - Windows"}, {"storeNumber": "27-0", "posNumber": "577", "storeType": "EWP", "street": "16700 S US 27", "city": "LANSING", "state": "MI", "zip": "48906", "lat": 42.774046, "lon": -84.543614, "manager": "Jon Korn", "market": "Michigan Manufacturing"}, {"storeNumber": "0-0", "posNumber": "229", "storeType": "DOOR SHOP", "street": "1155 MAK-TECH DRIVE", "city": "LANSING", "state": "MI", "zip": "48906", "lat": 42.775596, "lon": -84.546554, "manager": "Lance Eldridge", "market": "Lansing Door Shop"}, {"storeNumber": "27-17", "posNumber": "541", "storeType": "CCP", "street": "16700 S US 27", "city": "LANSING", "state": "MI", "zip": "48906", "lat": 42.774046, "lon": -84.543614, "manager": "Adam Fritz", "market": "Michigan Manufacturing"}, {"storeNumber": "27-17", "posNumber": "239", "storeType": "LUMBER", "street": "16700 S US 27", "city": "LANSING", "state": "MI", "zip": "48906", "lat": 42.774046, "lon": -84.543614, "manager": "Terry Wooley", "market": "West Michigan Market"}, {"storeNumber": "1031-34", "posNumber": "251", "storeType": "LUMBER", "street": "2323 WEST US HWY 10", "city": "LUDINGTON", "state": "MI", "zip": "49431", "lat": 43.954954, "lon": -86.337857, "manager": "Kim Wild", "market": "West Michigan Market"}, {"storeNumber": "0-0", "posNumber": "249", "storeType": "DOOR SHOP", "street": "46401 ERB DR", "city": "MACOMB", "state": "MI", "zip": "48042", "lat": 42.640746, "lon": -82.859725, "manager": "Steven Bell", "market": "Detroit Market"}, {"storeNumber": "0-0", "posNumber": "1682", "storeType": "DOOR SHOP", "street": "46401 ERB DR", "city": "MACOMB", "state": "MI", "zip": "48042", "lat": 42.640746, "lon": -82.859725, "manager": "Steven Bell", "market": "Detroit Market"}, {"storeNumber": "530-0", "posNumber": "559", "storeType": "EWP", "street": "46401 ERB DRIVE", "city": "MACOMB", "state": "MI", "zip": "48042", "lat": 42.640746, "lon": -82.859725, "manager": "Steven Bell", "market": "Detroit Market"}, {"storeNumber": "0-0", "posNumber": "227", "storeType": "KITCHEN AND BATH", "street": "46301 ERB DRIVE", "city": "MACOMB", "state": "MI", "zip": "48042", "lat": 42.640746, "lon": -82.859725, "manager": "Steven Bell", "market": "Detroit Kitchen & Bath"}, {"storeNumber": "530-40", "posNumber": "248", "storeType": "LUMBER", "street": "46401 ERB DRIVE", "city": "MACOMB", "state": "MI", "zip": "48042", "lat": 42.640746, "lon": -82.859725, "manager": "Steven Bell", "market": "Detroit Market"}, {"storeNumber": "50-5", "posNumber": "123", "storeType": "LUMBER", "street": "850 DIXIE N", "city": "MONROE", "state": "MI", "zip": "48162", "lat": 41.9232, "lon": -83.373862, "manager": "Taryn Young", "market": "Toledo Market"}, {"storeNumber": "46-15", "posNumber": "242", "storeType": "LUMBER", "street": "8500 GRATIOT RD", "city": "SAGINAW", "state": "MI", "zip": "48609", "lat": 43.417113, "lon": -84.082471, "manager": "Bruce Fenskie", "market": "Saginaw (MI)"}, {"storeNumber": "0-0", "posNumber": "233", "storeType": "LUMBER", "street": "6600 HIGHLAND RD", "city": "WHITE LAKE", "state": "MI", "zip": "48383", "lat": 42.647048, "lon": -83.5243, "manager": "Steven Bell", "market": "Detroit Market"}, {"storeNumber": "59-20", "posNumber": "232", "storeType": "LUMBER", "street": "6600 HIGHLAND RD", "city": "WHITE LAKE", "state": "MI", "zip": "48383", "lat": 42.647048, "lon": -83.5243, "manager": "Steven Bell", "market": "Detroit Market"}, {"storeNumber": "275-22", "posNumber": "230", "storeType": "LUMBER", "street": "2800 E MICHIGAN AVE", "city": "YPSILANTI", "state": "MI", "zip": "48198", "lat": 42.250959, "lon": -83.556352, "manager": "Steven Bell", "market": "Detroit Market"}, {"storeNumber": "605-4", "posNumber": "481", "storeType": "LUMBER", "street": "47371 BUXTON BACK RD", "city": "BUXTON", "state": "NC", "zip": "27920", "lat": 35.263623, "lon": -75.53546, "manager": "Dee James", "market": "Outer Banks Market"}, {"storeNumber": "0-0", "posNumber": "581", "storeType": "RELOAD", "street": "", "city": "CHARLOTTE", "state": "NC", "zip": "", "lat": 35.13009, "lon": -80.94885, "manager": "Martin Munson", "market": "Charlotte/Triad Market"}, {"storeNumber": "424-0", "posNumber": "586", "storeType": "EWP", "street": "4401 PETE BROWN RD", "city": "CHARLOTTE", "state": "NC", "zip": "28269", "lat": 35.321407, "lon": -80.827118, "manager": "Brian Turner", "market": "Charlotte/Triad Market"}, {"storeNumber": "0-0", "posNumber": "1621", "storeType": "KITCHEN AND BATH", "street": "7010 SMITH CORNERS BLVD SUITE A", "city": "CHARLOTTE", "state": "NC", "zip": "28269", "lat": 35.350154, "lon": -80.842932, "manager": "", "market": "Charlotte/Triad Market"}, {"storeNumber": "0-0", "posNumber": "561", "storeType": "RELOAD", "street": "4401 PETE BROWN RD", "city": "CHARLOTTE", "state": "NC", "zip": "28269", "lat": 35.321407, "lon": -80.827118, "manager": "Jordan Smithers", "market": "Charlotte/Triad Market"}, {"storeNumber": "0-0", "posNumber": "206", "storeType": "KITCHEN AND BATH", "street": "2601 WESTINGHOUSE BLVD", "city": "CHARLOTTE", "state": "NC", "zip": "28273", "lat": 35.130509, "lon": -80.948861, "manager": "", "market": "Charlotte/Triad Market"}, {"storeNumber": "601-418", "posNumber": "418", "storeType": "LUMBER", "street": "7135 LOGISTICS CENTER DRIVE", "city": "CHARLOTTE", "state": "NC", "zip": "28273", "lat": 35.130488, "lon": -80.948818, "manager": "Martin Munson", "market": "Charlotte/Triad Market"}, {"storeNumber": "601-424", "posNumber": "424", "storeType": "LUMBER", "street": "4401 PETE BROWN RD", "city": "CHARLOTTE", "state": "NC", "zip": "28269", "lat": 35.321407, "lon": -80.827118, "manager": "Rob Layton", "market": "Charlotte/Triad Market"}, {"storeNumber": "601-424", "posNumber": "428", "storeType": "LUMBER", "street": "7010 SMITH CORNERS BLVD SUITE A", "city": "CHARLOTTE", "state": "NC", "zip": "28269", "lat": 35.350154, "lon": -80.842932, "manager": "Randi Sento", "market": "Charlotte/Triad Market"}, {"storeNumber": "601-427", "posNumber": "427", "storeType": "DOOR SHOP", "street": "2601 WESTINGHOUSE BLVD", "city": "CHARLOTTE", "state": "NC", "zip": "28273", "lat": 35.130509, "lon": -80.948861, "manager": "Martin Munson", "market": "Charlotte/Triad Market"}, {"storeNumber": "605-3", "posNumber": "482", "storeType": "LUMBER", "street": "109 IMPACT BLVD", "city": "ELIZABETH CITY", "state": "NC", "zip": "27909", "lat": 36.26163, "lon": -76.30495, "manager": "Michael Gandy", "market": "Outer Banks Market"}, {"storeNumber": "601-540", "posNumber": "540", "storeType": "CCP", "street": "747 OLD HARGRAVE RD", "city": "LEXINGTON", "state": "NC", "zip": "27295", "lat": 35.786507, "lon": -80.30977, "manager": "", "market": "Charlotte/Triad Market"}, {"storeNumber": "605-1", "posNumber": "480", "storeType": "LUMBER", "street": "8917 CARATOKE HIGHWAY", "city": "POINT HARBOR", "state": "NC", "zip": "27964", "lat": 36.09115, "lon": -75.80522, "manager": "Michael Gandy", "market": "Outer Banks Market"}, {"storeNumber": "900-770", "posNumber": "770", "storeType": "LUMBER", "street": "877 OZONE DR", "city": "SALUDA", "state": "NC", "zip": "28773", "lat": 35.24419, "lon": -82.32997, "manager": "Jamey Sias", "market": "Greenville Market"}, {"storeNumber": "0-0", "posNumber": "543", "storeType": "CCP", "street": "298 HARVEY FAULK RD", "city": "SANFORD", "state": "NC", "zip": "27332", "lat": 35.435219, "lon": -79.129202, "manager": "", "market": "Raleigh Market"}, {"storeNumber": "605-6", "posNumber": "485", "storeType": "LUMBER", "street": "298 HARVEY FAULK RD", "city": "SANFORD", "state": "NC", "zip": "27332", "lat": 35.435219, "lon": -79.129202, "manager": "", "market": "Raleigh Market"}, {"storeNumber": "0-0", "posNumber": "580", "storeType": "RELOAD", "street": "9376 OLD US HWY 52", "city": "WELCOME", "state": "NC", "zip": "27374", "lat": 35.945389, "lon": -80.222157, "manager": "Jordan Smithers", "market": "Charlotte/Triad Market"}, {"storeNumber": "601-419", "posNumber": "419", "storeType": "LUMBER", "street": "9376 OLD US HWY 52", "city": "WELCOME", "state": "NC", "zip": "27374", "lat": 35.945389, "lon": -80.222157, "manager": "Ryan Williams", "market": "Triad Market"}, {"storeNumber": "201-393", "posNumber": "393", "storeType": "LUMBER", "street": "731 CUTHBERT BLVD", "city": "CHERRY HILL", "state": "NJ", "zip": "8002", "lat": 39.93183, "lon": -75.05518, "manager": "Wesley Stinson Jr", "market": "New Jersey Market"}, {"storeNumber": "0-0", "posNumber": "548", "storeType": "CCP", "street": "102 NJ-73S", "city": "HAMMONTON", "state": "NJ", "zip": "8037", "lat": 39.70513, "lon": -74.89515, "manager": "Chris Pitts", "market": "New Jersey Market"}, {"storeNumber": "201-390", "posNumber": "390", "storeType": "LUMBER", "street": "102 NJ-73 S", "city": "HAMMONTON", "state": "NJ", "zip": "8037", "lat": 39.70513, "lon": -74.89515, "manager": "Brandin Decker", "market": "New Jersey Market"}, {"storeNumber": "201-391", "posNumber": "391", "storeType": "LUMBER", "street": "148 RT 70 EAST", "city": "MEDFORD", "state": "NJ", "zip": "8055", "lat": 39.89999, "lon": -74.83849, "manager": "Robert Cleary", "market": "New Jersey Market"}, {"storeNumber": "201-395", "posNumber": "395", "storeType": "DOOR SHOP", "street": "148 RT 70 EAST", "city": "MEDFORD", "state": "NJ", "zip": "8055", "lat": 39.89999, "lon": -74.83849, "manager": "Doug Watson", "market": "New Jersey Market"}, {"storeNumber": "0-0", "posNumber": "706", "storeType": "EWP", "street": "1601 EDEN RD", "city": "MILLVILLE", "state": "NJ", "zip": "8332", "lat": 39.37981, "lon": -75.014992, "manager": "Erik Prock", "market": "New Jersey Market"}, {"storeNumber": "201-396", "posNumber": "396", "storeType": "HUB", "street": "1601 EDEN RD", "city": "MILLVILLE", "state": "NJ", "zip": "8332", "lat": 39.37981, "lon": -75.014992, "manager": "", "market": "New Jersey Market"}, {"storeNumber": "201-544", "posNumber": "544", "storeType": "CCP", "street": "1601 EDEN RD", "city": "MILLVILLE", "state": "NJ", "zip": "8332", "lat": 39.37981, "lon": -75.014992, "manager": "Matt Householder", "market": "New Jersey Market"}, {"storeNumber": "201-392", "posNumber": "392", "storeType": "LUMBER", "street": "111 DEVINS LANE", "city": "PLEASANTVILLE", "state": "NJ", "zip": "8232", "lat": 39.39549, "lon": -74.54066, "manager": "Luis Arocho", "market": "New Jersey Market"}, {"storeNumber": "201-394", "posNumber": "394", "storeType": "LUMBER", "street": "270 NORTH ORCHARD RD", "city": "VINELAND", "state": "NJ", "zip": "8360", "lat": 39.49139, "lon": -75.05274, "manager": "Bill Sutter", "market": "New Jersey Market"}, {"storeNumber": "0-0", "posNumber": "119", "storeType": "CLEARANCE", "street": "3779 MANCHESTER RD", "city": "AKRON", "state": "OH", "zip": "44319", "lat": 40.996384, "lon": -81.556758, "manager": "Dave Lentz", "market": "Clearance Center"}, {"storeNumber": "499-0", "posNumber": "583", "storeType": "EWP", "street": "172 NORTH CASE AVE", "city": "AKRON", "state": "OH", "zip": "44305", "lat": 41.07384, "lon": -81.48316, "manager": "", "market": "Northeast Ohio Market"}, {"storeNumber": "1-1", "posNumber": "499", "storeType": "LUMBER", "street": "172 NORTH CASE AVE", "city": "AKRON", "state": "OH", "zip": "44305", "lat": 41.07384, "lon": -81.48316, "manager": "Shane Bolon", "market": "Northeast Ohio Market"}, {"storeNumber": "261-1", "posNumber": "54", "storeType": "HUB", "street": "1763 WADSWORTH RD", "city": "AKRON", "state": "OH", "zip": "44320", "lat": 41.05883, "lon": -81.59356, "manager": "Russ Murphy", "market": "Northeast Ohio Market"}, {"storeNumber": "0-0", "posNumber": "531", "storeType": "CCP", "street": "172 NORTH CASE AVE", "city": "AKRON", "state": "OH", "zip": "44305", "lat": 41.07384, "lon": -81.48316, "manager": "Russ Murphy", "market": "Northeast Ohio Market"}, {"storeNumber": "62-72", "posNumber": "74", "storeType": "LUMBER", "street": "23611 SR 62", "city": "ALLIANCE", "state": "OH", "zip": "44601", "lat": 40.900701, "lon": -81.056614, "manager": "Brendon Simmons", "market": "Alliance-Louisville Market"}, {"storeNumber": "0-0", "posNumber": "710", "storeType": "RELOAD", "street": "2938 STATE ROUTE 752", "city": "ASHVILLE", "state": "OH", "zip": "43103", "lat": 39.723729, "lon": -82.963681, "manager": "", "market": "Columbus Market"}, {"storeNumber": "101-175", "posNumber": "175", "storeType": "LUMBER", "street": "2938 STATE ROUTE 752", "city": "ASHVILLE", "state": "OH", "zip": "43103", "lat": 39.723729, "lon": -82.963681, "manager": "Mike Broderick", "market": "Columbus Market"}, {"storeNumber": "50-53", "posNumber": "155", "storeType": "LUMBER", "street": "5330 HEBBARDSVILLE RD", "city": "ATHENS", "state": "OH", "zip": "45701", "lat": 39.277501, "lon": -82.153178, "manager": "James Pennington (JP)", "market": "Athens-Nelsonville Market"}, {"storeNumber": "32-39", "posNumber": "191", "storeType": "LUMBER", "street": "2600 OLD STATE ROUTE 32", "city": "BATAVIA", "state": "OH", "zip": "45103", "lat": 39.066433, "lon": -84.1185, "manager": "Bob Hamblen", "market": "Cincinnati-Dayton Market"}, {"storeNumber": "675-56", "posNumber": "193", "storeType": "LUMBER", "street": "1312 GRANGE HALL RD", "city": "BEAVERCREEK", "state": "OH", "zip": "45430", "lat": 39.728283, "lon": -84.083547, "manager": "Josh Gross", "market": "Cincinnati-Dayton Market"}, {"storeNumber": "25-0", "posNumber": "558", "storeType": "EWP", "street": "12859 KRAMER RD", "city": "BOWLING GREEN", "state": "OH", "zip": "43402", "lat": 41.341107, "lon": -83.64657, "manager": "Jon Korn", "market": "Toledo Market"}, {"storeNumber": "25-31", "posNumber": "126", "storeType": "LUMBER", "street": "12859 KRAMER RD", "city": "BOWLING GREEN", "state": "OH", "zip": "43402", "lat": 41.341107, "lon": -83.64657, "manager": "Kevin Stoots", "market": "Toledo Market"}, {"storeNumber": "209-24", "posNumber": "150", "storeType": "LUMBER", "street": "60696 SOUTHGATE RD", "city": "BYESVILLE", "state": "OH", "zip": "43723", "lat": 39.982429, "lon": -81.555894, "manager": "Kyle Moyer", "market": "Zanesville Market"}, {"storeNumber": "0-0", "posNumber": "53", "storeType": "HUB", "street": "567 ELM RIDGE AVE", "city": "CANAL FULTON", "state": "OH", "zip": "44614", "lat": 40.88446, "lon": -81.56453, "manager": "", "market": "Northeast Ohio Market"}, {"storeNumber": "0-3", "posNumber": "297", "storeType": "LUMBER", "street": "1532 PERRY DRIVE SW", "city": "CANTON", "state": "OH", "zip": "44710", "lat": 40.785629, "lon": -81.446227, "manager": "Greg Barnes", "market": "Northeast Ohio Market"}, {"storeNumber": "0-3", "posNumber": "497", "storeType": "LUMBER", "street": "1532 PERRY DRIVE SW", "city": "CANTON", "state": "OH", "zip": "44710", "lat": 40.785629, "lon": -81.446227, "manager": "Greg Barnes", "market": "Northeast Ohio Market"}, {"storeNumber": "28-67", "posNumber": "180", "storeType": "LUMBER", "street": "2800 WESTERN AVE", "city": "CHILLICOTHE", "state": "OH", "zip": "45601", "lat": 39.348258, "lon": -83.042506, "manager": "Tyler Hettinger", "market": "Chillicothe-Piketon Market"}, {"storeNumber": "65-8", "posNumber": "214", "storeType": "LUMBER", "street": "9300 OTTAWA RD", "city": "COLUMBUS GROVE", "state": "OH", "zip": "45830", "lat": 40.873159, "lon": -84.072318, "manager": "Don Malone", "market": "Toledo Market"}, {"storeNumber": "305-27", "posNumber": "100", "storeType": "LUMBER", "street": "2167 ELM RD NE", "city": "CORTLAND", "state": "OH", "zip": "44410", "lat": 41.277577, "lon": -80.775824, "manager": "AJ Baltes", "market": "Youngstown Market"}, {"storeNumber": "39-6", "posNumber": "77", "storeType": "LUMBER", "street": "1047 N TUSCARAWAS AVE", "city": "DOVER", "state": "OH", "zip": "44622", "lat": 40.52724, "lon": -81.489782, "manager": "Ben Stephens", "market": "East Central Ohio Market"}, {"storeNumber": "301-26", "posNumber": "143", "storeType": "LUMBER", "street": "41625 GRISWOLD RD", "city": "ELYRIA", "state": "OH", "zip": "44035", "lat": 41.399888, "lon": -82.128968, "manager": "Chris Collins", "market": "Northeast Ohio Market"}, {"storeNumber": "0-0", "posNumber": "600", "storeType": "OFFICE", "street": "601 TALLMADGE RD", "city": "KENT", "state": "OH", "zip": "44240", "lat": 41.101491, "lon": -81.371148, "manager": "", "market": "Non-Sales"}, {"storeNumber": "0-0", "posNumber": "701", "storeType": "RELOAD", "street": "2455 SOUTH FONTAINE ST", "city": "KENTON", "state": "OH", "zip": "43226", "lat": 40.617396, "lon": -83.625115, "manager": "", "market": "Reloads"}, {"storeNumber": "33-28", "posNumber": "160", "storeType": "LUMBER", "street": "1890 LOGAN-LANCASTER RD", "city": "LANCASTER", "state": "OH", "zip": "43130", "lat": 39.696328, "lon": -82.584878, "manager": "Matt Callicoat", "market": "Columbus Market"}, {"storeNumber": "45-22", "posNumber": "71", "storeType": "LUMBER", "street": "704 E LINCOLN WAY", "city": "LISBON", "state": "OH", "zip": "44432", "lat": 40.771919, "lon": -80.757179, "manager": "Sean Balint", "market": "Alliance-Louisville Market"}, {"storeNumber": "44-21", "posNumber": "72", "storeType": "LUMBER", "street": "720 N CHAPEL ST", "city": "LOUISVILLE", "state": "OH", "zip": "44641", "lat": 40.841888, "lon": -81.25939, "manager": "Timothy Young", "market": "Alliance-Louisville Market"}, {"storeNumber": "528-70", "posNumber": "68", "storeType": "LUMBER", "street": "6320 N RIDGE RD", "city": "MADISON", "state": "OH", "zip": "44057", "lat": 41.803097, "lon": -81.061928, "manager": "Shawn Steigner", "market": "Madison (OH)"}, {"storeNumber": "0-0", "posNumber": "179", "storeType": "DOOR SHOP", "street": "1242 READING RD", "city": "MASON", "state": "OH", "zip": "45040", "lat": 39.3343, "lon": -84.3445, "manager": "Matthew Hubbard", "market": "Cincinnati-Dayton Market"}, {"storeNumber": "7142-98", "posNumber": "199", "storeType": "LUMBER", "street": "1242 READING RD", "city": "MASON", "state": "OH", "zip": "45040", "lat": 39.3343, "lon": -84.3445, "manager": "Ron King", "market": "Cincinnati-Dayton Market"}, {"storeNumber": "7142-0", "posNumber": "537", "storeType": "CCP", "street": "1242 READING RD", "city": "MASON", "state": "OH", "zip": "45040", "lat": 39.3343, "lon": -84.3445, "manager": "Rich Flores", "market": "Cincinnati-Dayton Market"}, {"storeNumber": "0-0", "posNumber": "159", "storeType": "KITCHEN AND BATH", "street": "3725 MEDINA RD", "city": "MEDINA", "state": "OH", "zip": "44256", "lat": 41.137737, "lon": -81.821043, "manager": "Russ Murphy", "market": "Northeast Ohio Market"}, {"storeNumber": "87-79", "posNumber": "70", "storeType": "LUMBER", "street": "14601 KINSMAN RD", "city": "MIDDLEFIELD", "state": "OH", "zip": "44062", "lat": 41.462448, "lon": -81.120151, "manager": "Lenny Barcikoski", "market": "Middlefield (OH)"}, {"storeNumber": "0-0", "posNumber": "594", "storeType": "EWP", "street": "", "city": "MILLBURY", "state": "OH", "zip": "43447", "lat": 41.561, "lon": -83.453, "manager": "Jon Korn", "market": "Michigan Manufacturing"}, {"storeNumber": "0-0", "posNumber": "598", "storeType": "RELOAD", "street": "3521 MOLINE-MARTIN RD", "city": "MILLBURY", "state": "OH", "zip": "43447", "lat": 41.561, "lon": -83.449, "manager": "", "market": "Toledo Market"}, {"storeNumber": "795-1", "posNumber": "532", "storeType": "CCP", "street": "3520 MOLINE MARTIN RD", "city": "MILLBURY", "state": "OH", "zip": "43447", "lat": 41.561, "lon": -83.453, "manager": "Jason Thompson", "market": "Michigan Manufacturing"}, {"storeNumber": "100-889", "posNumber": "889", "storeType": "CCM", "street": "6000 STATE ROUTE 39", "city": "MILLERSBURG", "state": "OH", "zip": "44654", "lat": 40.55345, "lon": -81.83876, "manager": "", "market": "Carter Custom Millwork"}, {"storeNumber": "0-1", "posNumber": "495", "storeType": "LUMBER", "street": "6139 SR 39", "city": "MILLERSBURG", "state": "OH", "zip": "44654", "lat": 40.553248, "lon": -81.843419, "manager": "Dan Troyer", "market": "East Central Ohio Market"}, {"storeNumber": "0-6", "posNumber": "489", "storeType": "CCM", "street": "5158 TR 353 (TOWNSHIP RD)", "city": "MILLERSBURG", "state": "OH", "zip": "44654", "lat": 40.551694, "lon": -81.838583, "manager": "", "market": "Carter Custom Millwork"}, {"storeNumber": "532-3", "posNumber": "51", "storeType": "LUMBER", "street": "38 N CLEVELAND AVE", "city": "MOGADORE", "state": "OH", "zip": "44260", "lat": 41.05246, "lon": -81.395265, "manager": "Derik Francis", "market": "Portage Market"}, {"storeNumber": "100-177", "posNumber": "177", "storeType": "LUMBER", "street": "351 APPLE STREET", "city": "MOUNT ORAB", "state": "OH", "zip": "45154", "lat": 39.03251, "lon": -83.91298, "manager": "", "market": "Cincinnati-Dayton Market"}, {"storeNumber": "100-178", "posNumber": "178", "storeType": "LUMBER", "street": "351 APPLE STREET", "city": "MOUNT ORAB", "state": "OH", "zip": "45154", "lat": 39.03251, "lon": -83.91298, "manager": "Bob Hamblen", "market": "Cincinnati-Dayton Market"}, {"storeNumber": "657-11", "posNumber": "165", "storeType": "LUMBER", "street": "818 MT VERNON RD", "city": "NEWARK", "state": "OH", "zip": "43055", "lat": 40.079184, "lon": -82.414385, "manager": "William Kopp", "market": "Columbus Market"}, {"storeNumber": "534-3", "posNumber": "534", "storeType": "CCP", "street": "3747 ST RT 5", "city": "NEWTON FALLS", "state": "OH", "zip": "44444", "lat": 41.215575, "lon": -80.93335, "manager": "Mitch Thomas", "market": "Northeast Ohio Market"}, {"storeNumber": "4518-44", "posNumber": "103", "storeType": "LUMBER", "street": "11768 MAHONING AVE", "city": "NORTH JACKSON", "state": "OH", "zip": "44451", "lat": 41.100944, "lon": -80.872146, "manager": "Jeff Ohlinger", "market": "Youngstown Market"}, {"storeNumber": "2501-77", "posNumber": "139", "storeType": "LUMBER", "street": "399 MILAN AVE", "city": "NORWALK", "state": "OH", "zip": "44857", "lat": 41.272594, "lon": -82.60972, "manager": "Jack Brittain", "market": "Northern Ohio Lakeshore Market"}, {"storeNumber": "0-0", "posNumber": "205", "storeType": "KITCHEN AND BATH", "street": "8730 BROOKPARK ROAD", "city": "PARMA", "state": "OH", "zip": "44129", "lat": 41.42093, "lon": -81.74719, "manager": "Stacy Reynolds", "market": "Northeast Ohio Market"}, {"storeNumber": "161-15", "posNumber": "166", "storeType": "LUMBER", "street": "10271 SR 161", "city": "PLAIN CITY", "state": "OH", "zip": "43064", "lat": 40.1035, "lon": -83.2108, "manager": "David Thompson", "market": "Columbus Market"}, {"storeNumber": "53-69", "posNumber": "140", "storeType": "LUMBER", "street": "840 S E CATAWBA RD", "city": "PORT CLINTON", "state": "OH", "zip": "43452", "lat": 41.51003, "lon": -82.861035, "manager": "Richard Riedmaier", "market": "Northern Ohio Lakeshore Market"}, {"storeNumber": "59-80", "posNumber": "50", "storeType": "LUMBER", "street": "4929 S R 59", "city": "RAVENNA", "state": "OH", "zip": "44266", "lat": 41.156813, "lon": -81.215187, "manager": "Zack Price", "market": "Portage Market"}, {"storeNumber": "0-0", "posNumber": "174", "storeType": "CCP", "street": "13431 NATIONAL RD SW", "city": "REYNOLDSBURG", "state": "OH", "zip": "43068", "lat": 39.9557, "lon": -82.7405, "manager": "Shawn McIntire", "market": "Columbus Market"}, {"storeNumber": "40-0", "posNumber": "170", "storeType": "DOOR SHOP", "street": "13431 NATIONAL RD SW", "city": "REYNOLDSBURG", "state": "OH", "zip": "43068", "lat": 39.9557, "lon": -82.7405, "manager": "Shawn McIntire", "market": "Columbus Market"}, {"storeNumber": "40-58", "posNumber": "167", "storeType": "LUMBER", "street": "13431 NATIONAL RD SW", "city": "REYNOLDSBURG", "state": "OH", "zip": "43068", "lat": 39.9557, "lon": -82.7405, "manager": "Shawn McIntire", "market": "Columbus Market"}, {"storeNumber": "93-49", "posNumber": "152", "storeType": "LUMBER", "street": "4546 ROSEVILLE RD", "city": "ROSEVILLE", "state": "OH", "zip": "43777", "lat": 39.866772, "lon": -82.063723, "manager": "Shane Good (Petey)", "market": "Zanesville Market"}, {"storeNumber": "3971-91", "posNumber": "223", "storeType": "LUMBER", "street": "3835 MANSFIELD RD", "city": "SHELBY", "state": "OH", "zip": "44875", "lat": 40.858969, "lon": -82.634163, "manager": "Curt Adelman", "market": "Shelby (OH)"}, {"storeNumber": "91-33", "posNumber": "58", "storeType": "LUMBER", "street": "6199 S O M CENTER RD", "city": "SOLON", "state": "OH", "zip": "44139", "lat": 41.391438, "lon": -81.437716, "manager": "Chris Sheridan", "market": "Northeast Ohio Market"}, {"storeNumber": "68-25", "posNumber": "188", "storeType": "LUMBER", "street": "585 W COUNTY LINE RD", "city": "SPRINGFIELD", "state": "OH", "zip": "45502", "lat": 40.026455, "lon": -83.799688, "manager": "Rich Turnmire", "market": "Cincinnati-Dayton Market"}, {"storeNumber": "0-2", "posNumber": "496", "storeType": "LUMBER", "street": "216 E MAIN ST", "city": "SUGARCREEK", "state": "OH", "zip": "44681", "lat": 40.50194, "lon": -81.6391, "manager": "Arlen Mullet", "market": "East Central Ohio Market"}, {"storeNumber": "605-0", "posNumber": "579", "storeType": "EWP", "street": "3477 NORTH COUNTY RD 605", "city": "SUNBURY", "state": "OH", "zip": "43074", "lat": 40.257669, "lon": -82.789698, "manager": "Ed Shanor", "market": "Columbus Market"}, {"storeNumber": "0-0", "posNumber": "172", "storeType": "LUMBER", "street": "3573 NORTH COUNTY RD 605", "city": "SUNBURY", "state": "OH", "zip": "43074", "lat": 40.257669, "lon": -82.789698, "manager": "Andrew Nichols", "market": "Columbus Market"}, {"storeNumber": "605-45", "posNumber": "168", "storeType": "LUMBER", "street": "3573 NORTH COUNTY RD 605", "city": "SUNBURY", "state": "OH", "zip": "43074", "lat": 40.257669, "lon": -82.789698, "manager": "Russ Wiley", "market": "Columbus Market"}, {"storeNumber": "605-0", "posNumber": "538", "storeType": "CCP", "street": "3477 NORTH COUNTY RD 605", "city": "SUNBURY", "state": "OH", "zip": "43074", "lat": 40.257669, "lon": -82.789698, "manager": "Ed Shanor", "market": "Columbus Market"}, {"storeNumber": "0-0", "posNumber": "712", "storeType": "RELOAD", "street": "2716 REYNOLDS RD N", "city": "TOLEDO", "state": "OH", "zip": "43615", "lat": 41.671018, "lon": -83.668086, "manager": "", "market": "Reloads"}, {"storeNumber": "0-0", "posNumber": "306", "storeType": "KITCHEN AND BATH", "street": "2716 REYNOLDS RD N", "city": "TOLEDO", "state": "OH", "zip": "43615", "lat": 41.67144, "lon": -83.66686, "manager": "Jason Fischer", "market": "National Kitchen & Bath"}, {"storeNumber": "20-14", "posNumber": "133", "storeType": "LUMBER", "street": "2716 REYNOLDS RD N", "city": "TOLEDO", "state": "OH", "zip": "43615", "lat": 41.671018, "lon": -83.668086, "manager": "Dave Smithmyer", "market": "Toledo Market"}, {"storeNumber": "20-5", "posNumber": "134", "storeType": "KITCHEN AND BATH", "street": "2714 REYNOLDS RD N", "city": "TOLEDO", "state": "OH", "zip": "43615", "lat": 41.670761, "lon": -83.668079, "manager": "Rick Maxfield", "market": "Toledo Market"}, {"storeNumber": "6-64", "posNumber": "145", "storeType": "CLEARANCE", "street": "3020 LIBERTY AVE", "city": "VERMILION", "state": "OH", "zip": "44089", "lat": 41.426087, "lon": -82.305596, "manager": "Cliff Riley", "market": "Clearance Center"}, {"storeNumber": "6-51", "posNumber": "146", "storeType": "CLEARANCE", "street": "3026 LIBERTY AVE", "city": "VERMILION", "state": "OH", "zip": "44089", "lat": 41.426087, "lon": -82.305596, "manager": "Paul McKenna", "market": "Clearance Center"}, {"storeNumber": "22-20", "posNumber": "182", "storeType": "LUMBER", "street": "4994 US 22 NW", "city": "WASHINGTON COURT HOUSE", "state": "OH", "zip": "43160", "lat": 39.516776, "lon": -83.523664, "manager": "Wendy Whitaker", "market": "Chillicothe-Piketon Market"}, {"storeNumber": "22-11", "posNumber": "183", "storeType": "LUMBER", "street": "4974 US 22 NW", "city": "WASHINGTON COURT HOUSE", "state": "OH", "zip": "43160", "lat": 39.523799, "lon": -83.483429, "manager": "Josh Clifton", "market": "Chillicothe-Piketon Market"}, {"storeNumber": "41-73", "posNumber": "185", "storeType": "LUMBER", "street": "11856 ST RT 41", "city": "WEST UNION", "state": "OH", "zip": "45693", "lat": 38.787752, "lon": -83.554719, "manager": "Travis Wilson", "market": "Chillicothe-Piketon Market"}, {"storeNumber": "0-0", "posNumber": "173", "storeType": "HUB", "street": "173 HEATHERDOWN DRIVE", "city": "WESTERVILLE", "state": "OH", "zip": "43081", "lat": 40.104628, "lon": -82.930156, "manager": "Brady Kingry", "market": "Columbus Market"}, {"storeNumber": "81-12", "posNumber": "381", "storeType": "LUMBER", "street": "1840 HARRISBURG PIKE", "city": "CARLISLE", "state": "PA", "zip": "17015", "lat": 40.2338, "lon": -77.1201, "manager": "Nick Geppi", "market": "BWE Market"}, {"storeNumber": "0-0", "posNumber": "703", "storeType": "HUB", "street": "870 S MAIN ST", "city": "CHAMBERSBURG", "state": "PA", "zip": "17201", "lat": 39.92367, "lon": -77.66446, "manager": "Derek Jordan", "market": "Hanover Door Shop"}, {"storeNumber": "0-0", "posNumber": "591", "storeType": "RELOAD", "street": "2155 WAYNE RD", "city": "CHAMBERSBURG", "state": "PA", "zip": "17202", "lat": 39.90047, "lon": -77.64305, "manager": "", "market": "Mid Atlantic Reload"}, {"storeNumber": "0-0", "posNumber": "553", "storeType": "EWP", "street": "2155 WAYNE RD", "city": "CHAMBERSBURG", "state": "PA", "zip": "17202", "lat": 39.900469, "lon": -77.643052, "manager": "", "market": "BWE Market"}, {"storeNumber": "316-6", "posNumber": "380", "storeType": "LUMBER", "street": "2155 WAYNE RD", "city": "CHAMBERSBURG", "state": "PA", "zip": "17202", "lat": 39.900469, "lon": -77.643052, "manager": "Derek Jordan", "market": "BWE Market"}, {"storeNumber": "3226-23", "posNumber": "97", "storeType": "LUMBER", "street": "12925 CONNEAUT LAKE RD", "city": "CONNEAUT LAKE", "state": "PA", "zip": "16316", "lat": 41.609305, "lon": -80.277303, "manager": "Buck Nagle", "market": "Allegheny Market"}, {"storeNumber": "230-10", "posNumber": "386", "storeType": "LUMBER", "street": "2128 S MARKET ST", "city": "ELIZABETHTOWN", "state": "PA", "zip": "17022", "lat": 40.133962, "lon": -76.572314, "manager": "Kyle Lucas", "market": "BWE Market"}, {"storeNumber": "20-3", "posNumber": "63", "storeType": "LUMBER", "street": "4710 BUFFALO RD", "city": "ERIE", "state": "PA", "zip": "16510", "lat": 42.149695, "lon": -79.996032, "manager": "Nathan Spears", "market": "Erie Market"}, {"storeNumber": "98-4", "posNumber": "65", "storeType": "LUMBER", "street": "2801 W AVONIA RD (RT 98)", "city": "FAIRVIEW", "state": "PA", "zip": "16415", "lat": 42.038, "lon": -80.261, "manager": "Nathan Spears", "market": "Erie Market"}, {"storeNumber": "0-0", "posNumber": "595", "storeType": "RELOAD", "street": "8 BARNHART DRIVE", "city": "HANOVER", "state": "PA", "zip": "17331", "lat": 39.818778, "lon": -76.964846, "manager": "", "market": "Hanover Door Shop"}, {"storeNumber": "0-0", "posNumber": "389", "storeType": "DOOR SHOP", "street": "8 BARNHART DRIVE", "city": "HANOVER", "state": "PA", "zip": "17331", "lat": 39.818778, "lon": -76.964846, "manager": "Derek Bettencourt", "market": "Hanover Door Shop"}, {"storeNumber": "340-0", "posNumber": "565", "storeType": "EWP", "street": "2275 OLD PHILA PIKE", "city": "LANCASTER", "state": "PA", "zip": "17602", "lat": 40.039881, "lon": -76.21909, "manager": "Stan Foster", "market": "BWE Market"}, {"storeNumber": "340-5", "posNumber": "388", "storeType": "LUMBER", "street": "2275 OLD PHILA PIKE", "city": "LANCASTER", "state": "PA", "zip": "17602", "lat": 40.039881, "lon": -76.21909, "manager": "Trevor Goodman", "market": "BWE Market"}, {"storeNumber": "79-8", "posNumber": "372", "storeType": "LUMBER", "street": "675 PIKE ST", "city": "MEADOW LANDS", "state": "PA", "zip": "15347", "lat": 40.213246, "lon": -80.226154, "manager": "Chad Byrum", "market": "Pittsburgh Market"}, {"storeNumber": "0-0", "posNumber": "707", "storeType": "EWP", "street": "418 S CASCADE ST", "city": "NEW CASTLE", "state": "PA", "zip": "16101", "lat": 40.99578, "lon": -80.32157, "manager": "", "market": "Pittsburgh Market"}, {"storeNumber": "422-22", "posNumber": "108", "storeType": "LUMBER", "street": "3005 NEW BUTLER RD", "city": "NEW CASTLE", "state": "PA", "zip": "16101", "lat": 40.977319, "lon": -80.28402, "manager": "Dan Bernice", "market": "Pittsburgh Market"}, {"storeNumber": "200-716", "posNumber": "716", "storeType": "RELOAD", "street": "17 MEADOW LANE", "city": "PARADISE", "state": "PA", "zip": "17562", "lat": 40.010005, "lon": -76.121173, "manager": "", "market": "BWE Market"}, {"storeNumber": "8-21", "posNumber": "92", "storeType": "LUMBER", "street": "1553 ALLEGHENY BLVD", "city": "RENO", "state": "PA", "zip": "16343", "lat": 41.415285, "lon": -79.765638, "manager": "Mike Miller", "market": "Allegheny Market"}, {"storeNumber": "322-11", "posNumber": "93", "storeType": "LUMBER", "street": "731 MAIN ST", "city": "STRATTANVILLE", "state": "PA", "zip": "16258", "lat": 41.202927, "lon": -79.331023, "manager": "Mike Morris", "market": "Western PA"}, {"storeNumber": "62-7", "posNumber": "95", "storeType": "LUMBER", "street": "116 PRESTON RD", "city": "WARREN", "state": "PA", "zip": "16365", "lat": 41.838676, "lon": -79.199453, "manager": "Brian Kerstin", "market": "Allegheny Market"}, {"storeNumber": "900-435", "posNumber": "435", "storeType": "LUMBER", "street": "2440 CLEMENTS FERRY ROAD", "city": "CHARLESTON", "state": "SC", "zip": "29492", "lat": 32.90011, "lon": -79.92149, "manager": "", "market": "Charleston Market"}, {"storeNumber": "0-0", "posNumber": "429", "storeType": "LUMBER", "street": "1325 VETERANS RD", "city": "COLUMBIA", "state": "SC", "zip": "29209", "lat": 33.952367, "lon": -80.961181, "manager": "Gareth Rumley", "market": "Columbia Market"}, {"storeNumber": "123-2", "posNumber": "422", "storeType": "LUMBER", "street": "4588 CALHOUN MEMORIAL HWY", "city": "EASLEY", "state": "SC", "zip": "29640", "lat": 34.828789, "lon": -82.535541, "manager": "", "market": "Greenville Market"}, {"storeNumber": "901-486", "posNumber": "486", "storeType": "DOOR SHOP", "street": "305 WEST MYRTLE BEACH HWY", "city": "JOHNSONVILLE", "state": "SC", "zip": "29555", "lat": 33.882383, "lon": -79.46092, "manager": "Tim Taylor", "market": "Myrtle Beach Market"}, {"storeNumber": "0-0", "posNumber": "546", "storeType": "CCP", "street": "305 WEST MYRTLE BEACH HWY", "city": "JOHNSONVILLE", "state": "SC", "zip": "29555", "lat": 33.882383, "lon": -79.46092, "manager": "Terry Dale", "market": "Myrtle Beach Market"}, {"storeNumber": "901-487", "posNumber": "487", "storeType": "LUMBER", "street": "305 WEST MYRTLE BEACH HWY", "city": "JOHNSONVILLE", "state": "SC", "zip": "29555", "lat": 33.882383, "lon": -79.46092, "manager": "Tim Taylor", "market": "Myrtle Beach Market"}, {"storeNumber": "274-1", "posNumber": "423", "storeType": "LUMBER", "street": "126 HANDS MILL HWY", "city": "ROCK HILL", "state": "SC", "zip": "29732", "lat": 34.991925, "lon": -81.100661, "manager": "Rob Layton", "market": "Charlotte/Triad Market"}, {"storeNumber": "0-0", "posNumber": "443", "storeType": "KITCHEN AND BATH", "street": "2766 WILMA RUDOLPH  BLVD", "city": "CLARKSVILLE", "state": "TN", "zip": "37040", "lat": 36.58619, "lon": -87.296722, "manager": "Marc Huther", "market": "Clarksville Market"}, {"storeNumber": "305-7", "posNumber": "445", "storeType": "LUMBER", "street": "444 DICK BUCHANAN ST", "city": "LA VERGNE", "state": "TN", "zip": "37086", "lat": 36.021129, "lon": -86.553934, "manager": "Scott Dayton", "market": "Nashville Market"}, {"storeNumber": "445-7", "posNumber": "584", "storeType": "EWP", "street": "444 DICK BUCHANAN ST", "city": "LA VERGNE", "state": "TN", "zip": "37086", "lat": 36.021129, "lon": -86.553934, "manager": "Scott Dayton", "market": "Nashville Market"}, {"storeNumber": "0-0", "posNumber": "1445", "storeType": "INSTALLED", "street": "444 DICK BUCHANAN ST", "city": "LA VERGNE", "state": "TN", "zip": "37086", "lat": 36.021129, "lon": -86.553934, "manager": "Scott Dayton", "market": "Nashville Market"}, {"storeNumber": "900-446", "posNumber": "446", "storeType": "LABOR HUB", "street": "444C DICK BUCHANAN ST", "city": "LA VERGNE", "state": "TN", "zip": "37086", "lat": 36.021129, "lon": -86.553934, "manager": "Dave King", "market": "Nashville Market"}, {"storeNumber": "0-0", "posNumber": "444", "storeType": "KITCHEN AND BATH", "street": "516 FONTANA DRIVE", "city": "NASHVILLE", "state": "TN", "zip": "37204", "lat": 36.110143, "lon": -86.756227, "manager": "Marc Huther", "market": "Nashville Market"}, {"storeNumber": "0-0", "posNumber": "702", "storeType": "HUB", "street": "12144 WASHINGTON HIGHWAY", "city": "ASHLAND", "state": "VA", "zip": "23005", "lat": 37.73513, "lon": -77.469686, "manager": "Wayne Weeden", "market": "Hanover Door Shop"}, {"storeNumber": "0-0", "posNumber": "705", "storeType": "EWP", "street": "12144 WASHINGTON HIGHWAY", "city": "ASHLAND", "state": "VA", "zip": "23005", "lat": 37.73513, "lon": -77.469686, "manager": "Wayne Weeden", "market": "BWE Market"}, {"storeNumber": "0-0", "posNumber": "1570", "storeType": "EWP", "street": "3300 BUSINESS CENTER DRIVE", "city": "CHESAPEAKE", "state": "VA", "zip": "23323", "lat": 36.788614, "lon": -76.351066, "manager": "", "market": "VA Beach/Chesapeake Market"}, {"storeNumber": "805-1", "posNumber": "1470", "storeType": "INSTALLED", "street": "3300 BUSINESS CENTER DRIVE", "city": "CHESAPEAKE", "state": "VA", "zip": "23323", "lat": 36.788614, "lon": -76.351066, "manager": "Brett Paciulli", "market": "VA Beach/Chesapeake Market"}, {"storeNumber": "805-1", "posNumber": "470", "storeType": "LUMBER", "street": "3300 BUSINESS CENTER DRIVE", "city": "CHESAPEAKE", "state": "VA", "zip": "23323", "lat": 36.788614, "lon": -76.351066, "manager": "", "market": "VA Beach/Chesapeake Market"}, {"storeNumber": "805-5", "posNumber": "471", "storeType": "DOOR SHOP", "street": "3300 BUSINESS CENTER DRIVE", "city": "CHESAPEAKE", "state": "VA", "zip": "23323", "lat": 36.788614, "lon": -76.351066, "manager": "", "market": "VA Beach/Chesapeake Market"}, {"storeNumber": "805-6", "posNumber": "535", "storeType": "CCP", "street": "3300 BUSINESS CENTER DRIVE", "city": "CHESAPEAKE", "state": "VA", "zip": "23323", "lat": 36.788614, "lon": -76.351066, "manager": "", "market": "VA Beach/Chesapeake Market"}, {"storeNumber": "0-0", "posNumber": "1574", "storeType": "EWP", "street": "14500 EMANCIPATION HWY", "city": "CHESTER", "state": "VA", "zip": "23831", "lat": 37.325166, "lon": -77.409373, "manager": "", "market": "VA Beach/Chesapeake Market"}, {"storeNumber": "0-0", "posNumber": "740", "storeType": "DOOR SHOP", "street": "184 PLEASANT SHADE DRIVE", "city": "EMPORIA", "state": "VA", "zip": "23847", "lat": 36.707513, "lon": -77.56569, "manager": "", "market": ""}, {"storeNumber": "0-0", "posNumber": "587", "storeType": "RELOAD", "street": "", "city": "FREDERICKSBURG", "state": "VA", "zip": "", "lat": 38.27652, "lon": -77.464493, "manager": "", "market": "BWE Market"}, {"storeNumber": "800-464", "posNumber": "464", "storeType": "LUMBER", "street": "11631 SHANNON DR", "city": "FREDERICKSBURG", "state": "VA", "zip": "22408", "lat": 38.277071, "lon": -77.463179, "manager": "Richard Thompson", "market": "BWE Market"}, {"storeNumber": "805-4", "posNumber": "472", "storeType": "LUMBER", "street": "814 CHAPMAN WAY", "city": "NEWPORT NEWS", "state": "VA", "zip": "23608", "lat": 37.168212, "lon": -76.53522, "manager": "", "market": "VA Beach/Chesapeake Market"}, {"storeNumber": "0-0", "posNumber": "475", "storeType": "LUMBER", "street": "2890 SEVEN HILLS BLVD", "city": "RICHMOND", "state": "VA", "zip": "23231", "lat": 37.491845, "lon": -77.342596, "manager": "", "market": "Richmond Market"}, {"storeNumber": "805-7", "posNumber": "473", "storeType": "LUMBER", "street": "500 LASKIN ROAD", "city": "VIRGINIA BEACH", "state": "VA", "zip": "23451", "lat": 36.85881, "lon": -75.98218, "manager": "", "market": "VA Beach/Chesapeake Market"}, {"storeNumber": "0-0", "posNumber": "1684", "storeType": "KITCHEN AND BATH", "street": "1961 SOUTH LOUDOUN ST", "city": "WINCHESTER", "state": "VA", "zip": "22601", "lat": 39.164077, "lon": -78.173196, "manager": "", "market": "Winchester Market"}, {"storeNumber": "50-9", "posNumber": "461", "storeType": "LUMBER", "street": "1961 SOUTH LOUDOUN ST", "city": "WINCHESTER", "state": "VA", "zip": "22601", "lat": 39.164077, "lon": -78.173196, "manager": "Gary Trenary", "market": "Winchester Market"}, {"storeNumber": "8132-4", "posNumber": "462", "storeType": "LUMBER", "street": "5443 TABLER STATION RD", "city": "INWOOD", "state": "WV", "zip": "25428", "lat": 39.4004, "lon": -78.0095, "manager": "Gary Trenary", "market": "Winchester Market"}, {"storeNumber": "1-1", "posNumber": "111", "storeType": "LUMBER", "street": "195 NORTH STATE ROUTE 2", "city": "NEW MARTINSVILLE", "state": "WV", "zip": "26155", "lat": 39.671129, "lon": -80.857304, "manager": "Bob Thompson", "market": "West Virginia Market"}, {"storeNumber": "3-2", "posNumber": "112", "storeType": "LUMBER", "street": "6001 PIKE ST", "city": "PARKERSBURG", "state": "WV", "zip": "26101", "lat": 39.215206, "lon": -81.544647, "manager": "Adam Cooper", "market": "West Virginia Market"}, {"storeNumber": "0-0", "posNumber": "596", "storeType": "RELOAD", "street": "1 CARTER POINT", "city": "RIPLEY", "state": "WV", "zip": "25271", "lat": 38.82124, "lon": -81.73158, "manager": "", "market": "West Virginia Market"}, {"storeNumber": "3377-3", "posNumber": "113", "storeType": "LUMBER", "street": "1 CARTER POINT", "city": "RIPLEY", "state": "WV", "zip": "25271", "lat": 38.821241, "lon": -81.731575, "manager": "Mark Freed", "market": "West Virginia Market"}];
+let MILLS = [];
+let YARDS = [];
 
 let map, routeLayer, millMarker, yardMarker, millCoords = null;
 const geocodeCache = {};
@@ -914,18 +978,24 @@ async function loadTrucks() {
       const isMoving = parseFloat(v.speed) > 0;
       const statusIcon = v.engineOn ? (isMoving ? '🟢' : '🟡') : '🔴';
       const statusText = v.engineOn ? (isMoving ? 'Moving' : 'Idling') : 'Engine Off';
+      const typeEmoji = v.type === 'trailer' ? '🚚' : '🚛';
+      const typeClass = v.type === 'trailer' ? 'trailer' : '';
+      const statusClass = isMoving ? 'moving' : (v.engineOn ? 'idle' : 'stopped');
+      const labelText = v.driver ? `${v.name} – ${v.driver}` : v.name;
       const icon = L.divIcon({
         className: '',
-        html: `<div class="truck-label ${isMoving ? 'moving' : (v.engineOn ? 'idle' : 'stopped')}">${statusIcon} ${v.name}</div>`,
+        html: `<div class="truck-label ${statusClass} ${typeClass}">${typeEmoji} ${labelText}</div>`,
         iconAnchor: [35, 12]
       });
       const lastSeen = v.updated ? new Date(v.updated).toLocaleString() : 'Unknown';
       const location = [v.street, v.city, v.state].filter(Boolean).join(', ') || 'Location unknown';
-      const driverLine = v.driver ? `<br>Driver: ${v.driver}` : '';
+      const headerLine = v.driver ? `${v.name} – ${v.driver}` : v.name;
+      const descLine = v.description ? `<br><span style="color:#555;font-size:11px;">${v.description}</span>` : '';
+      const typeLine = `<br><small style="color:#888;">${v.type === 'trailer' ? 'Trailer' : v.type === 'truck' ? 'Truck (CMV)' : 'Vehicle'}</small>`;
       const stopLine = !isMoving && v.stopDuration ? `<br>Stopped for: ${v.stopDuration}` : '';
       L.marker([v.lat, v.lon], { icon })
         .bindPopup(`
-          <strong>${v.name}</strong>${driverLine}<br>
+          <strong>${headerLine}</strong>${descLine}${typeLine}<br>
           ${statusIcon} ${statusText}${isMoving ? ' — ' + Math.round(v.speed) + ' mph' : ''}<br>
           📍 ${location}${stopLine}<br>
           <small>Updated: ${lastSeen}</small>
@@ -1013,8 +1083,22 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-    if (btn.dataset.tab === 'truck') initTruckRouteTab();
-    if (btn.dataset.tab === 'schedule') loadSchedules();
+    if (btn.dataset.tab === 'today') initTodayTab();
+    if (btn.dataset.tab === 'schedule') initScheduleTab();
+    // When switching away from Today, stop auto-refresh
+    if (btn.dataset.tab !== 'today') stopTodayAutoRefresh();
+    // Toggle main-pane: show calendar instead of map when Schedule active
+    const mapEl = document.getElementById('map');
+    const calPane = document.getElementById('scheduleMainPane');
+    if (btn.dataset.tab === 'schedule') {
+      mapEl.style.display = 'none';
+      calPane.style.display = 'flex';
+    } else {
+      mapEl.style.display = 'block';
+      calPane.style.display = 'none';
+      // Invalidate map size after being hidden
+      setTimeout(() => { if (map) map.invalidateSize(); }, 50);
+    }
   });
 });
 
@@ -1034,21 +1118,7 @@ const truckRouteMillSel = document.getElementById('truckRouteMillSelect');
 const truckRouteYardSel = document.getElementById('truckRouteYardSelect');
 
 async function initTruckRouteTab() {
-  // Populate mill & yard dropdowns on first open (sortedMills/sortedYards defined later)
-  if (!truckRouteTabInitialized) {
-    sortedMills.forEach(m => {
-      const opt = document.createElement('option');
-      opt.value = m.idx;
-      opt.textContent = `${m.name} (${m.product}) — ${m.city}, ${m.stateZip}`;
-      truckRouteMillSel.appendChild(opt);
-    });
-    sortedYards.forEach(y => {
-      const opt = document.createElement('option');
-      opt.value = y.idx;
-      opt.textContent = `${y.posNumber} — ${y.city}, ${y.state} ${y.zip} (${y.storeType})`;
-      truckRouteYardSel.appendChild(opt);
-    });
-  }
+  // Mill & yard dropdowns are already populated by populateDropdowns() via loadReferenceData()
   if (truckRouteTabInitialized && truckRouteVehicles.length > 0) return;
   await refreshTruckDropdown();
   truckRouteTabInitialized = true;
@@ -1099,9 +1169,13 @@ document.getElementById('truckRouteSelect').addEventListener('change', () => {
   det.innerHTML = `<strong>${v.name}</strong>${v.driver ? ' — ' + v.driver : ''}<br>${statusIcon} ${statusText}<br>📍 ${loc}`;
   det.style.display = 'block';
   if (truckRouteTruckMarker) map.removeLayer(truckRouteTruckMarker);
-  const icon = L.divIcon({ className: '', html: `<div class="truck-label moving">🚛 ${v.name}</div>`, iconAnchor: [35, 12] });
+  const typeEmoji = v.type === 'trailer' ? '🚚' : '🚛';
+  const typeClass = v.type === 'trailer' ? 'trailer' : '';
+  const labelText = v.driver ? `${v.name} – ${v.driver}` : v.name;
+  const descLine = v.description ? `<br><span style="color:#555;font-size:11px;">${v.description}</span>` : '';
+  const icon = L.divIcon({ className: '', html: `<div class="truck-label moving ${typeClass}">${typeEmoji} ${labelText}</div>`, iconAnchor: [35, 12] });
   truckRouteTruckMarker = L.marker([v.lat, v.lon], { icon })
-    .bindPopup(`<strong>${v.name}</strong>${v.driver ? '<br>Driver: ' + v.driver : ''}<br>📍 ${loc}`)
+    .bindPopup(`<strong>${labelText}</strong>${descLine}<br>📍 ${loc}`)
     .addTo(map);
   map.setView([v.lat, v.lon], 8);
   checkTruckRouteReady();
@@ -1305,28 +1379,76 @@ document.getElementById('truckRouteClearBtn').addEventListener('click', () => {
   showStatus('truckRouteStatus', '', false);
 });
 
-// Populate all dropdowns
+// Populate all dropdowns — mills and yards come from server (API) now, not inline arrays
 const millSel = document.getElementById('millSelect');
 const yardSel = document.getElementById('yardSelect');
+let sortedMills = [];
+let sortedYards = [];
 
-const sortedMills = MILLS.map((m, i) => ({...m, idx: i})).sort((a, b) => a.name.localeCompare(b.name));
-sortedMills.forEach(m => {
-  const opt = document.createElement('option');
-  opt.value = m.idx;
-  opt.textContent = `${m.name} (${m.product}) — ${m.city}, ${m.stateZip}`;
-  millSel.appendChild(opt);
-});
+function populateDropdowns() {
+  sortedMills = MILLS.map((m, i) => ({...m, idx: i})).sort((a, b) => a.name.localeCompare(b.name));
+  sortedYards = YARDS.map((y, i) => ({...y, idx: i})).sort((a, b) => {
+    const sc = (a.state || '').localeCompare(b.state || '');
+    return sc !== 0 ? sc : (a.city || '').localeCompare(b.city || '');
+  });
 
-const sortedYards = YARDS.map((y, i) => ({...y, idx: i})).sort((a, b) => {
-  const sc = a.state.localeCompare(b.state);
-  return sc !== 0 ? sc : a.city.localeCompare(b.city);
-});
-sortedYards.forEach(y => {
-  const opt = document.createElement('option');
-  opt.value = y.idx;
-  opt.textContent = `${y.posNumber} — ${y.city}, ${y.state} ${y.zip} (${y.storeType})`;
-  yardSel.appendChild(opt);
-});
+  // Main Single Route dropdowns
+  millSel.innerHTML = '<option value="">— Choose a mill or supplier —</option>';
+  sortedMills.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.idx;
+    opt.textContent = `${m.name} (${m.product}) — ${m.city}, ${m.stateZip}`;
+    millSel.appendChild(opt);
+  });
+  yardSel.innerHTML = '<option value="">— Choose a yard —</option>';
+  sortedYards.forEach(y => {
+    const opt = document.createElement('option');
+    opt.value = y.idx;
+    opt.textContent = `${y.posNumber} — ${y.city}, ${y.state} ${y.zip} (${y.storeType})`;
+    yardSel.appendChild(opt);
+  });
+
+  // Route Truck dropdowns (rebuild if they've been initialized)
+  const tMillSel = document.getElementById('truckRouteMillSelect');
+  const tYardSel = document.getElementById('truckRouteYardSelect');
+  if (tMillSel) {
+    tMillSel.innerHTML = '<option value="">— Choose a mill or supplier —</option>';
+    sortedMills.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.idx;
+      opt.textContent = `${m.name} (${m.product}) — ${m.city}, ${m.stateZip}`;
+      tMillSel.appendChild(opt);
+    });
+  }
+  if (tYardSel) {
+    tYardSel.innerHTML = '<option value="">— Choose a yard —</option>';
+    sortedYards.forEach(y => {
+      const opt = document.createElement('option');
+      opt.value = y.idx;
+      opt.textContent = `${y.posNumber} — ${y.city}, ${y.state} ${y.zip} (${y.storeType})`;
+      tYardSel.appendChild(opt);
+    });
+  }
+}
+
+async function loadReferenceData() {
+  try {
+    const [mRes, yRes] = await Promise.all([
+      fetch('/api/mills'), fetch('/api/yards')
+    ]);
+    const mData = await mRes.json();
+    const yData = await yRes.json();
+    MILLS = mData.mills || [];
+    YARDS = yData.yards || [];
+    populateDropdowns();
+  } catch (e) {
+    console.error('Failed to load reference data:', e);
+    alert('Failed to load mill/yard data from server. Please refresh the page.');
+  }
+}
+
+// Kick off initial load
+loadReferenceData();
 
 // --- SINGLE ROUTE LOGIC ---
 millSel.addEventListener('change', async () => {
@@ -1697,7 +1819,9 @@ async function submitSchedule() {
 
   if (!date) { alert('Please select a date.'); return; }
 
-  let payload = { date, time, notes, type };
+  // Combine date + time into ISO datetime string expected by server
+  const scheduledAt = `${date}T${time || '00:00'}:00`;
+  let payload = { scheduledAt, date, time, notes, type };
 
   // Always include selected truck if one was picked in the modal
   if (scheduleSelectedTruck) {
@@ -1782,8 +1906,8 @@ async function loadSchedules(monthStr) {
     console.error('Error loading schedules:', e);
     allSchedules = [];
   }
-  renderScheduleList(allSchedules);
   renderCalendar(scheduleCalendarYear, scheduleCalendarMonth, allSchedules);
+  renderNext7Days();
 }
 
 function renderScheduleList(schedules) {
@@ -1818,13 +1942,26 @@ function renderScheduleList(schedules) {
   }).join('');
 }
 
+function initScheduleTab() {
+  // Reload schedules whenever the tab is opened (handles navigation back after edits)
+  loadSchedules();
+}
+
+function jumpToCalendarToday() {
+  const now = new Date();
+  scheduleCalendarYear = now.getFullYear();
+  scheduleCalendarMonth = now.getMonth();
+  loadSchedules();
+}
+
 function renderCalendar(year, month, schedules) {
   const grid = document.getElementById('calendarGrid');
   const label = document.getElementById('calendarMonthLabel');
   const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  label.textContent = `${monthNames[month]} ${year}`;
+  if (label) label.textContent = `${monthNames[month]} ${year}`;
+  if (!grid) return;
 
-  // Build date-to-schedule map
+  // Build date-to-schedule map (sorted by time within each day)
   const dateMap = {};
   (schedules || []).forEach(s => {
     if (s._date && s._date !== '—') {
@@ -1832,67 +1969,249 @@ function renderCalendar(year, month, schedules) {
       dateMap[s._date].push(s);
     }
   });
+  Object.values(dateMap).forEach(arr => arr.sort((a, b) => (a.scheduledAt || '').localeCompare(b.scheduledAt || '')));
 
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = new Date().toISOString().split('T')[0];
 
-  let html = ['S','M','T','W','T','F','S'].map(d => `<div class="cal-header">${d}</div>`).join('');
+  // Header row
+  const headers = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let html = headers.map(d => `<div class="cal-header-large">${d}</div>`).join('');
 
-  // Empty cells before first day
-  for (let i = 0; i < firstDay; i++) {
-    html += '<div class="calendar-day empty"></div>';
-  }
+  // Empty leading cells
+  for (let i = 0; i < firstDay; i++) html += '<div class="cal-day-large empty"></div>';
 
+  const MAX_ITEMS = 5;
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    const hasRoutes = dateMap[dateStr] && dateMap[dateStr].length > 0;
+    const routes = dateMap[dateStr] || [];
     const isToday = dateStr === todayStr;
-    let cls = 'calendar-day';
-    if (hasRoutes) cls += ' has-routes';
-    if (isToday) cls += ' today';
-    html += `<div class="${cls}" onclick="selectCalendarDay('${dateStr}')">${d}</div>`;
+    const cls = `cal-day-large${isToday ? ' today' : ''}`;
+    const shown = routes.slice(0, MAX_ITEMS);
+    const moreCount = Math.max(0, routes.length - MAX_ITEMS);
+
+    const itemsHtml = shown.map(s => {
+      const status = s.status || 'scheduled';
+      const time = s._time || '';
+      const yard = s.yard ? (s.yard.posNumber || '') : '';
+      const truck = s.truck ? s.truck.name : '';
+      const needsOvernight = s.hosProjection && s.hosProjection.segments && s.hosProjection.segments.some(seg => seg.type === 'rest');
+      const hasViolation = s.hosProjection && s.hosProjection.violations && s.hosProjection.violations.length > 0;
+      const hosFlag = hasViolation ? ' ⚠️' : (needsOvernight ? ' 🛌' : '');
+      const label = [time, yard, truck ? `(${truck})` : ''].filter(Boolean).join(' ') + hosFlag;
+      const tipExtra = needsOvernight ? ' • requires overnight rest' : '';
+      const tipViol  = hasViolation ? ' • HOS violation' : '';
+      return `<div class="cal-item status-${status}" onclick="event.stopPropagation();openScheduleDetail('${s.id}')" title="${escapeHtml((s.mill?.name || '') + ' → ' + yard + (truck ? ' • ' + truck : '') + tipExtra + tipViol)}">${escapeHtml(label)}</div>`;
+    }).join('');
+
+    const moreHtml = moreCount > 0
+      ? `<div class="cal-more" onclick="event.stopPropagation();openDayDrawer('${dateStr}')">+${moreCount} more</div>`
+      : '';
+
+    html += `<div class="${cls}" onclick="openDayDrawer('${dateStr}')">
+      <div class="cal-day-num">${d}</div>
+      <div class="cal-day-items">${itemsHtml}${moreHtml}</div>
+    </div>`;
   }
 
   grid.innerHTML = html;
 }
 
-function selectCalendarDay(dateStr) {
-  // Highlight selected day
-  document.querySelectorAll('.calendar-day').forEach(el => el.classList.remove('selected'));
-  const days = document.querySelectorAll('.calendar-day');
-  days.forEach(el => {
-    if (el.onclick && el.onclick.toString().includes(dateStr)) {
-      el.classList.add('selected');
-    }
-  });
-  // Find by matching the click handler date
-  document.querySelectorAll('.calendar-day').forEach(el => {
-    const attr = el.getAttribute('onclick');
-    if (attr && attr.includes(dateStr)) el.classList.add('selected');
-  });
-
-  const container = document.getElementById('calendarDayRoutes');
-  const daySchedules = allSchedules.filter(s => s._date === dateStr);
-  if (daySchedules.length === 0) {
-    container.innerHTML = `<div style="text-align:center;color:#888;font-size:12px;padding:12px;">No routes on ${dateStr}</div>`;
-    return;
+// Day drawer — slide-in panel with full list of routes for the day
+function openDayDrawer(dateStr) {
+  let drawer = document.getElementById('dayDrawer');
+  if (!drawer) {
+    drawer = document.createElement('div');
+    drawer.id = 'dayDrawer';
+    drawer.className = 'day-drawer';
+    document.body.appendChild(drawer);
   }
-  container.innerHTML = daySchedules.map(s => {
-    const mill = s.mill ? s.mill.name : '—';
-    const yard = s.yard ? `${s.yard.posNumber || ''} — ${s.yard.city || ''}` : '—';
-    const status = s.status || 'scheduled';
-    const truckInfo = s.truck ? `<div style="color:#555;margin-top:2px;">🚛 ${s.truck.name}${s.truck.driver ? ' — ' + s.truck.driver : ''}</div>` :
-      `<div style="margin-top:4px;"><button class="schedule-actions-btn" style="background:#e65100;color:white;font-size:10px;padding:3px 8px;" onclick="openAssignTruckPanel('${s.id}')">🚛 Assign Truck</button></div>`;
-    return `<div style="background:#f7f9fb;border:1px solid #dde3ea;border-radius:6px;padding:10px;margin-bottom:6px;font-size:12px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <strong>${s._time || ''}</strong>
-        <span class="schedule-badge ${status}">${status}</span>
+  const routes = (allSchedules || []).filter(s => s._date === dateStr)
+    .sort((a, b) => (a.scheduledAt || '').localeCompare(b.scheduledAt || ''));
+  const prettyDate = new Date(dateStr + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+  const itemsHtml = routes.length === 0
+    ? '<div style="padding:20px;text-align:center;color:#888;">No routes scheduled for this day.</div>'
+    : routes.map(s => {
+      const status = s.status || 'scheduled';
+      const mill = s.mill ? s.mill.name : '—';
+      const yard = s.yard ? `${s.yard.posNumber || ''} ${s.yard.city || ''}` : '—';
+      const truck = s.truck ? `${s.truck.name}${s.truck.driver ? ' / ' + s.truck.driver : ''}` : '<em>No truck assigned</em>';
+      return `<div class="day-drawer-item" onclick="openScheduleDetail('${s.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <strong style="color:#1a3a5c;">${escapeHtml(s._time || '—')}</strong>
+          <span class="today-status-badge status-${status}">${status}</span>
+        </div>
+        <div style="margin-top:4px;font-size:13px;">${escapeHtml(mill)} → ${escapeHtml(yard)}</div>
+        <div style="margin-top:2px;font-size:11px;color:#666;">🚛 ${truck}${s.distance ? ' • ' + escapeHtml(s.distance) : ''}</div>
+      </div>`;
+    }).join('');
+
+  drawer.innerHTML = `
+    <div class="day-drawer-header">
+      <div class="day-drawer-title">${escapeHtml(prettyDate)} <span style="color:#888;font-weight:400;font-size:12px;">(${routes.length})</span></div>
+      <button class="day-drawer-close" onclick="closeDayDrawer()">×</button>
+    </div>
+    ${itemsHtml}
+  `;
+  requestAnimationFrame(() => drawer.classList.add('open'));
+}
+
+function closeDayDrawer() {
+  const d = document.getElementById('dayDrawer');
+  if (d) d.classList.remove('open');
+}
+
+// Open a schedule for editing (reuses existing schedule actions via the edit modal)
+function openScheduleDetail(scheduleId) {
+  const s = (allSchedules || []).find(x => x.id === scheduleId);
+  if (!s) return;
+  const mill = s.mill ? s.mill.name : '?';
+  const yard = s.yard ? `${s.yard.posNumber || ''} ${s.yard.city || ''}` : '?';
+  const truck = s.truck ? `${s.truck.name}${s.truck.driver ? ' / ' + s.truck.driver : ''}` : 'No truck assigned';
+  const status = s.status || 'scheduled';
+  const when = s.scheduledAt ? new Date(s.scheduledAt).toLocaleString() : '—';
+
+  const actions = status === 'scheduled'
+    ? `<button class="btn btn-primary" style="width:auto;padding:6px 14px;font-size:12px;" onclick="updateScheduleStatus('${s.id}','in-progress');closeDayDrawer();">Mark In-Progress</button>
+       <button class="btn btn-primary" style="width:auto;padding:6px 14px;font-size:12px;background:#2e7d32;" onclick="updateScheduleStatus('${s.id}','delivered');closeDayDrawer();">Mark Delivered</button>
+       <button class="btn btn-secondary" style="width:auto;padding:6px 14px;font-size:12px;" onclick="updateScheduleStatus('${s.id}','cancelled');closeDayDrawer();">Cancel</button>`
+    : status === 'in-progress'
+    ? `<button class="btn btn-primary" style="width:auto;padding:6px 14px;font-size:12px;background:#2e7d32;" onclick="updateScheduleStatus('${s.id}','delivered');closeDayDrawer();">Mark Delivered</button>`
+    : '';
+
+  const truckAction = s.truck
+    ? ''
+    : `<button class="btn btn-primary" style="width:auto;padding:6px 14px;font-size:12px;background:#e65100;margin-right:6px;" onclick="openAssignTruckPanel('${s.id}');closeDayDrawer();">🚛 Assign Truck</button>`;
+
+  const deleteAction = `<button class="btn btn-secondary" style="width:auto;padding:6px 14px;font-size:12px;background:#c62828;color:white;" onclick="deleteSchedule('${s.id}');closeDayDrawer();">🗑 Delete</button>`;
+
+  // Show a simple modal (reuse the assign-truck modal pattern)
+  const modal = document.createElement('div');
+  modal.className = 'schedule-modal';
+  modal.style.display = 'flex';
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  const hosHtml = renderHosBreakdown(s.hosProjection);
+
+  modal.innerHTML = `
+    <div class="modal-card" style="width:560px;max-height:85vh;overflow-y:auto;">
+      <h3>📅 Route Details <span class="today-status-badge status-${status}" style="margin-left:6px;">${status}</span></h3>
+      <div style="font-size:13px;line-height:1.7;margin:12px 0;">
+        <div><strong>Scheduled:</strong> ${escapeHtml(when)}</div>
+        <div><strong>Mill:</strong> ${escapeHtml(mill)}</div>
+        <div><strong>Yard:</strong> ${escapeHtml(yard)}</div>
+        <div><strong>Truck:</strong> ${escapeHtml(truck)}</div>
+        ${s.distance ? `<div><strong>Distance:</strong> ${escapeHtml(s.distance)}</div>` : ''}
+        ${s.fuelCost ? `<div><strong>Est. Fuel:</strong> ${escapeHtml(s.fuelCost)}</div>` : ''}
+        ${s.notes ? `<div><strong>Notes:</strong> ${escapeHtml(s.notes)}</div>` : ''}
       </div>
-      <div style="margin-top:4px;">${mill} → ${yard}</div>
-      ${truckInfo}
-      ${s.distance ? `<div style="color:#888;margin-top:2px;">Distance: ${s.distance}</div>` : ''}
+      ${hosHtml}
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;">
+        ${truckAction}${actions}${deleteAction}
+      </div>
+      <div class="modal-actions" style="margin-top:12px;">
+        <button class="btn btn-secondary" onclick="this.closest('.schedule-modal').remove()">Close</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+// Render a DOT Hours-of-Service breakdown block for a schedule's hosProjection field.
+function renderHosBreakdown(hp) {
+  if (!hp || !hp.segments || hp.segments.length === 0) return '';
+  const hrs = sec => (sec / 3600).toFixed(1) + 'h';
+  const timeOnly = iso => new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const dateOnly = iso => new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+  const segmentIcons = { drive: '🚚', break: '☕', rest: '🛌' };
+  const segmentColors = { drive: '#1565c0', break: '#e65100', rest: '#6a1b9a' };
+
+  const segsHtml = hp.segments.map((seg, i) => {
+    const startDate = new Date(seg.start);
+    const endDate = new Date(seg.end);
+    const crossesDay = startDate.toDateString() !== endDate.toDateString();
+    const startLabel = `${dateOnly(seg.start)} ${timeOnly(seg.start)}`;
+    const endLabel = crossesDay ? `${dateOnly(seg.end)} ${timeOnly(seg.end)}` : timeOnly(seg.end);
+    const icon = segmentIcons[seg.type] || '•';
+    const color = segmentColors[seg.type] || '#555';
+    const reason = seg.reason ? `<div style="font-size:10px;color:#888;margin-top:2px;">${escapeHtml(seg.reason)}</div>` : '';
+    return `<div style="display:flex;gap:8px;padding:6px 8px;border-left:3px solid ${color};background:#f7f9fb;margin-bottom:4px;border-radius:4px;font-size:12px;">
+      <div style="font-size:16px;">${icon}</div>
+      <div style="flex:1;">
+        <div><strong style="color:${color};text-transform:uppercase;font-size:11px;">${seg.type}</strong> • ${hrs(seg.durationSec)}</div>
+        <div style="color:#555;font-size:11px;">${startLabel} → ${endLabel}</div>
+        ${reason}
+      </div>
+    </div>`;
+  }).join('');
+
+  const violations = (hp.violations || []).map(v =>
+    `<div style="background:#fff3e0;border-left:3px solid #e65100;padding:6px 8px;margin-bottom:4px;border-radius:4px;font-size:11px;color:#555;">
+      ⚠️ <strong>${escapeHtml(v.type)}</strong>: ${escapeHtml(v.message)}
+    </div>`
+  ).join('');
+
+  return `
+    <div style="background:white;border:1px solid #dde3ea;border-radius:8px;padding:10px;margin-top:12px;">
+      <div style="font-weight:700;color:#1a3a5c;font-size:13px;margin-bottom:8px;">
+        🛣 DOT Hours-of-Service Projection
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;font-size:11px;margin-bottom:10px;">
+        <div><div style="color:#888;">Total elapsed</div><strong>${hrs(hp.totalElapsedSec)}</strong></div>
+        <div><div style="color:#888;">Driving</div><strong>${hrs(hp.drivingSec)}</strong></div>
+        <div><div style="color:#888;">Break</div><strong>${hrs(hp.breakSec)}</strong></div>
+        <div><div style="color:#888;">Rest</div><strong>${hrs(hp.restSec)}</strong></div>
+      </div>
+      <div style="font-size:11px;color:#555;margin-bottom:6px;">
+        Projected delivery: <strong>${new Date(hp.deliveryEta).toLocaleString()}</strong>
+      </div>
+      ${violations}
+      ${segsHtml}
+      <div style="font-size:10px;color:#999;margin-top:8px;border-top:1px solid #eee;padding-top:6px;">
+        Property-carrying CMV rules: 11h daily max · 14h on-duty window · 30min break after 8h · 10h rest · 70/8 weekly cap
+      </div>
+    </div>
+  `;
+}
+
+// Keep legacy helper referenced by nothing now, but safe no-op
+function selectCalendarDay(dateStr) { openDayDrawer(dateStr); }
+
+// Compact Next-7-Days sidebar strip for Schedule tab
+function renderNext7Days() {
+  const el = document.getElementById('next7Days');
+  if (!el) return;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const strip = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today); d.setDate(today.getDate() + i);
+    const dateStr = d.toISOString().split('T')[0];
+    const routes = (allSchedules || []).filter(s => s._date === dateStr)
+      .sort((a,b)=>(a.scheduledAt||'').localeCompare(b.scheduledAt||''));
+    strip.push({ dateStr, d, routes });
+  }
+  el.innerHTML = strip.map(({dateStr, d, routes}) => {
+    const weekday = d.toLocaleDateString(undefined, { weekday: 'short' });
+    const md = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    const isToday = dateStr === today.toISOString().split('T')[0];
+    const headerStyle = isToday ? 'background:#fff8e1;' : '';
+    const routeLines = routes.length === 0
+      ? '<div style="color:#bbb;font-size:11px;padding:4px 10px;">No routes</div>'
+      : routes.slice(0, 3).map(s => {
+        const status = s.status || 'scheduled';
+        const truck = s.truck ? ` • ${s.truck.name}` : '';
+        return `<div class="today-route-item" style="font-size:11px;padding:4px 10px;" onclick="openScheduleDetail('${s.id}')">
+          <strong>${escapeHtml(s._time || '')}</strong> ${escapeHtml(s.yard?.posNumber || '')}${escapeHtml(truck)}
+          <span class="today-status-badge status-${status}" style="font-size:9px;margin-left:4px;">${status}</span>
+        </div>`;
+      }).join('') + (routes.length > 3 ? `<div class="cal-more" style="padding:3px 10px;" onclick="openDayDrawer('${dateStr}')">+${routes.length - 3} more</div>` : '');
+    return `<div style="border-bottom:1px solid #eee;">
+      <div style="padding:5px 10px;font-weight:700;color:#1a3a5c;font-size:12px;${headerStyle}cursor:pointer;" onclick="openDayDrawer('${dateStr}')">
+        ${isToday ? '★ ' : ''}${weekday} ${md} ${routes.length > 0 ? `<span style="color:#888;font-weight:400;">(${routes.length})</span>` : ''}
+      </div>
+      ${routeLines}
     </div>`;
   }).join('');
 }
@@ -2077,6 +2396,666 @@ function switchScheduleView(view) {
     btns[1].classList.add('active');
   }
 }
+
+// ============================================================
+// TODAY TAB — dispatcher dashboard: all of day's routes + live vehicles on map
+// ============================================================
+
+let todaySelectedDate   = new Date().toISOString().split('T')[0];  // YYYY-MM-DD
+let todayRoutes         = [];   // Today's scheduled routes
+let todayVehicles       = [];   // Live IntelliShift vehicles
+let todayVehicleFilter  = '';
+let todaySelectedRouteId = null;
+let todaySelectedVehicleId = null;
+let todayAutoRefreshTimer = null;
+let todayMapLayer       = null;   // Leaflet LayerGroup for today's routes (separate from main truckLayer)
+let todayRouteLines     = new Map();  // scheduleId -> Leaflet polyline
+
+async function initTodayTab() {
+  // Set date input to today by default
+  document.getElementById('todayDateInput').value = todaySelectedDate;
+  // Create map layer group if not present
+  if (!todayMapLayer) todayMapLayer = L.layerGroup().addTo(map);
+  // Ensure trucks are visible (share the existing truckLayer)
+  if (typeof toggleTrucks === 'function') {
+    const btn = document.getElementById('truckToggleBtn');
+    if (btn && btn.textContent.includes('Show')) toggleTrucks();
+  }
+  await refreshTodayData();
+  startTodayAutoRefresh();
+}
+
+function startTodayAutoRefresh() {
+  stopTodayAutoRefresh();
+  todayAutoRefreshTimer = setInterval(() => refreshTodayData(true), 60000);
+}
+
+function stopTodayAutoRefresh() {
+  if (todayAutoRefreshTimer) { clearInterval(todayAutoRefreshTimer); todayAutoRefreshTimer = null; }
+}
+
+async function refreshTodayData(silent) {
+  await Promise.all([loadTodayRoutes(silent), loadTodayVehicles(silent)]);
+  renderTodayOnMap();
+}
+
+async function loadTodayRoutes(silent) {
+  try {
+    const resp = await fetch(`/api/schedule?date=${todaySelectedDate}`);
+    const data = await resp.json();
+    todayRoutes = data.schedules || [];
+    renderTodayRoutesList();
+  } catch (e) {
+    if (!silent) document.getElementById('todayRoutesList').innerHTML = `<div style="padding:12px;color:#c62828;">Error: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function loadTodayVehicles(silent) {
+  try {
+    const resp = await fetch('/api/intellishift/vehicles');
+    const data = await resp.json();
+    todayVehicles = data.vehicles || [];
+    renderTodayVehicleList();
+  } catch (e) {
+    if (!silent) document.getElementById('todayVehicleList').innerHTML = `<div style="padding:12px;color:#c62828;">Error: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function renderTodayRoutesList() {
+  const list = document.getElementById('todayRoutesList');
+  const label = document.getElementById('todayRoutesLabel');
+  const isToday = todaySelectedDate === new Date().toISOString().split('T')[0];
+  const dateLabel = new Date(todaySelectedDate + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  label.textContent = `${isToday ? "Today's" : dateLabel + "'s"} Routes (${todayRoutes.length})`;
+
+  if (todayRoutes.length === 0) {
+    list.innerHTML = '<div style="padding:16px;text-align:center;color:#888;font-size:12px;">No routes scheduled for this day.</div>';
+    return;
+  }
+
+  list.innerHTML = todayRoutes.map(r => {
+    const time = r.scheduledAt ? new Date(r.scheduledAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '—';
+    const mill = r.mill ? r.mill.name : '?';
+    const yard = r.yard ? `${r.yard.posNumber} ${r.yard.city || ''}` : '?';
+    const truck = r.truck ? (r.truck.name + (r.truck.driver ? ' / ' + r.truck.driver : '')) : 'No truck assigned';
+    const status = r.status || 'scheduled';
+    const statusBadge = `<span class="today-status-badge status-${status}">${status}</span>`;
+    const isSel = r.id === todaySelectedRouteId ? 'selected' : '';
+    return `
+      <div class="today-route-item ${isSel}" onclick="selectTodayRoute('${r.id}')">
+        <div><span class="today-item-time">${time}</span>${statusBadge}</div>
+        <div class="today-item-route">${escapeHtml(mill)} → ${escapeHtml(yard)}</div>
+        <div class="today-item-meta">🚛 ${escapeHtml(truck)} • ${escapeHtml(r.distance || '—')}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderTodayVehicleList() {
+  const list = document.getElementById('todayVehicleList');
+  const f = todayVehicleFilter.toLowerCase();
+  const filtered = todayVehicles.filter(v => {
+    if (!f) return true;
+    return (v.name + ' ' + (v.driver || '') + ' ' + (v.city || '') + ' ' + (v.state || '') + ' ' + v.type).toLowerCase().includes(f);
+  }).sort((a, b) => {
+    if (a.type !== b.type) return a.type === 'truck' ? -1 : 1;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+  document.getElementById('todayVehicleCount').textContent = `${filtered.length} of ${todayVehicles.length}`;
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div style="padding:12px;text-align:center;color:#888;font-size:12px;">No vehicles match.</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(v => {
+    const isMoving = parseFloat(v.speed) > 0;
+    const statusIcon = v.engineOn ? (isMoving ? '🟢' : '🟡') : '🔴';
+    const typeEmoji = v.type === 'trailer' ? '🚚' : '🚛';
+    const label = v.driver ? `${v.name} – ${v.driver}` : v.name;
+    const city = [v.city, v.state].filter(Boolean).join(', ') || 'Unknown';
+    const isSel = String(v.id) === String(todaySelectedVehicleId) ? 'selected' : '';
+    return `
+      <div class="today-vehicle-item ${isSel}" onclick="selectTodayVehicle('${escapeHtml(String(v.id))}')">
+        <div>${typeEmoji} <strong>${escapeHtml(label)}</strong> ${statusIcon}</div>
+        <div class="today-item-meta">📍 ${escapeHtml(city)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function onTodayVehicleFilterChange(v) { todayVehicleFilter = v; renderTodayVehicleList(); }
+
+function changeTodayDate(deltaDays) {
+  const d = new Date(todaySelectedDate + 'T00:00:00');
+  d.setDate(d.getDate() + deltaDays);
+  todaySelectedDate = d.toISOString().split('T')[0];
+  document.getElementById('todayDateInput').value = todaySelectedDate;
+  todaySelectedRouteId = null;
+  refreshTodayData();
+}
+
+function onTodayDateChange() {
+  const v = document.getElementById('todayDateInput').value;
+  if (v) { todaySelectedDate = v; todaySelectedRouteId = null; refreshTodayData(); }
+}
+
+function jumpToToday() {
+  todaySelectedDate = new Date().toISOString().split('T')[0];
+  document.getElementById('todayDateInput').value = todaySelectedDate;
+  todaySelectedRouteId = null;
+  refreshTodayData();
+}
+
+function renderTodayOnMap() {
+  if (!todayMapLayer) return;
+  todayMapLayer.clearLayers();
+  todayRouteLines.clear();
+
+  const bounds = [];
+  for (const r of todayRoutes) {
+    // Each route: mill (needs lookup) → yard (has lat/lon)
+    const mill = MILLS.find(m => m.uuid === r.mill?.uuid || m.name === r.mill?.name);
+    const yard = YARDS.find(y => y.uuid === r.yard?.uuid || y.posNumber === r.yard?.posNumber);
+    if (!mill || !yard || mill.lat == null || yard.lat == null) continue;
+
+    const color = r.status === 'delivered' ? '#2e7d32'
+                : r.status === 'in-progress' ? '#e65100'
+                : r.status === 'cancelled' ? '#c62828'
+                : '#1565c0';
+
+    const line = L.polyline([[mill.lat, mill.lon], [yard.lat, yard.lon]], {
+      color, weight: 3, opacity: 0.7, dashArray: r.status === 'cancelled' ? '6 4' : null
+    }).bindPopup(`<strong>${escapeHtml(mill.name)}</strong> → ${escapeHtml(yard.storeNumber)} ${escapeHtml(yard.city)}<br>
+      Scheduled: ${r.scheduledAt ? new Date(r.scheduledAt).toLocaleString() : '?'}<br>
+      ${r.truck ? 'Truck: ' + escapeHtml(r.truck.name) + (r.truck.driver ? ' / ' + escapeHtml(r.truck.driver) : '') + '<br>' : ''}
+      <span style="color:${color};font-weight:700;">${r.status}</span>`).addTo(todayMapLayer);
+
+    const millIcon = L.circleMarker([mill.lat, mill.lon], { radius: 6, color: '#c62828', fillColor: '#e53935', fillOpacity: 0.9, weight: 2 }).bindPopup(`🏭 <strong>${escapeHtml(mill.name)}</strong>`).addTo(todayMapLayer);
+    const yardIcon = L.circleMarker([yard.lat, yard.lon], { radius: 6, color: '#1565c0', fillColor: '#1e88e5', fillOpacity: 0.9, weight: 2 }).bindPopup(`🏪 <strong>${escapeHtml(yard.storeNumber)}</strong> ${escapeHtml(yard.city)}`).addTo(todayMapLayer);
+
+    todayRouteLines.set(r.id, line);
+    bounds.push([mill.lat, mill.lon], [yard.lat, yard.lon]);
+  }
+
+  if (bounds.length > 0 && !todaySelectedRouteId && !todaySelectedVehicleId) {
+    try { map.fitBounds(bounds, { padding: [40, 40], maxZoom: 7 }); } catch (e) {}
+  }
+}
+
+function selectTodayRoute(scheduleId) {
+  todaySelectedRouteId = scheduleId;
+  todaySelectedVehicleId = null;
+  renderTodayRoutesList();
+  renderTodayVehicleList();
+  const r = todayRoutes.find(x => x.id === scheduleId);
+  if (!r) return;
+  const mill = MILLS.find(m => m.uuid === r.mill?.uuid || m.name === r.mill?.name);
+  const yard = YARDS.find(y => y.uuid === r.yard?.uuid || y.posNumber === r.yard?.posNumber);
+  if (!mill || !yard || mill.lat == null || yard.lat == null) {
+    alert('Cannot zoom: mill or yard coords missing. Use the Geocode button in Settings.');
+    return;
+  }
+  const bounds = [[mill.lat, mill.lon], [yard.lat, yard.lon]];
+  try { map.fitBounds(bounds, { padding: [60, 60] }); } catch (e) {}
+  const line = todayRouteLines.get(scheduleId);
+  if (line) line.openPopup();
+}
+
+function selectTodayVehicle(vehicleId) {
+  todaySelectedVehicleId = vehicleId;
+  todaySelectedRouteId = null;
+  renderTodayRoutesList();
+  renderTodayVehicleList();
+  const v = todayVehicles.find(x => String(x.id) === String(vehicleId));
+  if (!v) return;
+  if (!v.lat || !v.lon) { alert('No location for this vehicle.'); return; }
+  try { map.setView([v.lat, v.lon], 12, { animate: true }); } catch (e) {}
+  // Open popup on matching truck marker
+  setTimeout(() => {
+    if (truckLayer) {
+      truckLayer.eachLayer(layer => {
+        const ll = layer.getLatLng && layer.getLatLng();
+        if (ll && Math.abs(ll.lat - v.lat) < 0.00001 && Math.abs(ll.lng - v.lon) < 0.00001) {
+          layer.openPopup();
+        }
+      });
+    }
+  }, 300);
+}
+
+// ============================================================
+// SETTINGS MODAL (Mills / Yards / Activity Log)
+// ============================================================
+
+let settingsMillsFilter = '';
+let settingsYardsFilter = '';
+let settingsActivityOffset = 0;
+let settingsEditingMillUuid = null;
+let settingsEditingYardUuid = null;
+
+function openSettingsModal() {
+  document.getElementById('settingsModal').style.display = 'flex';
+  switchSettingsTab('mills');
+}
+
+function closeSettingsModal() {
+  document.getElementById('settingsModal').style.display = 'none';
+  cancelMillForm();
+  cancelYardForm();
+}
+
+function switchSettingsTab(tab) {
+  document.querySelectorAll('#settingsModal .tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.settingsTab === tab);
+  });
+  document.querySelectorAll('#settingsModal .settings-tab-content').forEach(c => {
+    c.classList.toggle('active', c.id === 'settings-' + tab);
+  });
+  if (tab === 'mills') renderSettingsMills();
+  if (tab === 'yards') renderSettingsYards();
+  if (tab === 'vehicles') loadSettingsVehicles();
+  if (tab === 'activity') { settingsActivityOffset = 0; loadSettingsActivity(true); }
+}
+
+// --- MILLS tab ---
+
+function renderSettingsMills() {
+  const tbody = document.getElementById('settingsMillsTbody');
+  const f = settingsMillsFilter.toLowerCase();
+  const filtered = MILLS.filter(m => {
+    if (!f) return true;
+    return (m.name + ' ' + m.vendor + ' ' + m.city + ' ' + (m.stateZip || '')).toLowerCase().includes(f);
+  }).sort((a,b) => a.name.localeCompare(b.name));
+
+  document.getElementById('settingsMillsCount').textContent = `${filtered.length} of ${MILLS.length}`;
+  tbody.innerHTML = filtered.map(m => `
+    <tr>
+      <td>${escapeHtml(m.name)}</td>
+      <td>${escapeHtml(m.product || '')}</td>
+      <td>${escapeHtml(m.vendor || '')}</td>
+      <td>${escapeHtml(m.city || '')}, ${escapeHtml(m.stateZip || '')}</td>
+      <td>${m.lat ? m.lat.toFixed(4) + ', ' + m.lon.toFixed(4) : '<span style="color:#aaa;">not geocoded</span>'}</td>
+      <td class="actions">
+        <button class="btn-sm btn-edit" onclick="editMill('${m.uuid}')">Edit</button>
+        <button class="btn-sm btn-delete" onclick="deleteMill('${m.uuid}')">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterMills(v) { settingsMillsFilter = v; renderSettingsMills(); }
+
+function showMillForm(mill) {
+  settingsEditingMillUuid = mill ? mill.uuid : null;
+  document.getElementById('millFormTitle').textContent = mill ? 'Edit Mill' : 'Add New Mill';
+  document.getElementById('millFormName').value    = mill ? mill.name    : '';
+  document.getElementById('millFormProduct').value = mill ? mill.product : '';
+  document.getElementById('millFormVendor').value  = mill ? mill.vendor  : '';
+  document.getElementById('millFormStreet').value  = mill ? mill.street  : '';
+  document.getElementById('millFormCity').value    = mill ? mill.city    : '';
+  document.getElementById('millFormStateZip').value= mill ? mill.stateZip: '';
+  document.getElementById('millForm').style.display = 'block';
+  document.getElementById('millFormName').focus();
+}
+
+function cancelMillForm() {
+  settingsEditingMillUuid = null;
+  const el = document.getElementById('millForm');
+  if (el) el.style.display = 'none';
+}
+
+function editMill(uuid) {
+  const m = MILLS.find(x => x.uuid === uuid);
+  if (m) showMillForm(m);
+}
+
+async function saveMill() {
+  const name     = document.getElementById('millFormName').value.trim();
+  const product  = document.getElementById('millFormProduct').value.trim();
+  const vendor   = document.getElementById('millFormVendor').value.trim();
+  const street   = document.getElementById('millFormStreet').value.trim();
+  const city     = document.getElementById('millFormCity').value.trim();
+  const stateZip = document.getElementById('millFormStateZip').value.trim();
+  if (!name || !street || !city || !stateZip) { alert('Name, Street, City, and State/ZIP are required.'); return; }
+  const address = `${street}, ${city}, ${stateZip}`;
+  const payload = { name, product, vendor, street, city, stateZip, address };
+  const btn = document.getElementById('millFormSaveBtn');
+  btn.disabled = true; btn.textContent = 'Saving & geocoding...';
+  try {
+    let resp;
+    if (settingsEditingMillUuid) {
+      resp = await fetch(`/api/mills/${settingsEditingMillUuid}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    } else {
+      resp = await fetch('/api/mills', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    }
+    if (!resp.ok) throw new Error((await resp.json()).error || 'Save failed');
+    const data = await resp.json();
+    if (data.geocoded === false) {
+      alert('Saved, but geocoding failed — lat/lon are blank. You may want to verify the address.');
+    }
+    cancelMillForm();
+    await loadReferenceData();
+    renderSettingsMills();
+  } catch (e) {
+    alert('Error: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save';
+  }
+}
+
+async function deleteMill(uuid) {
+  const m = MILLS.find(x => x.uuid === uuid);
+  if (!m) return;
+  if (!confirm(`Delete mill "${m.name}"? This cannot be undone.`)) return;
+  try {
+    const resp = await fetch(`/api/mills/${uuid}`, { method: 'DELETE' });
+    if (!resp.ok) throw new Error('Delete failed');
+    await loadReferenceData();
+    renderSettingsMills();
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+async function geocodeAllMills() {
+  const missing = MILLS.filter(m => m.lat == null || m.lon == null);
+  if (missing.length === 0) {
+    alert('All mills already have coordinates. Nothing to geocode.');
+    return;
+  }
+  if (!confirm(`Geocode ${missing.length} mill addresses? This takes about ${Math.ceil(missing.length * 1.2)} seconds (rate-limited to respect the geocoding service).`)) return;
+  const btn = document.getElementById('geocodeAllBtn');
+  const origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = `🌐 Geocoding ${missing.length}...`;
+  try {
+    const resp = await fetch('/api/mills/geocode-all', { method: 'POST' });
+    if (!resp.ok) throw new Error('Geocode request failed');
+    const data = await resp.json();
+    await loadReferenceData();
+    renderSettingsMills();
+    let msg = `Geocoded ${data.succeeded} of ${data.total} mills.`;
+    if (data.failed > 0) {
+      msg += `\n\n${data.failed} failed:\n` + data.failures.slice(0, 10).map(f => `• ${f.name} (${f.address})`).join('\n');
+      if (data.failures.length > 10) msg += `\n...and ${data.failures.length - 10} more.`;
+    }
+    alert(msg);
+  } catch (e) {
+    alert('Error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
+}
+
+// --- YARDS tab ---
+
+function renderSettingsYards() {
+  const tbody = document.getElementById('settingsYardsTbody');
+  const f = settingsYardsFilter.toLowerCase();
+  const filtered = YARDS.filter(y => {
+    if (!f) return true;
+    return (y.storeNumber + ' ' + y.posNumber + ' ' + y.city + ' ' + y.state + ' ' + (y.market || '') + ' ' + (y.manager || '')).toLowerCase().includes(f);
+  }).sort((a,b) => (a.state || '').localeCompare(b.state || '') || (a.city || '').localeCompare(b.city || ''));
+
+  document.getElementById('settingsYardsCount').textContent = `${filtered.length} of ${YARDS.length}`;
+  tbody.innerHTML = filtered.map(y => `
+    <tr>
+      <td>${escapeHtml(y.storeNumber)}</td>
+      <td>${escapeHtml(y.storeType || '')}</td>
+      <td>${escapeHtml(y.city || '')}, ${escapeHtml(y.state || '')} ${escapeHtml(y.zip || '')}</td>
+      <td>${escapeHtml(y.market || '')}</td>
+      <td>${y.lat != null ? y.lat.toFixed(4) + ', ' + y.lon.toFixed(4) : '<span style="color:#c62828;">missing</span>'}</td>
+      <td class="actions">
+        <button class="btn-sm btn-edit" onclick="editYard('${y.uuid}')">Edit</button>
+        <button class="btn-sm btn-delete" onclick="deleteYard('${y.uuid}')">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterYards(v) { settingsYardsFilter = v; renderSettingsYards(); }
+
+function showYardForm(yard) {
+  settingsEditingYardUuid = yard ? yard.uuid : null;
+  document.getElementById('yardFormTitle').textContent = yard ? 'Edit Yard' : 'Add New Yard';
+  document.getElementById('yardFormStoreNumber').value = yard ? yard.storeNumber : '';
+  document.getElementById('yardFormPosNumber').value   = yard ? yard.posNumber   : '';
+  document.getElementById('yardFormStoreType').value   = yard ? yard.storeType   : '';
+  document.getElementById('yardFormStreet').value      = yard ? yard.street      : '';
+  document.getElementById('yardFormCity').value        = yard ? yard.city        : '';
+  document.getElementById('yardFormState').value       = yard ? yard.state       : '';
+  document.getElementById('yardFormZip').value         = yard ? yard.zip         : '';
+  document.getElementById('yardFormLat').value         = yard && yard.lat != null ? yard.lat : '';
+  document.getElementById('yardFormLon').value         = yard && yard.lon != null ? yard.lon : '';
+  document.getElementById('yardFormManager').value     = yard ? yard.manager     : '';
+  document.getElementById('yardFormMarket').value      = yard ? yard.market      : '';
+  document.getElementById('yardForm').style.display = 'block';
+  document.getElementById('yardFormStoreNumber').focus();
+}
+
+function cancelYardForm() {
+  settingsEditingYardUuid = null;
+  const el = document.getElementById('yardForm');
+  if (el) el.style.display = 'none';
+}
+
+function editYard(uuid) {
+  const y = YARDS.find(x => x.uuid === uuid);
+  if (y) showYardForm(y);
+}
+
+async function saveYard() {
+  const storeNumber = document.getElementById('yardFormStoreNumber').value.trim();
+  const posNumber   = document.getElementById('yardFormPosNumber').value.trim();
+  const storeType   = document.getElementById('yardFormStoreType').value.trim();
+  const street      = document.getElementById('yardFormStreet').value.trim();
+  const city        = document.getElementById('yardFormCity').value.trim();
+  const state       = document.getElementById('yardFormState').value.trim().toUpperCase();
+  const zip         = document.getElementById('yardFormZip').value.trim();
+  const latStr      = document.getElementById('yardFormLat').value.trim();
+  const lonStr      = document.getElementById('yardFormLon').value.trim();
+  const manager     = document.getElementById('yardFormManager').value.trim();
+  const market      = document.getElementById('yardFormMarket').value.trim();
+  if (!storeNumber || !city || !state) { alert('Store Number, City, and State are required.'); return; }
+  const lat = latStr === '' ? null : parseFloat(latStr);
+  const lon = lonStr === '' ? null : parseFloat(lonStr);
+  if (latStr && (isNaN(lat) || lat < -90 || lat > 90)) { alert('Latitude must be between -90 and 90.'); return; }
+  if (lonStr && (isNaN(lon) || lon < -180 || lon > 180)) { alert('Longitude must be between -180 and 180.'); return; }
+  const payload = { storeNumber, posNumber, storeType, street, city, state, zip, lat, lon, manager, market };
+  const btn = document.getElementById('yardFormSaveBtn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  try {
+    let resp;
+    if (settingsEditingYardUuid) {
+      resp = await fetch(`/api/yards/${settingsEditingYardUuid}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    } else {
+      resp = await fetch('/api/yards', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    }
+    if (!resp.ok) throw new Error((await resp.json()).error || 'Save failed');
+    cancelYardForm();
+    await loadReferenceData();
+    renderSettingsYards();
+  } catch (e) {
+    alert('Error: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save';
+  }
+}
+
+async function deleteYard(uuid) {
+  const y = YARDS.find(x => x.uuid === uuid);
+  if (!y) return;
+  if (!confirm(`Delete yard "${y.storeNumber} - ${y.city}, ${y.state}"? This cannot be undone.`)) return;
+  try {
+    const resp = await fetch(`/api/yards/${uuid}`, { method: 'DELETE' });
+    if (!resp.ok) throw new Error('Delete failed');
+    await loadReferenceData();
+    renderSettingsYards();
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+// --- VEHICLES tab (read-only, source: IntelliShift) ---
+
+let settingsVehicles = [];
+let settingsVehiclesFilter = '';
+
+async function loadSettingsVehicles() {
+  const tbody = document.getElementById('settingsVehiclesTbody');
+  tbody.innerHTML = '<tr><td colspan="8" style="padding:20px;text-align:center;color:#888;">Loading vehicles from IntelliShift…</td></tr>';
+  try {
+    const resp = await fetch('/api/intellishift/vehicles');
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+    settingsVehicles = data.vehicles || [];
+    renderSettingsVehicles();
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="8" style="padding:20px;text-align:center;color:#c62828;">Error: ${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+function filterVehiclesSettings(v) {
+  settingsVehiclesFilter = v;
+  renderSettingsVehicles();
+}
+
+function renderSettingsVehicles() {
+  const tbody = document.getElementById('settingsVehiclesTbody');
+  const f = settingsVehiclesFilter.toLowerCase();
+  const filtered = settingsVehicles.filter(v => {
+    if (!f) return true;
+    return (v.name + ' ' + (v.driver || '') + ' ' + (v.description || '') + ' ' + (v.city || '') + ' ' + (v.state || '') + ' ' + v.type).toLowerCase().includes(f);
+  }).sort((a, b) => {
+    // Trucks first, then trailers; within type sort by name
+    if (a.type !== b.type) return a.type === 'truck' ? -1 : 1;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+
+  document.getElementById('settingsVehiclesCount').textContent = `${filtered.length} of ${settingsVehicles.length}`;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="padding:20px;text-align:center;color:#888;">No vehicles match.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(v => {
+    const isMoving = parseFloat(v.speed) > 0;
+    const statusIcon = v.engineOn ? (isMoving ? '🟢' : '🟡') : '🔴';
+    const statusText = v.engineOn ? (isMoving ? `Moving ${Math.round(v.speed)} mph` : 'Idling') : 'Off';
+    const typeBadge = v.type === 'truck'
+      ? '<span class="activity-badge" style="background:#e3f2fd;color:#1565c0;">🚛 Truck</span>'
+      : v.type === 'trailer'
+      ? '<span class="activity-badge" style="background:#fff8e1;color:#e65100;">🚚 Trailer</span>'
+      : '<span class="activity-badge" style="background:#f5f5f5;color:#666;">Vehicle</span>';
+    const location = [v.city, v.state].filter(Boolean).join(', ') || '—';
+    const updated = v.updated ? formatRelativeTime(v.updated) : '—';
+    return `
+      <tr>
+        <td>${typeBadge}</td>
+        <td style="font-family:'Courier New',monospace;">${escapeHtml(v.name)}</td>
+        <td>${escapeHtml(v.driver || '')}</td>
+        <td style="font-size:11px;color:#555;">${escapeHtml(v.description || '')}</td>
+        <td>${statusIcon} ${statusText}</td>
+        <td>${escapeHtml(location)}</td>
+        <td style="font-size:11px;" title="${escapeHtml(new Date(v.updated || 0).toLocaleString())}">${updated}</td>
+        <td class="actions"><button class="btn-sm btn-edit" onclick="zoomToVehicleFromSettings('${escapeHtml(String(v.id))}')">📍 Map</button></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function zoomToVehicleFromSettings(vehicleId) {
+  const v = settingsVehicles.find(x => String(x.id) === String(vehicleId));
+  if (!v) return;
+  if (!v.lat || !v.lon) { alert('This vehicle has no location data.'); return; }
+  closeSettingsModal();
+  // Ensure vehicles are visible on the map
+  if (typeof toggleTrucks === 'function') {
+    const btn = document.getElementById('truckToggleBtn');
+    if (btn && btn.textContent.includes('Show')) toggleTrucks();
+  }
+  // Pan/zoom the map
+  try {
+    map.setView([v.lat, v.lon], 12, { animate: true });
+    // Find matching marker in truckLayer and open its popup
+    setTimeout(() => {
+      if (truckLayer) {
+        truckLayer.eachLayer(layer => {
+          const ll = layer.getLatLng && layer.getLatLng();
+          if (ll && Math.abs(ll.lat - v.lat) < 0.00001 && Math.abs(ll.lng - v.lon) < 0.00001) {
+            layer.openPopup();
+          }
+        });
+      }
+    }, 300);
+  } catch (e) { console.error('zoomToVehicle failed:', e); }
+}
+
+// --- ACTIVITY LOG tab ---
+
+function formatRelativeTime(isoStr) {
+  const diff = Date.now() - new Date(isoStr).getTime();
+  const sec = Math.floor(diff / 1000);
+  if (sec < 60) return sec + 's ago';
+  const min = Math.floor(sec / 60);
+  if (min < 60) return min + 'm ago';
+  const hrs = Math.floor(min / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return days + 'd ago';
+  return new Date(isoStr).toLocaleDateString();
+}
+
+async function loadSettingsActivity(reset) {
+  const container = document.getElementById('settingsActivityRows');
+  if (reset) {
+    container.innerHTML = '';
+    settingsActivityOffset = 0;
+  }
+  try {
+    const resp = await fetch(`/api/activity?limit=100&offset=${settingsActivityOffset}`);
+    const data = await resp.json();
+    document.getElementById('settingsActivityTotal').textContent = `${data.total} total events`;
+
+    if (reset && data.events.length === 0) {
+      container.innerHTML = '<div style="padding:20px;text-align:center;color:#888;">No activity recorded yet. Make a change to create the first entry.</div>';
+      document.getElementById('settingsActivityLoadMore').style.display = 'none';
+      return;
+    }
+
+    data.events.forEach(ev => {
+      const row = document.createElement('div');
+      row.className = 'activity-row';
+      const detailsStr = JSON.stringify(ev.details || {}, null, 0);
+      row.innerHTML = `
+        <div title="${escapeHtml(new Date(ev.timestamp).toLocaleString())}">${formatRelativeTime(ev.timestamp)}</div>
+        <div>${escapeHtml(ev.ip || '—')}</div>
+        <div>${escapeHtml(ev.user || '—')}</div>
+        <div><span class="activity-badge badge-${ev.action}">${escapeHtml(ev.action)}</span></div>
+        <div>${escapeHtml(ev.entity)}</div>
+        <div class="activity-details" onclick="this.classList.toggle('expanded')" title="Click to expand">${escapeHtml(detailsStr)}</div>
+      `;
+      container.appendChild(row);
+    });
+
+    settingsActivityOffset += data.events.length;
+    document.getElementById('settingsActivityLoadMore').style.display = settingsActivityOffset < data.total ? 'inline-block' : 'none';
+  } catch (e) {
+    container.innerHTML = '<div style="padding:20px;color:#c62828;">Error loading activity: ' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+// Shared helper
+function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Wire up settings tab click handler (scoped to modal, avoids conflict with main tab system)
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('#settingsModal .tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchSettingsTab(btn.dataset.settingsTab));
+  });
+});
 </script>
 
 <!-- Schedule Modal -->
@@ -2117,6 +3096,156 @@ function switchScheduleView(view) {
     <div id="assignTruckList" style="max-height:400px;overflow-y:auto;border:1px solid #dde3ea;border-radius:6px;"></div>
     <div class="modal-actions" style="margin-top:10px;">
       <button class="btn btn-secondary" onclick="closeAssignTruckModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="schedule-modal settings-modal" id="settingsModal" style="display:none;" onclick="if(event.target===this)closeSettingsModal()">
+  <div class="modal-card">
+    <h3>⚙️ Settings</h3>
+    <div class="tab-bar">
+      <button class="tab-btn active" data-settings-tab="mills">Mills</button>
+      <button class="tab-btn" data-settings-tab="yards">Yards</button>
+      <button class="tab-btn" data-settings-tab="vehicles">Vehicles</button>
+      <button class="tab-btn" data-settings-tab="activity">Activity Log</button>
+    </div>
+
+    <!-- MILLS TAB -->
+    <div id="settings-mills" class="settings-tab-content active">
+      <div class="settings-toolbar">
+        <input type="search" placeholder="Search mills by name, vendor, city..." oninput="filterMills(this.value)" />
+        <span style="font-size:11px;color:#888;" id="settingsMillsCount"></span>
+        <button class="btn-add" id="geocodeAllBtn" onclick="geocodeAllMills()" style="background:#1565c0;" title="Geocode addresses for mills missing lat/lon">🌐 Geocode missing</button>
+        <button class="btn-add" onclick="showMillForm(null)">+ Add Mill</button>
+      </div>
+      <div id="millForm" class="settings-form" style="display:none;">
+        <h4 id="millFormTitle">Add New Mill</h4>
+        <div class="form-row">
+          <div><label>Name *</label><input type="text" id="millFormName" /></div>
+          <div><label>Product</label><input type="text" id="millFormProduct" placeholder="YP, OSB, etc." /></div>
+        </div>
+        <div class="form-row">
+          <div><label>Vendor #</label><input type="text" id="millFormVendor" /></div>
+          <div><label>Street *</label><input type="text" id="millFormStreet" /></div>
+        </div>
+        <div class="form-row">
+          <div><label>City *</label><input type="text" id="millFormCity" /></div>
+          <div><label>State / ZIP *</label><input type="text" id="millFormStateZip" placeholder="GA 31539" /></div>
+        </div>
+        <div style="font-size:11px;color:#888;margin-top:4px;">Lat/lon will be auto-geocoded from the address on save.</div>
+        <div class="form-actions">
+          <button class="btn btn-secondary" onclick="cancelMillForm()">Cancel</button>
+          <button class="btn btn-primary" id="millFormSaveBtn" onclick="saveMill()">Save</button>
+        </div>
+      </div>
+      <div style="overflow:auto;max-height:400px;">
+        <table class="settings-table">
+          <thead><tr><th>Name</th><th>Product</th><th>Vendor</th><th>Location</th><th>Coords</th><th style="width:110px;">Actions</th></tr></thead>
+          <tbody id="settingsMillsTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- YARDS TAB -->
+    <div id="settings-yards" class="settings-tab-content">
+      <div class="settings-toolbar">
+        <input type="search" placeholder="Search yards by #, city, market..." oninput="filterYards(this.value)" />
+        <span style="font-size:11px;color:#888;" id="settingsYardsCount"></span>
+        <button class="btn-add" onclick="showYardForm(null)">+ Add Yard</button>
+      </div>
+      <div id="yardForm" class="settings-form" style="display:none;">
+        <h4 id="yardFormTitle">Add New Yard</h4>
+        <div class="form-row">
+          <div><label>Store # *</label><input type="text" id="yardFormStoreNumber" placeholder="900-459" /></div>
+          <div><label>POS #</label><input type="text" id="yardFormPosNumber" /></div>
+        </div>
+        <div class="form-row">
+          <div><label>Store Type</label><input type="text" id="yardFormStoreType" placeholder="CCP, LUMBER, etc." /></div>
+          <div><label>Market</label><input type="text" id="yardFormMarket" /></div>
+        </div>
+        <div class="form-row">
+          <div><label>Street</label><input type="text" id="yardFormStreet" /></div>
+          <div><label>Manager</label><input type="text" id="yardFormManager" /></div>
+        </div>
+        <div class="form-row">
+          <div><label>City *</label><input type="text" id="yardFormCity" /></div>
+          <div><label>State *</label><input type="text" id="yardFormState" placeholder="GA" maxlength="2" /></div>
+        </div>
+        <div class="form-row">
+          <div><label>ZIP</label><input type="text" id="yardFormZip" /></div>
+          <div></div>
+        </div>
+        <div class="form-row">
+          <div><label>Latitude</label><input type="number" id="yardFormLat" step="0.000001" placeholder="31.257526" /></div>
+          <div><label>Longitude</label><input type="number" id="yardFormLon" step="0.000001" placeholder="-85.403661" /></div>
+        </div>
+        <div style="font-size:11px;color:#888;margin-top:4px;">Lat/lon are used for direct map display on yards — enter them accurately.</div>
+        <div class="form-actions">
+          <button class="btn btn-secondary" onclick="cancelYardForm()">Cancel</button>
+          <button class="btn btn-primary" id="yardFormSaveBtn" onclick="saveYard()">Save</button>
+        </div>
+      </div>
+      <div style="overflow:auto;max-height:400px;">
+        <table class="settings-table">
+          <thead><tr><th>Store #</th><th>Type</th><th>Location</th><th>Market</th><th>Coords</th><th style="width:110px;">Actions</th></tr></thead>
+          <tbody id="settingsYardsTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VEHICLES TAB (read-only, source: IntelliShift) -->
+    <div id="settings-vehicles" class="settings-tab-content">
+      <div class="settings-toolbar">
+        <input type="search" placeholder="Search vehicles by #, driver, description, city..." oninput="filterVehiclesSettings(this.value)" />
+        <span style="font-size:11px;color:#888;" id="settingsVehiclesCount"></span>
+        <button class="btn-add" onclick="loadSettingsVehicles()" style="background:#555;">🔄 Refresh</button>
+      </div>
+      <div style="font-size:11px;color:#888;margin-bottom:6px;">
+        Source: IntelliShift (read-only). Driver and vehicle assignment must be edited there.
+      </div>
+      <div style="overflow:auto;max-height:440px;">
+        <table class="settings-table">
+          <thead><tr>
+            <th>Type</th>
+            <th>Vehicle #</th>
+            <th>Driver</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th>Location</th>
+            <th>Last Updated</th>
+            <th style="width:90px;">Actions</th>
+          </tr></thead>
+          <tbody id="settingsVehiclesTbody">
+            <tr><td colspan="8" style="padding:20px;text-align:center;color:#888;">Loading vehicles from IntelliShift…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ACTIVITY LOG TAB -->
+    <div id="settings-activity" class="settings-tab-content">
+      <div class="settings-toolbar">
+        <span style="font-size:12px;color:#555;">Audit trail of all changes. User identity will populate when SSO is connected.</span>
+        <span style="margin-left:auto;font-size:11px;color:#888;" id="settingsActivityTotal"></span>
+        <button class="btn-add" onclick="loadSettingsActivity(true)" style="background:#555;">Refresh</button>
+      </div>
+      <div class="activity-row activity-header">
+        <div>Time</div>
+        <div>IP Address</div>
+        <div>User</div>
+        <div>Action</div>
+        <div>Entity</div>
+        <div>Details</div>
+      </div>
+      <div id="settingsActivityRows" style="max-height:400px;overflow-y:auto;"></div>
+      <div style="text-align:center;margin-top:10px;">
+        <button id="settingsActivityLoadMore" class="btn btn-secondary" style="display:none;width:auto;padding:6px 20px;font-size:12px;" onclick="loadSettingsActivity(false)">Load more</button>
+      </div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:10px;">
+      <button class="btn btn-secondary" onclick="closeSettingsModal()">Close</button>
     </div>
   </div>
 </div>

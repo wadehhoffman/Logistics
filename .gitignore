@@ -17,4 +17,9 @@ CarterLumberRoutes/CarterLumberRoutes.xcodeproj/project.xcworkspace/xcuserdata/
 CarterLumberRoutes/DerivedData/
 CarterLumberRoutes/.build/
 *.xcuserstate
+
+# Server-local state (per-deployment data, not repo content)
 schedule.json
+mills.json
+yards.json
+activity.json
