@@ -420,6 +420,13 @@ let YARDS = [];
 
 let map, routeLayer, millMarker, yardMarker, millCoords = null;
 const geocodeCache = {};
+
+// Inline SVG silhouettes used for vehicle type indication. currentColor lets them
+// inherit the label pill's white color. Sized to match single-line text (~10px tall).
+// Semi-truck: cab + trailer + 3 wheels.  Trailer-only: box + 2 wheels.
+const SVG_TRUCK   = '<svg viewBox="0 0 22 12" width="18" height="10" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="vertical-align:middle;margin-right:3px;"><rect x="0" y="3" width="6" height="6" rx="0.8"/><rect x="6.5" y="1" width="13" height="8" rx="0.4"/><circle cx="3" cy="10.5" r="1.3"/><circle cx="11" cy="10.5" r="1.3"/><circle cx="17" cy="10.5" r="1.3"/></svg>';
+const SVG_TRAILER = '<svg viewBox="0 0 20 12" width="18" height="10" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="vertical-align:middle;margin-right:3px;"><rect x="0" y="1" width="19" height="8" rx="0.4"/><circle cx="4"  cy="10.5" r="1.3"/><circle cx="15" cy="10.5" r="1.3"/></svg>';
+function vehicleIcon(type) { return type === 'trailer' ? SVG_TRAILER : SVG_TRUCK; }
 let MAPBOX_TOKEN_CLIENT = ''; // fetched from /api/config on load
 fetch('/api/config').then(r => r.json()).then(cfg => { MAPBOX_TOKEN_CLIENT = cfg.mapboxToken || ''; });
 
@@ -983,12 +990,12 @@ truckLayer.on('clusterclick', (ev) => {
   const children = ev.layer.getAllChildMarkers();
   const rows = children.map(m => {
     const v = m._vehicleData || {};
-    const typeEmoji = v.type === 'trailer' ? '🚚' : '🚛';
     const statusIcon = v.engineOn ? (parseFloat(v.speed) > 0 ? '🟢' : '🟡') : '🔴';
     const op = v.operator || v.driver || '';
     const label = op ? `${v.name} – ${op}` : v.name;
-    return `<div style="padding:4px 2px;border-bottom:1px solid #eee;cursor:pointer;" onclick="_clusterOpenVehicle(${v.id})">
-      ${typeEmoji} <strong>${label}</strong> ${statusIcon}
+    const iconColor = v.type === 'trailer' ? '#888' : '#1565c0';
+    return `<div style="padding:4px 2px;border-bottom:1px solid #eee;cursor:pointer;color:${iconColor};" onclick="_clusterOpenVehicle(${v.id})">
+      ${vehicleIcon(v.type)}<strong style="color:#222;">${label}</strong> ${statusIcon}
     </div>`;
   }).join('');
   const popup = L.popup({ maxWidth: 300, maxHeight: 320, autoPan: true })
@@ -1049,19 +1056,18 @@ async function loadTrucks() {
       const isMoving = parseFloat(v.speed) > 0;
       const statusIcon = v.engineOn ? (isMoving ? '🟢' : '🟡') : '🔴';
       const statusText = v.engineOn ? (isMoving ? 'Moving' : 'Idling') : 'Engine Off';
-      const typeEmoji = v.type === 'trailer' ? '🚚' : '🚛';
       const typeClass = v.type === 'trailer' ? 'trailer' : '';
       const statusClass = isMoving ? 'moving' : (v.engineOn ? 'idle' : 'stopped');
-      const labelText = v.driver ? `${v.name} – ${v.driver}` : v.name;
+      const op = v.operator || v.driver || '';
+      const labelText = op ? `${v.name} – ${op}` : v.name;
       const icon = L.divIcon({
         className: '',
-        html: `<div class="truck-label ${statusClass} ${typeClass}">${typeEmoji} ${labelText}</div>`,
+        html: `<div class="truck-label ${statusClass} ${typeClass}">${vehicleIcon(v.type)}${labelText}</div>`,
         iconAnchor: [35, 12]
       });
       const lastSeen = v.updated ? new Date(v.updated).toLocaleString() : 'Unknown';
       const location = [v.street, v.city, v.state].filter(Boolean).join(', ') || 'Location unknown';
-      const op = v.operator || v.driver || '';
-      const headerLine = op ? `${v.name} – ${op}` : v.name;
+      const headerLine = labelText;
       const descLine = v.description ? `<br><span style="color:#555;font-size:11px;">${v.description}</span>` : '';
       const typeLine = `<br><small style="color:#888;">${v.type === 'trailer' ? 'Trailer' : v.type === 'truck' ? 'Truck (CMV)' : 'Vehicle'}</small>`;
       const stopLine = !isMoving && v.stopDuration ? `<br>Stopped for: ${v.stopDuration}` : '';
@@ -2584,13 +2590,14 @@ function renderTodayVehicleList() {
   list.innerHTML = filtered.map(v => {
     const isMoving = parseFloat(v.speed) > 0;
     const statusIcon = v.engineOn ? (isMoving ? '🟢' : '🟡') : '🔴';
-    const typeEmoji = v.type === 'trailer' ? '🚚' : '🚛';
-    const label = v.driver ? `${v.name} – ${v.driver}` : v.name;
+    const op = v.operator || v.driver || '';
+    const label = op ? `${v.name} – ${op}` : v.name;
     const city = [v.city, v.state].filter(Boolean).join(', ') || 'Unknown';
     const isSel = String(v.id) === String(todaySelectedVehicleId) ? 'selected' : '';
+    const iconColor = v.type === 'trailer' ? '#888' : '#1565c0';
     return `
       <div class="today-vehicle-item ${isSel}" onclick="selectTodayVehicle('${escapeHtml(String(v.id))}')">
-        <div>${typeEmoji} <strong>${escapeHtml(label)}</strong> ${statusIcon}</div>
+        <div style="color:${iconColor};">${vehicleIcon(v.type)}<strong style="color:#222;">${escapeHtml(label)}</strong> ${statusIcon}</div>
         <div class="today-item-meta">📍 ${escapeHtml(city)}</div>
       </div>
     `;
@@ -3015,9 +3022,9 @@ function renderSettingsVehicles() {
     const statusIcon = v.engineOn ? (isMoving ? '🟢' : '🟡') : '🔴';
     const statusText = v.engineOn ? (isMoving ? `Moving ${Math.round(v.speed)} mph` : 'Idling') : 'Off';
     const typeBadge = v.type === 'truck'
-      ? '<span class="activity-badge" style="background:#e3f2fd;color:#1565c0;">🚛 Truck</span>'
+      ? `<span class="activity-badge" style="background:#e3f2fd;color:#1565c0;">${SVG_TRUCK} Truck</span>`
       : v.type === 'trailer'
-      ? '<span class="activity-badge" style="background:#fff8e1;color:#e65100;">🚚 Trailer</span>'
+      ? `<span class="activity-badge" style="background:#fff8e1;color:#e65100;">${SVG_TRAILER} Trailer</span>`
       : '<span class="activity-badge" style="background:#f5f5f5;color:#666;">Vehicle</span>';
     const location = [v.city, v.state].filter(Boolean).join(', ') || '—';
     const updated = v.updated ? formatRelativeTime(v.updated) : '—';
