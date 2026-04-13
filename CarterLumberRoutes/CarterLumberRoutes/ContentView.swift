@@ -96,7 +96,7 @@ struct ContentView: View {
                 Spacer()
                 VStack(alignment: .leading, spacing: 4) {
                     Divider()
-                    Text("58 mills / 238 yards").font(.caption2).foregroundStyle(.tertiary)
+                    Text("\(locationStore.mills.count) mills / \(locationStore.yards.count) yards").font(.caption2).foregroundStyle(.tertiary)
                     Text("v1.0.0").font(.caption2).foregroundStyle(.quaternary)
                 }.padding(.horizontal, 24).padding(.bottom, 24)
             }
@@ -917,6 +917,7 @@ struct TruckKPICardView: View {
 
 struct SettingsContentView: View {
     @Environment(AppConfiguration.self) private var config
+    @Environment(LocationDataStore.self) private var dataStore
     @State private var updateStatus: UpdateCheckStatus = .idle
     @State private var latestVersion: String?
     @State private var updateURL: String?
@@ -978,6 +979,41 @@ struct SettingsContentView: View {
                 }
             }
 
+            Section("Reference Data") {
+                HStack {
+                    Text("Mills"); Spacer()
+                    Text("\(dataStore.mills.count)").foregroundStyle(.secondary)
+                }
+                HStack {
+                    Text("Yards"); Spacer()
+                    Text("\(dataStore.yards.count)").foregroundStyle(.secondary)
+                }
+                HStack {
+                    Text("Last refreshed"); Spacer()
+                    if let when = dataStore.lastSyncedAt {
+                        Text(when, style: .relative).foregroundStyle(.secondary)
+                    } else {
+                        Text("never (using cache or seed)").foregroundStyle(.secondary).italic()
+                    }
+                }
+                Button {
+                    Task { await dataStore.refresh(serverBaseURL: config.intelliShiftBaseURL) }
+                } label: {
+                    HStack {
+                        Image(systemName: "arrow.clockwise")
+                        Text("Reload from Server")
+                        Spacer()
+                        if dataStore.isSyncing { ProgressView().controlSize(.small) }
+                    }
+                }
+                .disabled(dataStore.isSyncing)
+                if let err = dataStore.lastSyncError {
+                    Text(err).font(.caption).foregroundStyle(.red)
+                }
+                Text("Mills/Yards are fetched from the server on launch and cached locally so the app works offline.")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+
             Section("App Info") {
                 HStack {
                     Text("App")
@@ -990,11 +1026,6 @@ struct SettingsContentView: View {
                     Text("\(currentVersion) (\(buildNumber))")
                         .font(.system(.body, design: .monospaced))
                         .foregroundStyle(.secondary)
-                }
-                HStack {
-                    Text("Data")
-                    Spacer()
-                    Text("58 mills, 238 yards").foregroundStyle(.secondary)
                 }
             }
 

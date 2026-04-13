@@ -10,6 +10,12 @@ struct CarterLumberRoutesApp: App {
             ContentView()
                 .environment(locationStore)
                 .environment(appConfig)
+                .task {
+                    // Background refresh of Mills/Yards from server on launch.
+                    // Cache from previous session has already loaded synchronously,
+                    // so the UI is up before this completes.
+                    await locationStore.refresh(serverBaseURL: appConfig.intelliShiftBaseURL)
+                }
         }
     }
 }
