@@ -290,6 +290,14 @@ struct RouteQuickDetailSheet: View {
                     Section("Notes") { Text(route.notes).font(.callout) }
                 }
 
+                if let hos = route.hosProjection, !hos.segments.isEmpty {
+                    Section {
+                        HOSBreakdownView(projection: hos)
+                            .listRowInsets(EdgeInsets())
+                            .listRowBackground(Color.clear)
+                    }
+                }
+
                 Section("Actions") {
                     if route.statusEnum == .scheduled {
                         Button {
