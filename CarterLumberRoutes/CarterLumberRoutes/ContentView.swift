@@ -8,24 +8,24 @@ struct ContentView: View {
 
     enum AppPage: String, CaseIterable, Identifiable {
         case singleRoute = "Route Planner"
-        case truckRoute = "Truck Route"
+        case today = "Today"
         case schedule = "Schedule"
         case settings = "Settings"
         var id: String { rawValue }
         var icon: String {
             switch self {
             case .singleRoute: return "arrow.triangle.turn.up.right.diamond"
-            case .truckRoute: return "truck.box.fill"
-            case .schedule: return "calendar"
-            case .settings: return "gear"
+            case .today:       return "map.fill"
+            case .schedule:    return "calendar"
+            case .settings:    return "gear"
             }
         }
         var subtitle: String {
             switch self {
             case .singleRoute: return "Mill to Yard routing"
-            case .truckRoute: return "Live truck + 2-leg route"
-            case .schedule: return "View & manage scheduled routes"
-            case .settings: return "API keys, fuel settings"
+            case .today:       return "Dispatcher dashboard"
+            case .schedule:    return "View & manage scheduled routes"
+            case .settings:    return "API keys, fuel settings"
             }
         }
     }
@@ -48,8 +48,19 @@ struct ContentView: View {
         switch selectedPage {
         case .singleRoute:
             SingleRouteContentView(showMenu: $showMenu)
-        case .truckRoute:
-            TruckRouteContentView(showMenu: $showMenu)
+        case .today:
+            NavigationStack {
+                TodayView()
+                    .navigationTitle("Today")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button { withAnimation(.easeOut(duration: 0.25)) { showMenu = true } } label: {
+                                Image(systemName: "line.3.horizontal").font(.title3).foregroundStyle(Color.carterBlue)
+                            }
+                        }
+                    }
+            }
         case .schedule:
             NavigationStack {
                 ScheduleContentView()
