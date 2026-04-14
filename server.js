@@ -14,6 +14,108 @@ const MAPBOX_TOKEN = secrets.MAPBOX_TOKEN || process.env.MAPBOX_TOKEN || '';
 const IS_EMAIL    = secrets.INTELLISHIFT_EMAIL    || process.env.IS_EMAIL    || '';
 const IS_PASSWORD = secrets.INTELLISHIFT_PASSWORD || process.env.IS_PASSWORD || '';
 
+// States we operate in — loads outside these are filtered out
+// Derived from YardList.xlsx unique states (16 total; trim when confirmed)
+const OPERATING_STATES = ['AL','AR','FL','GA','IN','KY','MD','MI','NC','NJ','OH','PA','SC','TN','VA','WV'];
+
+// --- 123Loadboard cache (4hr TTL) ---
+const LOADS_CACHE_TTL = 4 * 60 * 60 * 1000;
+let cachedLoads = null;
+let loadsLoadedAt = 0;
+const LOADBOARD_CLIENT_ID     = secrets.LOADBOARD_CLIENT_ID     || process.env.LOADBOARD_CLIENT_ID     || '';
+const LOADBOARD_CLIENT_SECRET = secrets.LOADBOARD_CLIENT_SECRET || process.env.LOADBOARD_CLIENT_SECRET || '';
+
+// Mock load generator — used until 123Loadboard API credentials arrive
+function generateMockLoads() {
+  const equipment = ['Flatbed', 'Van', 'Reefer', 'Stepdeck'];
+  const cities = {
+    OH: [['Columbus',39.9612,-82.9988],['Cleveland',41.4993,-81.6944],['Cincinnati',39.1031,-84.5120],['Toledo',41.6528,-83.5379]],
+    PA: [['Pittsburgh',40.4406,-79.9959],['Philadelphia',39.9526,-75.1652],['Allentown',40.6084,-75.4902]],
+    KY: [['Louisville',38.2527,-85.7585],['Lexington',38.0406,-84.5037]],
+    IN: [['Indianapolis',39.7684,-86.1581],['Fort Wayne',41.0793,-85.1394]],
+    MI: [['Detroit',42.3314,-83.0458],['Grand Rapids',42.9634,-85.6681]],
+    WV: [['Charleston',38.3498,-81.6326],['Morgantown',39.6295,-79.9559]],
+    VA: [['Richmond',37.5407,-77.4360],['Roanoke',37.2710,-79.9414]],
+    NC: [['Charlotte',35.2271,-80.8431],['Raleigh',35.7796,-78.6382]],
+    TN: [['Nashville',36.1627,-86.7816],['Knoxville',35.9606,-83.9207]],
+    GA: [['Atlanta',33.7490,-84.3880],['Savannah',32.0809,-81.0912]],
+    FL: [['Jacksonville',30.3322,-81.6557],['Orlando',28.5383,-81.3792]],
+    AL: [['Birmingham',33.5186,-86.8104],['Mobile',30.6954,-88.0399]],
+    SC: [['Columbia',34.0007,-81.0348],['Charleston',32.7765,-79.9311]],
+    MD: [['Baltimore',39.2904,-76.6122]],
+    NJ: [['Newark',40.7357,-74.1724]],
+    AR: [['Little Rock',34.7465,-92.2896]],
+  };
+  const brokers = [
+    { name: 'Triad Logistics', phone: '888-555-0142', mcNumber: 'MC-482193' },
+    { name: 'Summit Freight Brokers', phone: '800-555-0198', mcNumber: 'MC-619274' },
+    { name: 'Keystone Transport', phone: '877-555-0165', mcNumber: 'MC-391028' },
+    { name: 'Rivertown Dispatch', phone: '855-555-0173', mcNumber: 'MC-726451' },
+    { name: 'National Load Xchange', phone: '866-555-0121', mcNumber: 'MC-204938' },
+  ];
+  const states = Object.keys(cities);
+  const loads = [];
+  const now = Date.now();
+  for (let i = 0; i < 45; i++) {
+    const os = states[Math.floor(Math.random() * states.length)];
+    let ds = states[Math.floor(Math.random() * states.length)];
+    while (ds === os) ds = states[Math.floor(Math.random() * states.length)];
+    const [oc, oLat, oLon] = cities[os][Math.floor(Math.random() * cities[os].length)];
+    const [dc, dLat, dLon] = cities[ds][Math.floor(Math.random() * cities[ds].length)];
+    const miles = Math.round(haversine(oLat, oLon, dLat, dLon) * 0.621371 * 1.32);
+    const rate = Math.round((miles * (1.80 + Math.random() * 1.40)) / 25) * 25;
+    loads.push({
+      id: 'MOCK-' + (100000 + i),
+      originCity: oc, originState: os, originLat: oLat, originLon: oLon,
+      destCity: dc,   destState: ds,   destLat: dLat,   destLon: dLon,
+      pickupDate: new Date(now + Math.floor(Math.random() * 5) * 86400000).toISOString().split('T')[0],
+      rate, miles,
+      weight: Math.round((20000 + Math.random() * 28000) / 500) * 500,
+      equipment: equipment[Math.floor(Math.random() * equipment.length)],
+      broker: brokers[Math.floor(Math.random() * brokers.length)],
+    });
+  }
+  return loads;
+}
+
+async function getLoads() {
+  if (cachedLoads && Date.now() - loadsLoadedAt < LOADS_CACHE_TTL) {
+    return { loads: cachedLoads, cached: true };
+  }
+  // TODO: replace with real 123Loadboard OAuth2 + /loads/search calls once credentials arrive
+  //   1. POST https://api.123loadboard.com/oauth/token  (client_credentials grant)
+  //   2. GET  /loads/search?originStates=AL,AR,...&equipment=...  (batch by state if needed)
+  //   3. Filter: drop any load whose originState not in OPERATING_STATES
+  //   4. Enrich: attach deadhead via getVehiclesWithLocations() + haversine to nearest truck
+  const loads = generateMockLoads()
+    .filter(l => OPERATING_STATES.includes(l.originState));
+
+  // Enrich with deadhead if IntelliShift is configured
+  if (IS_EMAIL && IS_PASSWORD) {
+    try {
+      const { vehicles } = await getVehiclesWithLocations();
+      if (vehicles.length > 0) {
+        loads.forEach(l => {
+          let best = { miles: Infinity, truck: '' };
+          vehicles.forEach(v => {
+            const m = haversine(l.originLat, l.originLon, v.lat, v.lon) * 0.621371;
+            if (m < best.miles) best = { miles: m, truck: v.name };
+          });
+          l.deadheadMiles = Math.round(best.miles);
+          l.nearestTruck = best.truck;
+        });
+      }
+    } catch(e) {
+      console.log('  [loads] deadhead enrichment skipped:', e.message);
+    }
+  }
+
+  cachedLoads = loads;
+  loadsLoadedAt = Date.now();
+  console.log(`  [loads] Mock loads generated: ${loads.length}`);
+  return { loads, cached: false };
+}
+
 // Known branch IDs for "570: Traffic" (discovered, hardcoded to skip branch lookup)
 // 34911 = 570: Traffic-CMV  |  34914 = 570: Traffic-Trailers  |  30215 = 570: Traffic (parent)
 const IS_BRANCH_IDS = [34911, 34914, 30215];
@@ -457,6 +559,29 @@ const server = http.createServer((req, res) => {
     } catch(e) {
       res.writeHead(200);
       res.end(JSON.stringify({ error: e.message }));
+    }})();
+    return;
+  }
+
+  // 123Loadboard available loads (mock data until API access granted)
+  if (pathname === '/api/loads') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+    (async () => { try {
+      const { loads, cached } = await getLoads();
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        loads,
+        count: loads.length,
+        operatingStates: OPERATING_STATES,
+        cachedAt: new Date(loadsLoadedAt).toISOString(),
+        nextRefresh: new Date(loadsLoadedAt + LOADS_CACHE_TTL).toISOString(),
+        fromCache: cached,
+        source: (LOADBOARD_CLIENT_ID ? '123loadboard' : 'mock'),
+      }));
+    } catch(e) {
+      console.error('  [loads] error:', e.message);
+      res.writeHead(500); res.end(JSON.stringify({ error: e.message }));
     }})();
     return;
   }
