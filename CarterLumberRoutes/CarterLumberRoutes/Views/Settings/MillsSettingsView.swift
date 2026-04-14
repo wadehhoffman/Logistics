@@ -33,45 +33,8 @@ struct MillsSettingsView: View {
 
     var body: some View {
         List {
-            if missingCoordCount > 0 {
-                Section {
-                    Button {
-                        Task { await runGeocodeAll() }
-                    } label: {
-                        HStack {
-                            Image(systemName: "globe")
-                            VStack(alignment: .leading) {
-                                Text("Geocode \(missingCoordCount) missing").font(.subheadline.weight(.semibold))
-                                Text("Adds lat/lon to mills that have an address but no coordinates.")
-                                    .font(.caption2).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            if isGeocoding { ProgressView().controlSize(.small) }
-                        }
-                    }
-                    .disabled(isGeocoding)
-                }
-            }
-
-            Section {
-                ForEach(filteredMills) { mill in
-                    Button {
-                        editing = mill
-                        showingEditor = true
-                    } label: {
-                        millRow(mill)
-                    }
-                    .foregroundStyle(.primary)
-                }
-                .onDelete(perform: deleteRows)
-            } header: {
-                HStack {
-                    Text("\(filteredMills.count) of \(dataStore.mills.count)")
-                    Spacer()
-                    Text(search.isEmpty ? "Tap to edit" : "Tap to edit • swipe to delete")
-                }
-                .font(.caption)
-            }
+            geocodeSection
+            millsListSection
         }
         .navigationTitle("Mills")
         .searchable(text: $search, placement: .navigationBarDrawer, prompt: "Search by name, vendor, city, product")
@@ -86,31 +49,96 @@ struct MillsSettingsView: View {
         .sheet(isPresented: $showingEditor) {
             MillEditorView(mill: editing) { result in
                 showingEditor = false
-                switch result {
-                case .saved:   Task { await dataStore.refresh(serverBaseURL: config.intelliShiftBaseURL) }
-                case .cancel:  break
+                if case .saved = result {
+                    Task { await dataStore.refresh(serverBaseURL: config.intelliShiftBaseURL) }
                 }
             }
         }
-        .alert("Geocoding", isPresented: Binding(
-            get: { geocodeResult != nil },
-            set: { if !$0 { geocodeResult = nil } }
-        ), presenting: geocodeResult) { _ in
+        .alert("Geocoding", isPresented: $showingGeocodeAlert) {
             Button("OK") { geocodeResult = nil }
-        } message: { r in
-            var msg = "Geocoded \(r.succeeded) of \(r.total) mills."
-            if r.failed > 0 {
-                msg += "\n\n\(r.failed) failed:\n" + r.failures.prefix(5).map { "• \($0.name)" }.joined(separator: "\n")
-                if r.failures.count > 5 { msg += "\n…and \(r.failures.count - 5) more." }
-            }
-            Text(msg)
+        } message: {
+            Text(geocodeAlertMessage)
         }
-        .alert("Error", isPresented: Binding(
-            get: { alertMessage != nil },
-            set: { if !$0 { alertMessage = nil } }
-        ), presenting: alertMessage) { _ in
+        .alert("Error", isPresented: $showingErrorAlert) {
             Button("OK") { alertMessage = nil }
-        } message: { msg in Text(msg) }
+        } message: {
+            Text(alertMessage ?? "")
+        }
+    }
+
+    // Binding helpers for alerts (avoids complex generic .alert(presenting:) that chokes the compiler)
+    private var showingGeocodeAlert: Binding<Bool> {
+        Binding(get: { geocodeResult != nil }, set: { if !$0 { geocodeResult = nil } })
+    }
+    private var showingErrorAlert: Binding<Bool> {
+        Binding(get: { alertMessage != nil }, set: { if !$0 { alertMessage = nil } })
+    }
+    private var geocodeAlertMessage: String {
+        guard let r = geocodeResult else { return "" }
+        var msg = "Geocoded \(r.succeeded) of \(r.total) mills."
+        if r.failed > 0 {
+            let names = r.failures.prefix(5).map { "• \($0.name)" }.joined(separator: "\n")
+            msg += "\n\n\(r.failed) failed:\n" + names
+            if r.failures.count > 5 {
+                msg += "\n…and \(r.failures.count - 5) more."
+            }
+        }
+        return msg
+    }
+
+    // MARK: - Extracted sections (helps the Swift compiler with type-checking)
+
+    @ViewBuilder
+    private var geocodeSection: some View {
+        if missingCoordCount > 0 {
+            Section {
+                Button {
+                    Task { await runGeocodeAll() }
+                } label: {
+                    geocodeButtonLabel
+                }
+                .disabled(isGeocoding)
+            }
+        }
+    }
+
+    private var geocodeButtonLabel: some View {
+        HStack {
+            Image(systemName: "globe")
+            VStack(alignment: .leading) {
+                Text("Geocode \(missingCoordCount) missing")
+                    .font(.subheadline.weight(.semibold))
+                Text("Adds lat/lon to mills that have an address but no coordinates.")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+            Spacer()
+            if isGeocoding { ProgressView().controlSize(.small) }
+        }
+    }
+
+    @ViewBuilder
+    private var millsListSection: some View {
+        let headerText = "\(filteredMills.count) of \(dataStore.mills.count)"
+        let hintText: String = search.isEmpty ? "Tap to edit" : "Tap to edit • swipe to delete"
+        Section {
+            ForEach(filteredMills) { mill in
+                Button {
+                    editing = mill
+                    showingEditor = true
+                } label: {
+                    millRow(mill)
+                }
+                .foregroundStyle(.primary)
+            }
+            .onDelete(perform: deleteRows)
+        } header: {
+            HStack {
+                Text(headerText)
+                Spacer()
+                Text(hintText)
+            }
+            .font(.caption)
+        }
     }
 
     // MARK: - Row

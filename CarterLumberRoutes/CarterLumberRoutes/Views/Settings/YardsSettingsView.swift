@@ -27,23 +27,7 @@ struct YardsSettingsView: View {
 
     var body: some View {
         List {
-            Section {
-                ForEach(filteredYards) { yard in
-                    Button {
-                        editing = yard
-                        showingEditor = true
-                    } label: { yardRow(yard) }
-                    .foregroundStyle(.primary)
-                }
-                .onDelete(perform: deleteRows)
-            } header: {
-                HStack {
-                    Text("\(filteredYards.count) of \(dataStore.yards.count)")
-                    Spacer()
-                    Text(search.isEmpty ? "Tap to edit" : "Tap to edit • swipe to delete")
-                }
-                .font(.caption)
-            }
+            yardsListSection
         }
         .navigationTitle("Yards")
         .searchable(text: $search, placement: .navigationBarDrawer, prompt: "Search by #, city, state, market")
@@ -58,18 +42,43 @@ struct YardsSettingsView: View {
         .sheet(isPresented: $showingEditor) {
             YardEditorView(yard: editing) { result in
                 showingEditor = false
-                switch result {
-                case .saved:  Task { await dataStore.refresh(serverBaseURL: config.intelliShiftBaseURL) }
-                case .cancel: break
+                if case .saved = result {
+                    Task { await dataStore.refresh(serverBaseURL: config.intelliShiftBaseURL) }
                 }
             }
         }
-        .alert("Error", isPresented: Binding(
-            get: { alertMessage != nil },
-            set: { if !$0 { alertMessage = nil } }
-        ), presenting: alertMessage) { _ in
+        .alert("Error", isPresented: showingErrorAlert) {
             Button("OK") { alertMessage = nil }
-        } message: { Text($0) }
+        } message: {
+            Text(alertMessage ?? "")
+        }
+    }
+
+    private var showingErrorAlert: Binding<Bool> {
+        Binding(get: { alertMessage != nil }, set: { if !$0 { alertMessage = nil } })
+    }
+
+    @ViewBuilder
+    private var yardsListSection: some View {
+        let headerText = "\(filteredYards.count) of \(dataStore.yards.count)"
+        let hintText: String = search.isEmpty ? "Tap to edit" : "Tap to edit • swipe to delete"
+        Section {
+            ForEach(filteredYards) { yard in
+                Button {
+                    editing = yard
+                    showingEditor = true
+                } label: { yardRow(yard) }
+                .foregroundStyle(.primary)
+            }
+            .onDelete(perform: deleteRows)
+        } header: {
+            HStack {
+                Text(headerText)
+                Spacer()
+                Text(hintText)
+            }
+            .font(.caption)
+        }
     }
 
     @ViewBuilder
