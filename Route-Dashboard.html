@@ -57,6 +57,27 @@ body { font-family: Arial, sans-serif; background: #f0f2f5; color: #333; }
 .badge-login, .badge-logout { background: #f5f5f5; color: #666; }
 .activity-details { font-family: 'Courier New', monospace; font-size: 11px; color: #555; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 .activity-details.expanded { white-space: pre-wrap; word-break: break-all; }
+/* Drivers modal */
+.schedule-modal.drivers-modal .modal-card { width: 1400px; max-width: 96vw; max-height: 90vh; display: flex; flex-direction: column; padding: 20px; }
+.drivers-summary { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; padding: 10px 14px; background: #f0f2f5; border-radius: 8px; font-size: 12px; }
+.drivers-summary .ds-item { text-align: center; }
+.drivers-summary .ds-item .ds-val { font-size: 22px; font-weight: 700; color: #1a3a5c; }
+.drivers-summary .ds-item .ds-label { color: #888; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+.hours-bar { position: relative; height: 18px; background: #e0e0e0; border-radius: 9px; overflow: hidden; min-width: 100px; font-size: 10px; }
+.hours-bar .hb-fill { position: absolute; top: 0; left: 0; height: 100%; border-radius: 9px; transition: width 0.3s; }
+.hours-bar .hb-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #333; text-shadow: 0 0 3px rgba(255,255,255,0.7); }
+.hb-green  { background: #66bb6a; }
+.hb-yellow { background: #ffa726; }
+.hb-red    { background: #ef5350; }
+.med-badge { display: inline-block; padding: 2px 7px; border-radius: 8px; font-size: 10px; font-weight: 700; }
+.med-valid { background: #e8f5e9; color: #2e7d32; }
+.med-expiring { background: #fff8e1; color: #e65100; }
+.med-expired { background: #ffebee; color: #c62828; }
+.med-unknown { background: #f5f5f5; color: #888; }
+.endorsement-badge { display: inline-block; padding: 1px 5px; border-radius: 6px; font-size: 9px; font-weight: 700; background: #e3f2fd; color: #1565c0; margin-right: 2px; }
+.driver-status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.driver-status-dot.on-shift { background: #66bb6a; box-shadow: 0 0 4px #66bb6a; }
+.driver-status-dot.off-shift { background: #bbb; }
 .container { display: flex; height: calc(100vh - 64px); }
 .sidebar { width: 420px; min-width: 420px; background: white; padding: 20px; overflow-y: auto; border-right: 1px solid #ddd; display: flex; flex-direction: column; gap: 14px; }
 .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #888; margin-bottom: 4px; }
@@ -245,6 +266,7 @@ select:focus { outline: none; border-color: #2c5f8a; box-shadow: 0 0 0 2px rgba(
     <div class="subtitle">Mill / Supplier to Yard — Road Distance & Route</div>
   </div>
   <div class="header-actions">
+    <button class="header-btn" onclick="openDriversModal()" title="Drivers" style="transform:none;">🧑‍✈️</button>
     <button class="header-btn" onclick="openSettingsModal()" title="Settings">⚙️</button>
   </div>
 </div>
@@ -2705,6 +2727,120 @@ function selectTodayVehicle(vehicleId) {
 }
 
 // ============================================================
+// DRIVERS MODAL — Branch 570 operators with HOS tracking
+// ============================================================
+
+let driversData = [];
+
+function openDriversModal() {
+  document.getElementById('driversModal').style.display = 'flex';
+  loadDrivers();
+}
+
+function closeDriversModal() {
+  document.getElementById('driversModal').style.display = 'none';
+}
+
+async function loadDrivers() {
+  const tbody = document.getElementById('driversTbody');
+  tbody.innerHTML = '<tr><td colspan="10" style="padding:20px;text-align:center;color:#888;">Loading drivers from IntelliShift…</td></tr>';
+  try {
+    const resp = await fetch('/api/drivers');
+    if (!resp.ok) throw new Error((await resp.json()).error || `Status ${resp.status}`);
+    const data = await resp.json();
+    driversData = data.drivers || [];
+    renderDriversSummary();
+    renderDriversTable();
+    document.getElementById('driversCount').textContent = `${driversData.length} drivers • as of ${new Date(data.asOf).toLocaleTimeString()}`;
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="10" style="padding:20px;text-align:center;color:#c62828;">Error: ${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+function renderDriversSummary() {
+  const el = document.getElementById('driversSummary');
+  const onShift = driversData.filter(d => d.status === 'on-shift').length;
+  const offShift = driversData.length - onShift;
+  const avgWeekUsed = driversData.length > 0 ? (driversData.reduce((s, d) => s + d.weekActualHours, 0) / driversData.length).toFixed(1) : '0';
+  const lowDaily = driversData.filter(d => d.status === 'on-shift' && d.dailyRemaining < 2).length;
+  const expired = driversData.filter(d => d.medicalCardStatus === 'expired').length;
+  const expiring = driversData.filter(d => d.medicalCardStatus === 'expiring-soon').length;
+  el.innerHTML = `
+    <div class="ds-item"><div class="ds-val" style="color:#2e7d32;">${onShift}</div><div class="ds-label">On Shift</div></div>
+    <div class="ds-item"><div class="ds-val" style="color:#888;">${offShift}</div><div class="ds-label">Off Shift</div></div>
+    <div class="ds-item"><div class="ds-val">${avgWeekUsed}h</div><div class="ds-label">Avg Week Hours</div></div>
+    ${lowDaily > 0 ? `<div class="ds-item"><div class="ds-val" style="color:#e65100;">${lowDaily}</div><div class="ds-label">Low Daily Hours</div></div>` : ''}
+    ${expired > 0 ? `<div class="ds-item"><div class="ds-val" style="color:#c62828;">${expired}</div><div class="ds-label">Expired Med Card</div></div>` : ''}
+    ${expiring > 0 ? `<div class="ds-item"><div class="ds-val" style="color:#e65100;">${expiring}</div><div class="ds-label">Expiring Med Card</div></div>` : ''}
+  `;
+}
+
+function renderDriversTable() {
+  const tbody = document.getElementById('driversTbody');
+  const f = (document.getElementById('driversFilter').value || '').toLowerCase().trim();
+  const filtered = driversData.filter(d => {
+    if (!f) return true;
+    return (d.name + ' ' + (d.employeeId || '') + ' ' + (d.currentVehicle ? d.currentVehicle.name : '') + ' ' + (d.currentVehicle ? d.currentVehicle.city + ' ' + d.currentVehicle.state : '')).toLowerCase().includes(f);
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="10" style="padding:20px;text-align:center;color:#888;">No drivers match.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(d => {
+    const statusDot = `<span class="driver-status-dot ${d.status}"></span>`;
+    const vehicle = d.currentVehicle ? escapeHtml(d.currentVehicle.name) : '<span style="color:#bbb;">—</span>';
+    const location = d.currentVehicle ? escapeHtml([d.currentVehicle.city, d.currentVehicle.state].filter(Boolean).join(', ') || '—') : '<span style="color:#bbb;">—</span>';
+
+    const todayBar = renderHoursBar(d.todayActualHours, 11, `${d.dailyRemaining}h left`);
+    const weekBar = renderHoursBar(d.weekActualHours, 70, `${d.weeklyRemaining}h left`);
+    const planned = d.weekPlannedHours > 0 ? `${d.weekPlannedHours}h` : '<span style="color:#bbb;">—</span>';
+
+    const medBadge = d.medicalCardStatus === 'valid'
+      ? '<span class="med-badge med-valid">Valid</span>'
+      : d.medicalCardStatus === 'expiring-soon'
+      ? `<span class="med-badge med-expiring">Expiring</span>`
+      : d.medicalCardStatus === 'expired'
+      ? `<span class="med-badge med-expired">Expired</span>`
+      : '<span class="med-badge med-unknown">N/A</span>';
+    const medDate = d.medicalCardExpiration
+      ? `<div style="font-size:9px;color:#888;">${new Date(d.medicalCardExpiration).toLocaleDateString()}</div>`
+      : '';
+
+    const endorsements = (d.endorsements || []).map(e => `<span class="endorsement-badge">${escapeHtml(e)}</span>`).join('') || '<span style="color:#bbb;">—</span>';
+
+    const shiftInfo = d.shiftStartTime
+      ? `<div style="font-size:9px;color:#888;">Since ${new Date(d.shiftStartTime).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</div>`
+      : '';
+
+    return `<tr>
+      <td>${statusDot}</td>
+      <td><strong>${escapeHtml(d.name)}</strong>${shiftInfo}</td>
+      <td style="font-family:'Courier New',monospace;font-size:11px;">${escapeHtml(d.employeeId)}</td>
+      <td style="font-family:'Courier New',monospace;">${vehicle}</td>
+      <td>${location}</td>
+      <td>${todayBar}</td>
+      <td>${weekBar}</td>
+      <td>${planned}</td>
+      <td>${medBadge}${medDate}</td>
+      <td>${endorsements}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderHoursBar(used, cap, label) {
+  const pct = Math.min(100, Math.round((used / cap) * 100));
+  const remaining = cap - used;
+  const colorClass = remaining > 4 ? 'hb-green' : remaining > 2 ? 'hb-yellow' : 'hb-red';
+  return `<div class="hours-bar">
+    <div class="hb-fill ${colorClass}" style="width:${pct}%;"></div>
+    <div class="hb-text">${label}</div>
+  </div>
+  <div style="font-size:9px;color:#888;text-align:center;">${used.toFixed(1)}h / ${cap}h</div>`;
+}
+
+// ============================================================
 // SETTINGS MODAL (Mills / Yards / Activity Log)
 // ============================================================
 
@@ -3326,6 +3462,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
     <div class="modal-actions" style="margin-top:10px;">
       <button class="btn btn-secondary" onclick="closeSettingsModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Drivers Modal -->
+<div class="schedule-modal drivers-modal" id="driversModal" style="display:none;" onclick="if(event.target===this)closeDriversModal()">
+  <div class="modal-card">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <h3 style="margin:0;">🧑‍✈️ Drivers</h3>
+      <span id="driversCount" style="font-size:12px;color:#888;"></span>
+      <div style="margin-left:auto;">
+        <button class="btn-add" onclick="loadDrivers()" style="background:#555;">🔄 Refresh</button>
+      </div>
+    </div>
+    <div id="driversSummary" class="drivers-summary"></div>
+    <div class="settings-toolbar" style="margin-bottom:8px;">
+      <input type="search" id="driversFilter" placeholder="Search by name, vehicle, city..." oninput="renderDriversTable()" />
+    </div>
+    <div style="overflow:auto;flex:1;max-height:calc(90vh - 220px);">
+      <table class="settings-table" id="driversTable">
+        <thead><tr>
+          <th style="width:40px;"></th>
+          <th>Name</th>
+          <th>Employee ID</th>
+          <th>Vehicle</th>
+          <th>Location</th>
+          <th style="min-width:130px;">Today (11h)</th>
+          <th style="min-width:130px;">Week (70h)</th>
+          <th>Planned</th>
+          <th>Med Card</th>
+          <th>Endorsements</th>
+        </tr></thead>
+        <tbody id="driversTbody">
+          <tr><td colspan="10" style="padding:20px;text-align:center;color:#888;">Loading drivers from IntelliShift…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="modal-actions" style="margin-top:10px;">
+      <button class="btn btn-secondary" onclick="closeDriversModal()">Close</button>
     </div>
   </div>
 </div>

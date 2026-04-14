@@ -365,6 +365,48 @@ async function getVehiclesWithLocations() {
   return { vehicles, total: assets.length, withLocation: vehicles.length, endpoint };
 }
 
+// --- Operators cache (for Drivers modal) ---
+let cachedOperators = null;
+let operatorsLoadedAt = 0;
+const OPERATOR_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+async function loadOperators(token) {
+  if (cachedOperators && Date.now() - operatorsLoadedAt < OPERATOR_CACHE_TTL) return cachedOperators;
+  console.log('  [IS] Fetching all operators...');
+  let allOps = [];
+  let page = 1, totalPages = 1;
+  do {
+    const r = await isGet(token, `/api/operators?pageNumber=${page}&pageSize=100`);
+    if (r.status !== 200) break;
+    const items = Array.isArray(r.body) ? r.body : (r.body.collection || []);
+    allOps = allOps.concat(items);
+    totalPages = r.body.totalPages || 1;
+    page++;
+  } while (page <= totalPages);
+  cachedOperators = allOps;
+  operatorsLoadedAt = Date.now();
+  console.log(`  [IS] Operator cache loaded: ${cachedOperators.length} total`);
+  return cachedOperators;
+}
+
+async function fetchAssignments(token) {
+  // Fetch recent assignments (active + closed in past 8 days).
+  // The /api/operator-assignments endpoint returns current active ones by default.
+  // To get historical, we'd need date params — for now grab what we can.
+  let allAssign = [];
+  let page = 1, totalPages = 1;
+  do {
+    const r = await isGet(token, `/api/operator-assignments?pageNumber=${page}&pageSize=100`);
+    if (r.status !== 200) break;
+    const items = Array.isArray(r.body) ? r.body : (r.body.collection || []);
+    allAssign = allAssign.concat(items);
+    totalPages = r.body.totalPages || 1;
+    page++;
+  } while (page <= totalPages);
+  console.log(`  [IS] Fetched ${allAssign.length} operator assignments`);
+  return allAssign;
+}
+
 const MIME_TYPES = {
   '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript',
   '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg',
@@ -1187,6 +1229,162 @@ const server = http.createServer((req, res) => {
     const offset = parseInt(parsed.query.offset) || 0;
     const events = activityData.slice(offset, offset + limit);
     return res.end(JSON.stringify({ events, total: activityData.length, offset, limit }));
+  }
+
+  // ============================================================
+  // DRIVERS — Branch 570 operators with HOS tracking
+  // ============================================================
+
+  if (pathname === '/api/drivers' && req.method === 'GET') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+    (async () => { try {
+      const token = await getIntelliShiftToken();
+
+      // 1. Fetch all operators (cached 1h)
+      const operators = await loadOperators(token);
+
+      // 2. Fetch current + recent assignments (live, not cached — shifts change throughout the day)
+      const assignments = await fetchAssignments(token);
+
+      // 3. Get vehicle locations for cross-ref
+      let vehicleLocations = {};
+      try {
+        const { vehicles } = await getVehiclesWithLocations();
+        vehicles.forEach(v => { vehicleLocations[v.id] = v; });
+      } catch(e) { /* proceed without locations */ }
+
+      // 4. Build the drivers list
+      const now = Date.now();
+      const eightDaysAgo = now - 8 * 24 * 3600 * 1000;
+      const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+      const todayMs = todayStart.getTime();
+
+      // Build assignment lookups
+      const activeAssignments = {};   // operatorId → current active assignment
+      const weekAssignments = {};     // operatorId → array of assignments in 8-day window
+      for (const a of assignments) {
+        const startMs = new Date(a.startTime).getTime();
+        const endMs = a.endTime ? new Date(a.endTime).getTime() : now;
+        // Active = no endTime
+        if (!a.endTime) activeAssignments[a.operatorId] = a;
+        // Week window
+        if (startMs >= eightDaysAgo || endMs >= eightDaysAgo) {
+          if (!weekAssignments[a.operatorId]) weekAssignments[a.operatorId] = [];
+          weekAssignments[a.operatorId].push(a);
+        }
+      }
+
+      // Determine which operators are "Branch 570 relevant"
+      const b570BranchIds = new Set(IS_BRANCH_IDS);
+      const activeOperatorIds = new Set(Object.keys(activeAssignments).map(Number));
+      const relevantOperators = operators.filter(op => {
+        // Include if: has an active shift on a 570 vehicle, OR reportingBranchId is a 570 branch, OR statusId 1 + has any 570 assignment ever
+        if (activeOperatorIds.has(op.id)) return true;
+        if (op.reportingBranchId && b570BranchIds.has(op.reportingBranchId)) return true;
+        if (weekAssignments[op.id]) return true;
+        return false;
+      });
+
+      // Build enriched driver objects
+      const drivers = relevantOperators.map(op => {
+        const active = activeAssignments[op.id];
+        const weekHistory = weekAssignments[op.id] || [];
+
+        // Today actual hours
+        let todayActualSec = 0;
+        for (const a of weekHistory) {
+          const start = Math.max(new Date(a.startTime).getTime(), todayMs);
+          const end = a.endTime ? new Date(a.endTime).getTime() : now;
+          if (end > todayMs && start < now) {
+            todayActualSec += (Math.min(end, now) - start) / 1000;
+          }
+        }
+
+        // Week actual hours (rolling 8-day)
+        let weekActualSec = 0;
+        for (const a of weekHistory) {
+          const start = Math.max(new Date(a.startTime).getTime(), eightDaysAgo);
+          const end = a.endTime ? new Date(a.endTime).getTime() : now;
+          weekActualSec += (Math.min(end, now) - start) / 1000;
+        }
+
+        // Planned hours from schedule (match by operator name or vehicle name)
+        let weekPlannedSec = 0;
+        const opName = op.operatorName || '';
+        const vehicleName = active ? active.assetText : '';
+        for (const s of scheduleData) {
+          if (s.status === 'cancelled') continue;
+          if (!s.scheduledAt || !s.duration) continue;
+          const schedMs = new Date(s.scheduledAt).getTime();
+          if (schedMs < eightDaysAgo || schedMs > now + 7 * 24 * 3600 * 1000) continue;
+          const truckMatch = s.truck && (s.truck.name === vehicleName || s.truck.driver === opName || s.truck.operator === opName);
+          if (truckMatch) weekPlannedSec += s.duration;
+        }
+
+        // Vehicle location
+        let currentVehicle = null;
+        if (active) {
+          const v = vehicleLocations[active.assetId];
+          currentVehicle = {
+            id: active.assetId,
+            name: active.assetText,
+            lat: v ? v.lat : null,
+            lon: v ? v.lon : null,
+            city: v ? v.city : '',
+            state: v ? v.state : '',
+            engineOn: v ? v.engineOn : false,
+            speed: v ? v.speed : 0,
+          };
+        }
+
+        // Medical card status
+        let medicalCardStatus = 'unknown';
+        if (op.medicalCardExpiration) {
+          const expMs = new Date(op.medicalCardExpiration).getTime();
+          const thirtyDays = 30 * 24 * 3600 * 1000;
+          if (expMs < now) medicalCardStatus = 'expired';
+          else if (expMs < now + thirtyDays) medicalCardStatus = 'expiring-soon';
+          else medicalCardStatus = 'valid';
+        }
+
+        const todayActualHours = Math.round(todayActualSec / 360) / 10; // 1 decimal
+        const weekActualHours = Math.round(weekActualSec / 360) / 10;
+        const weekPlannedHours = Math.round(weekPlannedSec / 360) / 10;
+
+        return {
+          id: op.id,
+          name: op.operatorName,
+          firstName: op.firstName,
+          lastName: op.lastName,
+          employeeId: op.employeeId || '',
+          status: active ? 'on-shift' : 'off-shift',
+          todayActualHours,
+          weekActualHours,
+          weekPlannedHours,
+          dailyRemaining: Math.max(0, Math.round((11 - todayActualHours) * 10) / 10),
+          weeklyRemaining: Math.max(0, Math.round((70 - weekActualHours) * 10) / 10),
+          hosSchedule: '70/8',
+          currentVehicle,
+          shiftStartTime: active ? active.startTime : null,
+          medicalCardExpiration: op.medicalCardExpiration || null,
+          medicalCardStatus,
+          endorsements: (op.endorsements || []).map(e => e.name),
+        };
+      }).sort((a, b) => {
+        // On-shift first, then by name
+        if (a.status !== b.status) return a.status === 'on-shift' ? -1 : 1;
+        return (a.name || '').localeCompare(b.name || '');
+      });
+
+      res.writeHead(200);
+      res.end(JSON.stringify({ drivers, total: drivers.length, asOf: new Date().toISOString() }));
+    } catch(e) {
+      console.error('  [Drivers] Error:', e.message);
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: e.message }));
+    }})();
+    return;
   }
 
   // Static files
