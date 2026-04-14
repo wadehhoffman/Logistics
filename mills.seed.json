@@ -7,7 +7,9 @@
     "city": "Hazlehurst",
     "stateZip": "GA 31539",
     "address": "712 Uvalda Hwy, Hazlehurst, GA 31539",
-    "uuid": "b281e853-8250-485b-ba50-6b9acf5bac21"
+    "uuid": "b281e853-8250-485b-ba50-6b9acf5bac21",
+    "lat": 31.909747,
+    "lon": -82.558737
   },
   {
     "name": "BINDERHOLZ",
@@ -17,7 +19,9 @@
     "city": "Live Oak",
     "stateZip": "FL 32060",
     "address": "17152 46th Trace, Live Oak, FL 32060",
-    "uuid": "95509321-7776-462b-b0e6-89b3259f4733"
+    "uuid": "95509321-7776-462b-b0e6-89b3259f4733",
+    "lat": 30.364005,
+    "lon": -83.103218
   },
   {
     "name": "BINDERHOLZ",
@@ -27,7 +31,9 @@
     "city": "Enfield",
     "stateZip": "NC 27823",
     "address": "260 Piper Ln, Enfield, NC 27823",
-    "uuid": "c87e730a-954d-483f-bd2d-a6e2a5f9e896"
+    "uuid": "c87e730a-954d-483f-bd2d-a6e2a5f9e896",
+    "lat": 36.21938,
+    "lon": -77.632162
   },
   {
     "name": "CHARLES INGRAM LUMBER",
@@ -37,7 +43,9 @@
     "city": "Effingham",
     "stateZip": "SC 29541",
     "address": "4930 Planer Rd, Effingham, SC 29541",
-    "uuid": "39d37240-b306-4c00-95a0-2984131f9c32"
+    "uuid": "39d37240-b306-4c00-95a0-2984131f9c32",
+    "lat": 34.091208,
+    "lon": -79.646621
   },
   {
     "name": "CULP LUMBER",
@@ -47,7 +55,9 @@
     "city": "New London",
     "stateZip": "NC 28127",
     "address": "491 Old US 52, New London, NC 28127",
-    "uuid": "9331af5a-f557-49cf-aa17-d2abf72879b6"
+    "uuid": "9331af5a-f557-49cf-aa17-d2abf72879b6",
+    "lat": 35.4505867,
+    "lon": -80.2233297
   },
   {
     "name": "GEORGIA PACIFIC -  Clarendon OSB",
@@ -57,7 +67,9 @@
     "city": "Alcolu",
     "stateZip": "SC 29001",
     "address": "8250 Sumter Highway, Alcolu, SC 29001",
-    "uuid": "0d8312b0-674b-4687-9a13-623259439e47"
+    "uuid": "0d8312b0-674b-4687-9a13-623259439e47",
+    "lat": 33.79377,
+    "lon": -80.23402
   },
   {
     "name": "GEORGIA PACIFIC - Albany",
@@ -67,7 +79,9 @@
     "city": "Albany",
     "stateZip": "GA 31705",
     "address": "3150 Sylvester Rd, Albany, GA 31705",
-    "uuid": "5c6f2639-7a65-4d28-b761-6188cf39d4ae"
+    "uuid": "5c6f2639-7a65-4d28-b761-6188cf39d4ae",
+    "lat": 31.566011,
+    "lon": -84.065604
   },
   {
     "name": "GEORGIA PACIFIC - Dudley",
@@ -77,7 +91,9 @@
     "city": "Dudley",
     "stateZip": "NC 28333",
     "address": "139 Brewington Road, Dudley, NC 28333",
-    "uuid": "7b037a66-0aa5-42a2-8564-74a87c5ba299"
+    "uuid": "7b037a66-0aa5-42a2-8564-74a87c5ba299",
+    "lat": 35.260692,
+    "lon": -78.031422
   },
   {
     "name": "GEORGIA PACIFIC - Hosford OSB",
@@ -87,7 +103,9 @@
     "city": "Hosford",
     "stateZip": "FL  32334",
     "address": "12995 fl-65, Hosford, FL  32334",
-    "uuid": "554646f6-ebc5-4b47-9c7e-1272a1dee4e4"
+    "uuid": "554646f6-ebc5-4b47-9c7e-1272a1dee4e4",
+    "lat": 30.3939225,
+    "lon": -84.793024
   },
   {
     "name": "GEORGIA PACIFIC - Mexia",
@@ -97,7 +115,9 @@
     "city": "Frisco City",
     "stateZip": "AL 36445",
     "address": "372 Mexboro Rd, Frisco City, AL 36445",
-    "uuid": "027a4636-c45e-41e9-a208-00014c7b21cd"
+    "uuid": "027a4636-c45e-41e9-a208-00014c7b21cd",
+    "lat": 31.492908,
+    "lon": -87.368988
   },
   {
     "name": "GEORGIA PACIFIC - Prosperity",
@@ -107,7 +127,9 @@
     "city": "Prosperity",
     "stateZip": "SC 29127",
     "address": "191 Georgia Pacific Blvd, Prosperity, SC 29127",
-    "uuid": "f130c0fd-c2fe-48dd-80b6-385f9bb6bd75"
+    "uuid": "f130c0fd-c2fe-48dd-80b6-385f9bb6bd75",
+    "lat": 34.217256,
+    "lon": -81.494614
   },
   {
     "name": "GEORGIA PACIFIC - Rome",
@@ -117,7 +139,9 @@
     "city": "Rome",
     "stateZip": "GA 30165",
     "address": "80 Mays Bridge Road, Rome, GA 30165",
-    "uuid": "06a050b1-bea4-45e3-a098-265121e0b595"
+    "uuid": "06a050b1-bea4-45e3-a098-265121e0b595",
+    "lat": 34.225606,
+    "lon": -85.289933
   },
   {
     "name": "GEORGIA PACIFIC - Talladega",
@@ -127,7 +151,9 @@
     "city": "Talladega",
     "stateZip": "AL 35160",
     "address": "400 Ironaton Cutoff Rd, Talladega, AL 35160",
-    "uuid": "5522a5ed-a026-4381-88b9-66ed0ec0780d"
+    "uuid": "5522a5ed-a026-4381-88b9-66ed0ec0780d",
+    "lat": 33.4500294,
+    "lon": -86.057523
   },
   {
     "name": "GEORGIA PACIFIC - Taylorsville",
@@ -137,7 +163,9 @@
     "city": "Taylorsville",
     "stateZip": "MS 39169",
     "address": "105 Smith Co Rd 25, Taylorsville, MS 39169",
-    "uuid": "9f70e5d6-9971-4d95-acb1-e10a6a912a74"
+    "uuid": "9f70e5d6-9971-4d95-acb1-e10a6a912a74",
+    "lat": 31.838497,
+    "lon": -89.4695
   },
   {
     "name": "GEORGIA PACIFIC - Warrenton",
@@ -147,7 +175,9 @@
     "city": "Warrenton",
     "stateZip": "GA 30828",
     "address": "331 Thomson Hwy, Warrenton, GA 30828",
-    "uuid": "fbb8d430-6bd1-4ecf-ab15-f1e6a0330757"
+    "uuid": "fbb8d430-6bd1-4ecf-ab15-f1e6a0330757",
+    "lat": 33.4077256,
+    "lon": -82.6444426
   },
   {
     "name": "INLAND WHOLESALE - BLUE INLAND",
@@ -157,7 +187,9 @@
     "city": "Blue Island",
     "stateZip": "IL 60406",
     "address": "2101 Burr Oak Avenue, Blue Island, IL 60406",
-    "uuid": "73ac8eeb-774c-4370-addb-d5b58d296f01"
+    "uuid": "73ac8eeb-774c-4370-addb-d5b58d296f01",
+    "lat": 41.662604,
+    "lon": -87.675176
   },
   {
     "name": "INLAND WHOLESALE - BUFFALO, NY",
@@ -167,7 +199,9 @@
     "city": "Buffalo",
     "stateZip": "NY 14219",
     "address": "S3100 Lake Shore Rd, Buffalo, NY 14219",
-    "uuid": "edf79e15-5fa7-44ff-b1c4-743e3f238424"
+    "uuid": "edf79e15-5fa7-44ff-b1c4-743e3f238424",
+    "lat": 42.801591,
+    "lon": -78.846815
   },
   {
     "name": "INLAND WHOLESALE - DETROIT, MI",
@@ -177,7 +211,9 @@
     "city": "DETROIT",
     "stateZip": "MI 48234",
     "address": "11010 STATE FAIR EAST, DETROIT, MI 48234",
-    "uuid": "cc1ddce2-99ff-4e20-a827-69f4e4cfe7f2"
+    "uuid": "cc1ddce2-99ff-4e20-a827-69f4e4cfe7f2",
+    "lat": 42.44028,
+    "lon": -83.014065
   },
   {
     "name": "INLAND WHOLESALE - WALBRIDGE, OH",
@@ -187,7 +223,9 @@
     "city": "Walbridge",
     "stateZip": "OH 43465",
     "address": "6373 Ayers Road, Walbridge, OH 43465",
-    "uuid": "489a95ea-a755-4356-a2f2-2a83a0c405be"
+    "uuid": "489a95ea-a755-4356-a2f2-2a83a0c405be",
+    "lat": 41.5732399,
+    "lon": -83.5050582
   },
   {
     "name": "INTERFOR - BAXLEY, GA",
@@ -197,7 +235,9 @@
     "city": "BAXLEY",
     "stateZip": "GA 31513",
     "address": "1830 Golden Isles Easr, BAXLEY, GA 31513",
-    "uuid": "2e54be5f-f7bc-47b8-9f72-0c7da4ffcbac"
+    "uuid": "2e54be5f-f7bc-47b8-9f72-0c7da4ffcbac",
+    "lat": 31.76803,
+    "lon": -82.320039
   },
   {
     "name": "INTERFOR - BAYSPRING, MS",
@@ -207,7 +247,9 @@
     "city": "Bays Springs",
     "stateZip": "MS 39422",
     "address": "71 GEORGIA-PACIFIC ROAD, Bays Springs, MS 39422",
-    "uuid": "ab3f567f-b3b3-483b-ac59-21be5b74c906"
+    "uuid": "ab3f567f-b3b3-483b-ac59-21be5b74c906",
+    "lat": 31.956866,
+    "lon": -89.284274
   },
   {
     "name": "INTERFOR - EATONTON, GA",
@@ -217,7 +259,9 @@
     "city": "EATONTON",
     "stateZip": "GA 31024",
     "address": "370 DENNIS STATION ROAD SW, EATONTON, GA 31024",
-    "uuid": "4a5316f3-037c-49a3-bf19-0bee196dfeb6"
+    "uuid": "4a5316f3-037c-49a3-bf19-0bee196dfeb6",
+    "lat": 33.243307,
+    "lon": -83.361506
   },
   {
     "name": "INTERFOR - FAYETTE, AL",
@@ -227,7 +271,9 @@
     "city": "BELK",
     "stateZip": "AL 35545",
     "address": "545 COUNTY ROAD 6, BELK, AL 35545",
-    "uuid": "4d6fd969-4f09-4dd5-a3a9-fd4721700fd7"
+    "uuid": "4d6fd969-4f09-4dd5-a3a9-fd4721700fd7",
+    "lat": 33.6420651,
+    "lon": -87.9183932
   },
   {
     "name": "INTERFOR - GEORGETOWN, SC",
@@ -237,7 +283,9 @@
     "city": "Georgetown",
     "stateZip": "SC 29440",
     "address": "2701 Indian Hut Rd, Georgetown, SC 29440",
-    "uuid": "a076e3ac-d0d1-48ac-8413-11906072b860"
+    "uuid": "a076e3ac-d0d1-48ac-8413-11906072b860",
+    "lat": 33.42123,
+    "lon": -79.447727
   },
   {
     "name": "INTERFOR - MELDRIM, GA",
@@ -247,7 +295,9 @@
     "city": "Bloomingdale",
     "stateZip": "GA 31302",
     "address": "1291 Old River Rd, Bloomingdale, GA 31302",
-    "uuid": "20a8ff42-96f6-4df6-98fd-012c0ae45324"
+    "uuid": "20a8ff42-96f6-4df6-98fd-012c0ae45324",
+    "lat": 32.136035,
+    "lon": -81.388435
   },
   {
     "name": "INTERFOR - PERRY, GA",
@@ -257,7 +307,9 @@
     "city": "PERRY",
     "stateZip": "GA 31069",
     "address": "903 JERNIGAN STREET, PERRY, GA 31069",
-    "uuid": "56a5227b-f969-488d-9044-b3ee356ffc25"
+    "uuid": "56a5227b-f969-488d-9044-b3ee356ffc25",
+    "lat": 32.4540951,
+    "lon": -83.7327742
   },
   {
     "name": "INTERFOR - PRESTON, GA",
@@ -267,7 +319,9 @@
     "city": "PRESTON",
     "stateZip": "GA 31824",
     "address": "378 TOLLESON ROAD, PRESTON, GA 31824",
-    "uuid": "e2b40d39-1c12-4468-b2fa-5746f6fd9d16"
+    "uuid": "e2b40d39-1c12-4468-b2fa-5746f6fd9d16",
+    "lat": 32.037121,
+    "lon": -84.492101
   },
   {
     "name": "INTERFOR - SUMMERVILLE,SC",
@@ -277,7 +331,9 @@
     "city": "SUMMERVILLE",
     "stateZip": "SC 29483",
     "address": "200 N Maple St, SUMMERVILLE, SC 29483",
-    "uuid": "9b2a51b7-f8e6-4d97-b971-200c538a0a20"
+    "uuid": "9b2a51b7-f8e6-4d97-b971-200c538a0a20",
+    "lat": 33.0344711,
+    "lon": -80.1884198
   },
   {
     "name": "INTERFOR - SWAINSBORO, GA",
@@ -287,7 +343,9 @@
     "city": "SWAINSBORO",
     "stateZip": "GA 30401",
     "address": "8796 HWY 297, SWAINSBORO, GA 30401",
-    "uuid": "d9ba33d5-a587-42e4-9409-3879bcc6f0a3"
+    "uuid": "d9ba33d5-a587-42e4-9409-3879bcc6f0a3",
+    "lat": 32.510439,
+    "lon": -82.334686
   },
   {
     "name": "INTERFOR - THOMASTON, GA",
@@ -297,7 +355,9 @@
     "city": "THOMASTON",
     "stateZip": "GA 30286",
     "address": "75 BEN HILL ROAD, THOMASTON, GA 30286",
-    "uuid": "eb1dd6b9-517c-4a85-b322-f82911be696c"
+    "uuid": "eb1dd6b9-517c-4a85-b322-f82911be696c",
+    "lat": 32.929783,
+    "lon": -84.279665
   },
   {
     "name": "JORDAN LUMBER",
@@ -307,7 +367,9 @@
     "city": "Mount Gilead",
     "stateZip": "NC 27306",
     "address": "1939 N Carolina 109, Mount Gilead, NC 27306",
-    "uuid": "1ea7056b-67f3-4b14-9ea9-0ec126d53584"
+    "uuid": "1ea7056b-67f3-4b14-9ea9-0ec126d53584",
+    "lat": 35.25961,
+    "lon": -79.97862
   },
   {
     "name": "KRONOSPAN - PORT OF BALTIMORE",
@@ -317,7 +379,9 @@
     "city": "Baltimore",
     "stateZip": "MD 21224",
     "address": "2200 Broening Highway, Baltimore, MD 21224",
-    "uuid": "9347882a-f09d-415f-901c-46f6cb6ecab3"
+    "uuid": "9347882a-f09d-415f-901c-46f6cb6ecab3",
+    "lat": 39.2646728,
+    "lon": -76.5451501
   },
   {
     "name": "Langdale FOREST",
@@ -327,7 +391,9 @@
     "city": "Barnesville",
     "stateZip": "GA 30204",
     "address": "752 Grove St, Barnesville, GA 30204",
-    "uuid": "41b7b12a-3ec8-4e73-a5f2-0ec4f43cb611"
+    "uuid": "41b7b12a-3ec8-4e73-a5f2-0ec4f43cb611",
+    "lat": 33.0796018,
+    "lon": -84.1963948
   },
   {
     "name": "Louisiana-Pacific - HANCEVILLE OSB",
@@ -337,7 +403,9 @@
     "city": "Hanceville",
     "stateZip": "AL 35077",
     "address": "902 Main St SE, Hanceville, AL 35077",
-    "uuid": "a2b8fc7e-45a1-4647-b75e-6065776f7556"
+    "uuid": "a2b8fc7e-45a1-4647-b75e-6065776f7556",
+    "lat": 34.04664,
+    "lon": -86.75556
   },
   {
     "name": "Louisiana-Pacific - ROXBORO OSB",
@@ -347,7 +415,9 @@
     "city": "Roxboro",
     "stateZip": "NC 27574",
     "address": "10475 Boston Rd, Roxboro, NC 27574",
-    "uuid": "394e35a3-b789-466c-ac48-f155530bd0e7"
+    "uuid": "394e35a3-b789-466c-ac48-f155530bd0e7",
+    "lat": 36.521387,
+    "lon": -78.909669
   },
   {
     "name": "Louisiana-Pacific - THOMASVILLE OSB",
@@ -357,7 +427,9 @@
     "city": "Thomasville",
     "stateZip": "AL 36784",
     "address": "1500 N Clarke Industrial Rd, Thomasville, AL 36784",
-    "uuid": "740a0da7-99c4-423e-bbdd-349392336cfb"
+    "uuid": "740a0da7-99c4-423e-bbdd-349392336cfb",
+    "lat": 31.855519,
+    "lon": -87.728595
   },
   {
     "name": "MARION, OH",
@@ -367,7 +439,9 @@
     "city": "MARION",
     "stateZip": "OH 43302",
     "address": "3177 HARDING HIGHWAY EAST, MARION, OH 43302",
-    "uuid": "19909b19-1b8a-4c2f-8267-fa1a2b5eb3e2"
+    "uuid": "19909b19-1b8a-4c2f-8267-fa1a2b5eb3e2",
+    "lat": 40.6101609,
+    "lon": -83.0440038
   },
   {
     "name": "NATIONAL DISTRIBUTION",
@@ -377,7 +451,9 @@
     "city": "CHICAGO",
     "stateZip": "IL 60632",
     "address": "3501 WEST 51 ST STREET, CHICAGO, IL 60632",
-    "uuid": "1364aaa5-ec80-4f25-8386-639e90c95183"
+    "uuid": "1364aaa5-ec80-4f25-8386-639e90c95183",
+    "lat": 41.796431,
+    "lon": -87.713052
   },
   {
     "name": "PARTNERS WAREHOUSE",
@@ -387,7 +463,9 @@
     "city": "Aurora",
     "stateZip": "Il 60502",
     "address": "675 Mcclure Rd, Aurora, Il 60502",
-    "uuid": "d6da0c02-05d5-4db5-808a-dd249a528d1d"
+    "uuid": "d6da0c02-05d5-4db5-808a-dd249a528d1d",
+    "lat": 41.7720493,
+    "lon": -88.2745539
   },
   {
     "name": "Pollard Lumber Co., Inc",
@@ -397,7 +475,9 @@
     "city": "Appling",
     "stateZip": "GA 30802",
     "address": "5863 Washington Rd, Appling, GA 30802",
-    "uuid": "0fbfed8a-c1aa-4915-817f-be9a158aff69"
+    "uuid": "0fbfed8a-c1aa-4915-817f-be9a158aff69",
+    "lat": 33.61716,
+    "lon": -82.26741
   },
   {
     "name": "REX LUMBER - Bristol",
@@ -407,7 +487,9 @@
     "city": "Bristol",
     "stateZip": "FL 32321",
     "address": "18601 FL-12, Bristol, FL 32321",
-    "uuid": "eb878334-ba53-4e76-a6f3-32d94cbc7c3b"
+    "uuid": "eb878334-ba53-4e76-a6f3-32d94cbc7c3b",
+    "lat": 30.44537,
+    "lon": -84.97168
   },
   {
     "name": "REX LUMBER - Brookhaven",
@@ -417,7 +499,9 @@
     "city": "Brookhaven",
     "stateZip": "MS 39601",
     "address": "810 Wl Behan Rd, Brookhaven, MS 39601",
-    "uuid": "24afed7f-3c49-4535-a19b-f45effef5796"
+    "uuid": "24afed7f-3c49-4535-a19b-f45effef5796",
+    "lat": 31.5893647,
+    "lon": -90.4363329
   },
   {
     "name": "REX LUMBER - Graceville",
@@ -427,7 +511,9 @@
     "city": "Graceville",
     "stateZip": "FL 32440",
     "address": "5299 Alabama St, Graceville, FL 32440",
-    "uuid": "93e2fa8f-3c30-45d4-a7c8-85cda3e1eb2d"
+    "uuid": "93e2fa8f-3c30-45d4-a7c8-85cda3e1eb2d",
+    "lat": 30.962268,
+    "lon": -85.5175155
   },
   {
     "name": "REX LUMBER - TROY",
@@ -437,7 +523,9 @@
     "city": "TROY",
     "stateZip": "AL 36081",
     "address": "1945 COUNTY ROAD 7714, TROY, AL 36081",
-    "uuid": "70920651-3dd8-4ca6-97d1-fdfdb6b6b7bd"
+    "uuid": "70920651-3dd8-4ca6-97d1-fdfdb6b6b7bd",
+    "lat": 31.90467,
+    "lon": -86.00132
   },
   {
     "name": "TR MILLER",
@@ -447,7 +535,9 @@
     "city": "Brewton",
     "stateZip": "AL 36426",
     "address": "215 Deer St, Brewton, AL 36426",
-    "uuid": "8f29b9c9-a88d-4a72-9b71-ee0adea4e331"
+    "uuid": "8f29b9c9-a88d-4a72-9b71-ee0adea4e331",
+    "lat": 31.1048748,
+    "lon": -87.0699857
   },
   {
     "name": "TROY LUMBER",
@@ -457,7 +547,9 @@
     "city": "Troy",
     "stateZip": "NC 27371",
     "address": "110 Leslie St, Troy, NC 27371",
-    "uuid": "278cd9ee-38de-4f1b-800e-f4fadc2d4143"
+    "uuid": "278cd9ee-38de-4f1b-800e-f4fadc2d4143",
+    "lat": 35.370853,
+    "lon": -79.893118
   },
   {
     "name": "WEST FRASER - Allendale",
@@ -467,7 +559,9 @@
     "city": "Fairfax",
     "stateZip": "SC 29827",
     "address": "9918 Bufford’s Bridge Hwy, Fairfax, SC 29827",
-    "uuid": "3e1891d1-23fd-4a6a-800b-bbfe4141cd6f"
+    "uuid": "3e1891d1-23fd-4a6a-800b-bbfe4141cd6f",
+    "lat": 32.9937,
+    "lon": -81.22481
   },
   {
     "name": "WEST FRASER - Cordele",
@@ -477,7 +571,9 @@
     "city": "Cordele",
     "stateZip": "GA 31015",
     "address": "964 US-280 W, Cordele, GA 31015",
-    "uuid": "9ab87601-0260-4a7b-8fcd-3c939f8f6a7f"
+    "uuid": "9ab87601-0260-4a7b-8fcd-3c939f8f6a7f",
+    "lat": 31.965043,
+    "lon": -83.800848
   },
   {
     "name": "WEST FRASER - Huguley",
@@ -487,7 +583,9 @@
     "city": "Lanett",
     "stateZip": "AL 36863",
     "address": "4400 Barton Industrial Blvd, Lanett, AL 36863",
-    "uuid": "b0096dba-1636-4191-b039-dd82c9d57fe8"
+    "uuid": "b0096dba-1636-4191-b039-dd82c9d57fe8",
+    "lat": 32.821507,
+    "lon": -85.226872
   },
   {
     "name": "WEST FRASER - Joanna",
@@ -497,7 +595,9 @@
     "city": "Kinards",
     "stateZip": "sc 29355",
     "address": "564 Woodyard Road, Kinards, sc 29355",
-    "uuid": "fb627e96-f864-49f2-a576-ce9438157f72"
+    "uuid": "fb627e96-f864-49f2-a576-ce9438157f72",
+    "lat": 34.388972,
+    "lon": -81.799433
   },
   {
     "name": "WEST FRASER - Maplesville Mills",
@@ -507,7 +607,9 @@
     "city": "Maplesville",
     "stateZip": "AL 36750",
     "address": "7475 AL-22, Maplesville, AL 36750",
-    "uuid": "b9d49491-13a7-4802-b1f6-62eb8acd5af2"
+    "uuid": "b9d49491-13a7-4802-b1f6-62eb8acd5af2",
+    "lat": 32.7612945,
+    "lon": -86.8823224
   },
   {
     "name": "WEST FRASER - McDavid",
@@ -517,7 +619,9 @@
     "city": "McDavid",
     "stateZip": "FL 32568",
     "address": "401 Champion Dr, McDavid, FL 32568",
-    "uuid": "00c2f16e-3b83-4a20-b4a7-78591bad3faa"
+    "uuid": "00c2f16e-3b83-4a20-b4a7-78591bad3faa",
+    "lat": 30.7959183,
+    "lon": -87.3320271
   },
   {
     "name": "WEST FRASER - Opelika",
@@ -527,7 +631,9 @@
     "city": "Opelika",
     "stateZip": "AL 36801",
     "address": "2100 Industrial Blvd, Opelika, AL 36801",
-    "uuid": "5b5ac5ba-c8fe-42d5-b237-702e6b1aacee"
+    "uuid": "5b5ac5ba-c8fe-42d5-b237-702e6b1aacee",
+    "lat": 32.6743156,
+    "lon": -85.3650281
   },
   {
     "name": "WEST FRASER - Seaboard Mills",
@@ -537,7 +643,9 @@
     "city": "Seaboard",
     "stateZip": "NC 27876",
     "address": "4400 NC-186, Seaboard, NC 27876",
-    "uuid": "5d1f6857-0579-4b61-9641-9f37a6acc386"
+    "uuid": "5d1f6857-0579-4b61-9641-9f37a6acc386",
+    "lat": 36.4934342,
+    "lon": -77.4377112
   },
   {
     "name": "WESTERVELT - Moundville",
@@ -547,7 +655,9 @@
     "city": "Moundville",
     "stateZip": "AL 35474",
     "address": "2500 Gulf States Pkwy, Moundville, AL 35474",
-    "uuid": "ab646b86-5011-4d73-860e-1aed8477d9ee"
+    "uuid": "ab646b86-5011-4d73-860e-1aed8477d9ee",
+    "lat": 32.95962,
+    "lon": -87.6546
   },
   {
     "name": "WESTERVELT - Thomasville",
@@ -557,7 +667,9 @@
     "city": "Thomasville",
     "stateZip": "AL 36784",
     "address": "700 N Clarke Industrial Rd, Thomasville, AL 36784",
-    "uuid": "0c622113-b0a7-45f5-addb-324aa7d4e2d4"
+    "uuid": "0c622113-b0a7-45f5-addb-324aa7d4e2d4",
+    "lat": 31.844465,
+    "lon": -87.731723
   },
   {
     "name": "Weyerhaeuser - GREENVILLE",
@@ -567,7 +679,9 @@
     "city": "Ayden",
     "stateZip": "NC 28513",
     "address": "371 E Hanrahan Rd, Ayden, NC 28513",
-    "uuid": "4365f3f4-ac45-4442-8142-dd19030e3e9e"
+    "uuid": "4365f3f4-ac45-4442-8142-dd19030e3e9e",
+    "lat": 35.411469,
+    "lon": -77.41934
   },
   {
     "name": "Weyerhaeuser - Plymouth Wood Plant",
@@ -577,6 +691,8 @@
     "city": "Jamesville",
     "stateZip": "NC 27846",
     "address": "Pulp Mill Rd, Jamesville, NC 27846",
-    "uuid": "43c9eb35-ebd1-470c-bd2c-46b689858105"
+    "uuid": "43c9eb35-ebd1-470c-bd2c-46b689858105",
+    "lat": 35.845432,
+    "lon": -76.802419
   }
 ]

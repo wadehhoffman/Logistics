@@ -83,9 +83,18 @@ function logActivity(req, action, entity, details) {
   try { saveActivity(); } catch(e) { console.error('  [Activity] save failed:', e.message); }
 }
 
-// Internal Nominatim geocoder for server-side mill saves
+// Internal geocoder — tries Mapbox first (accurate for US street addresses),
+// falls back to Nominatim if Mapbox token is missing or fails.
 function geocodeAddress(address) {
-  return new Promise((resolve) => {
+  return new Promise(async (resolve) => {
+    // Try Mapbox first (much better hit rate for US industrial addresses)
+    if (MAPBOX_TOKEN) {
+      try {
+        const result = await geocodeViaMapbox(address);
+        if (result) return resolve(result);
+      } catch(e) { /* fall through to Nominatim */ }
+    }
+    // Fallback: Nominatim
     const u = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`;
     const req = https.get(u, { headers: { 'User-Agent': 'CarterLumberRouteApp/1.0' }, timeout: 8000 }, (r) => {
       const chunks = [];
@@ -99,6 +108,31 @@ function geocodeAddress(address) {
       });
     });
     req.on('error', () => resolve(null));
+    req.on('timeout', () => { req.destroy(); resolve(null); });
+  });
+}
+
+// Mapbox geocoding — better hit rate than Nominatim for US addresses
+function geocodeViaMapbox(address) {
+  return new Promise((resolve, reject) => {
+    const encoded = encodeURIComponent(address);
+    const u = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encoded}.json?access_token=${MAPBOX_TOKEN}&limit=1&country=US`;
+    const req = https.get(u, { timeout: 8000 }, (r) => {
+      const chunks = [];
+      r.on('data', c => chunks.push(c));
+      r.on('end', () => {
+        try {
+          const data = JSON.parse(Buffer.concat(chunks).toString());
+          if (data.features && data.features[0] && data.features[0].center) {
+            const [lon, lat] = data.features[0].center;
+            resolve({ lat, lon });
+          } else {
+            resolve(null);
+          }
+        } catch(e) { resolve(null); }
+      });
+    });
+    req.on('error', (e) => reject(e));
     req.on('timeout', () => { req.destroy(); resolve(null); });
   });
 }
