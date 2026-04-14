@@ -27,7 +27,7 @@ final class AppConfiguration {
         // weather, diesel, IntelliShift vehicles, mills/yards, schedule, HOS).
         // Property name kept as intelliShiftBaseURL for UserDefaults migration
         // continuity — treat it as the single server URL going forward.
-        self.intelliShiftBaseURL = defaults.string(forKey: Self.isBaseURLKey) ?? "http://logistics-ai.carterlumber.com"
+        self.intelliShiftBaseURL = defaults.string(forKey: Self.isBaseURLKey) ?? "https://logistics-ai.carterlumber.com"
     }
 
     func save() {

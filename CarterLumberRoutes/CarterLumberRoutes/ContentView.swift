@@ -986,7 +986,7 @@ struct SettingsContentView: View {
             Section("Server") {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Server URL")
-                    TextField("http://logistics-ai.carterlumber.com", text: $config.intelliShiftBaseURL)
+                    TextField("https://logistics-ai.carterlumber.com", text: $config.intelliShiftBaseURL)
                         .font(.system(.caption, design: .monospaced))
                         .textInputAutocapitalization(.never).autocorrectionDisabled()
                 }

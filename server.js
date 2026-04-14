@@ -186,7 +186,9 @@ function readBody(req) {
 
 // Load secrets from secrets.js (gitignored) — never commit API keys
 let secrets = {};
-try { secrets = require('./secrets'); } catch(e) {}
+try { secrets = require('./secrets'); } catch(e) {
+  try { secrets = require('../secrets'); } catch(e2) {}
+}
 const MAPBOX_TOKEN = secrets.MAPBOX_TOKEN || process.env.MAPBOX_TOKEN || '';
 const IS_EMAIL    = secrets.INTELLISHIFT_EMAIL    || process.env.IS_EMAIL    || '';
 const IS_PASSWORD = secrets.INTELLISHIFT_PASSWORD || process.env.IS_PASSWORD || '';

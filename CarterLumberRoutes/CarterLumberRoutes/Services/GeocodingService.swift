@@ -9,7 +9,7 @@ actor GeocodingService {
     private var cache: [String: CLLocationCoordinate2D] = [:]
     private let session: URLSession
 
-    init(baseURL: String = "http://logistics-ai.carterlumber.com") {
+    init(baseURL: String = "https://logistics-ai.carterlumber.com") {
         self.baseURL = baseURL.hasSuffix("/") ? String(baseURL.dropLast()) : baseURL
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 10

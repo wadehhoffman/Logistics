@@ -19,7 +19,7 @@ actor MapboxRoutingService {
     /// Back-compat initializer (kept so older code paths that passed a
     /// Mapbox token continue to compile). Token is ignored — routing runs
     /// server-side now.
-    init(mapboxToken: String = "", baseURL: String = "http://logistics-ai.carterlumber.com") {
+    init(mapboxToken: String = "", baseURL: String = "https://logistics-ai.carterlumber.com") {
         self.baseURL = baseURL.hasSuffix("/") ? String(baseURL.dropLast()) : baseURL
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 15
