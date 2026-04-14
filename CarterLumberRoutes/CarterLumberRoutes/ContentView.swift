@@ -10,6 +10,7 @@ struct ContentView: View {
         case singleRoute = "Route Planner"
         case today = "Today"
         case schedule = "Schedule"
+        case drivers = "Drivers"
         case settings = "Settings"
         var id: String { rawValue }
         var icon: String {
@@ -17,6 +18,7 @@ struct ContentView: View {
             case .singleRoute: return "arrow.triangle.turn.up.right.diamond"
             case .today:       return "map.fill"
             case .schedule:    return "calendar"
+            case .drivers:     return "person.2.fill"
             case .settings:    return "gear"
             }
         }
@@ -25,7 +27,8 @@ struct ContentView: View {
             case .singleRoute: return "Mill to Yard routing"
             case .today:       return "Dispatcher dashboard"
             case .schedule:    return "View & manage scheduled routes"
-            case .settings:    return "API keys, fuel settings"
+            case .drivers:     return "HOS tracking & compliance"
+            case .settings:    return "Server, fuel, reference data"
             }
         }
     }
@@ -65,6 +68,19 @@ struct ContentView: View {
             NavigationStack {
                 ScheduleContentView()
                     .navigationTitle("Schedule")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button { withAnimation(.easeOut(duration: 0.25)) { showMenu = true } } label: {
+                                Image(systemName: "line.3.horizontal").font(.title3).foregroundStyle(Color.carterBlue)
+                            }
+                        }
+                    }
+            }
+        case .drivers:
+            NavigationStack {
+                DriversView()
+                    .navigationTitle("Drivers")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
