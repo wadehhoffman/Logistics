@@ -54,12 +54,12 @@ struct MillsSettingsView: View {
                 }
             }
         }
-        .alert("Geocoding", isPresented: $showingGeocodeAlert) {
+        .alert("Geocoding", isPresented: showingGeocodeAlert) {
             Button("OK") { geocodeResult = nil }
         } message: {
             Text(geocodeAlertMessage)
         }
-        .alert("Error", isPresented: $showingErrorAlert) {
+        .alert("Error", isPresented: showingErrorAlert) {
             Button("OK") { alertMessage = nil }
         } message: {
             Text(alertMessage ?? "")
